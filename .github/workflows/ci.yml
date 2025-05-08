@@ -1,0 +1,196 @@
+name: Finex CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - name: Check ESM compatibility
+        run: npm run esm:check
+
+  docs-integrity:
+    name: Documentation Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run docs integrity check
+        run: bash ./scripts/check-docs-integrity.sh
+        env:
+          FORBIDDEN_IN_README: "ThemeTemplate"
+
+  api-types-check:
+    name: API Types Check
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      
+      # Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /var/lib/docker
+          key: openapitools-image-v${{ env.OPENAPI_GENERATOR_TAG }}-${{ hashFiles('openapi/finex.yaml') }}
+          restore-keys: |
+            openapitools-image-v${{ env.OPENAPI_GENERATOR_TAG }}-
+
+      # Set environment variable from package.json config
+      - name: Set OpenAPI Generator Version
+        shell: bash
+        run: echo "OPENAPI_GENERATOR_TAG=$(node -e "console.log(require('./package.json').config.OPENAPI_GENERATOR_TAG)")" >> $GITHUB_ENV
+
+      - name: Generate API types
+        run: npm run api:generate
+        
+      - name: Check if API types are up-to-date
+        run: |
+          git add types/api
+          git diff --cached --exit-code || 
+            (echo "🔴 API types are out-of-date! Run 'npm run api:generate' and commit the changes." && exit 1)
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run type-check
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:unit
+
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: finex_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - name: Check for mocked handlers in contract tests
+        run: |
+          if grep -R --line-number "mockImplementation(" tests/contract | grep "route"; then
+            echo "🔴 Found mocked route handlers in contract tests! Contract tests should use real route handlers."
+            exit 1
+          else
+            echo "✅ No mocked route handlers found in contract tests."
+          fi
+      - name: Run contract tests with coverage
+        run: npm run test:contract -- --coverage
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/finex_test
+          DIRECT_URL: postgres://postgres:postgres@localhost:5432/finex_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          CLERK_SECRET_KEY: test_secret_key
+          OPENAI_API_KEY: test_openai_key
+      - name: Verify route handler coverage
+        run: |
+          # Check if coverage report exists
+          if [ -f coverage/coverage-summary.json ]; then
+            # Use jq to check coverage on route handlers
+            lines_pct=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
+            
+            # Set threshold for route handlers
+            threshold=90
+            
+            if (( $(echo "$lines_pct < $threshold" | bc -l) )); then
+              echo "🔴 Coverage for route handlers below threshold: $lines_pct% < $threshold%"
+              exit 1
+            else
+              echo "✅ Coverage for route handlers meets threshold: $lines_pct% >= $threshold%"
+            fi
+          else
+            echo "⚠️ Coverage report not found. Skipping coverage check."
+          fi
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: finex_test
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/finex_test
+          DIRECT_URL: postgres://postgres:postgres@localhost:5432/finex_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          CLERK_SECRET_KEY: test_secret_key
+          OPENAI_API_KEY: test_openai_key
