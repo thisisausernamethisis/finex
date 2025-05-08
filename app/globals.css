@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+  
+  /* Color system variables for consistent usage */
+  --primary: 24 96 226;        /* #1860e2 */
+  --primary-foreground: 255 255 255;
+  
+  --secondary: 148 163 184;    /* #94a3b8 */
+  --secondary-foreground: 255 255 255;
+  
+  --accent: 245 158 11;        /* #f59e0b */
+  --accent-foreground: 255 255 255;
+  
+  --destructive: 220 38 38;    /* #dc2626 */
+  --destructive-foreground: 255 255 255;
+  
+  --muted: 241 245 249;        /* #f1f5f9 */
+  --muted-foreground: 100 116 139; /* #64748b */
+  
+  --card: 255 255 255;
+  --card-foreground: 15 23 42; /* #0f172a */
+  
+  --popover: 255 255 255;
+  --popover-foreground: 15 23 42;
+  
+  --border: 226 232 240;       /* #e2e8f0 */
+  --input: 226 232 240;
+  
+  --ring: 24 96 226;           /* #1860e2 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+    
+    --primary: 59 130 246;     /* #3b82f6 */
+    --primary-foreground: 255 255 255;
+    
+    --secondary: 100 116 139;  /* #64748b */
+    --secondary-foreground: 255 255 255;
+    
+    --accent: 245 158 11;      /* #f59e0b */
+    --accent-foreground: 15 23 42;
+    
+    --destructive: 239 68 68;  /* #ef4444 */
+    --destructive-foreground: 255 255 255;
+    
+    --muted: 51 65 85;         /* #334155 */
+    --muted-foreground: 148 163 184; /* #94a3b8 */
+    
+    --card: 15 23 42;          /* #0f172a */
+    --card-foreground: 248 250 252; /* #f8fafc */
+    
+    --popover: 15 23 42;
+    --popover-foreground: 248 250 252;
+    
+    --border: 51 65 85;        /* #334155 */
+    --input: 51 65 85;
+    
+    --ring: 59 130 246;        /* #3b82f6 */
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+/* v4 compatibility classes */
+.focus-visible\:ring-2:focus-visible {
+  --tw-ring-offset-width: 2px;
+  --tw-ring-offset-color: transparent;
+  --tw-ring-color: rgb(var(--ring));
+  --tw-ring-width: 2px;
+  box-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color), 
+              var(--tw-ring-inset) 0 0 0 calc(var(--tw-ring-width) + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
