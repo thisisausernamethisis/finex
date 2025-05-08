@@ -1,0 +1,7 @@
+node_modules
+.next
+out
+prisma/generated/**
+prisma/client/**
+.prisma/**
+**/*.d.ts

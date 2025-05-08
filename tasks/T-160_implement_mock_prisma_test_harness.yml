@@ -1,0 +1,15 @@
+id: T-160
+title: "Implement Mock Prisma Test Harness (Phase 3)"
+phase: 3
+acceptance:
+  - Contract tests can run without a live database
+  - Tests use mock prisma client in test environment
+  - Documentation created for test harness usage
+files_touched:
+  - tests/mocks/prisma.ts
+  - tests/mocks/repositories.ts
+  - tests/jest.setup.ts
+  - jest.config.js
+  - .env.test.local
+  - docs/runbooks/testing.md
+  - lib/mockPrisma.ts

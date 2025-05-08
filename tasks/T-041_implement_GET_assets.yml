@@ -1,0 +1,10 @@
+id: T-041
+title: "Implement GET /assets (Phase 3)"
+phase: 3
+acceptance:
+  - ci passes
+  - openapi unchanged
+  - tests/contract/assets.test.ts green
+files_touched:
+  - app/api/assets/route.ts
+  - lib/repositories/assetRepository.ts

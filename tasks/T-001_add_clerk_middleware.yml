@@ -1,0 +1,11 @@
+id: T-001
+title: "Add Clerk middleware (Phase 1)"
+phase: 1
+acceptance:
+  - Auth middleware handles public and protected routes
+  - JWT verification works for API routes
+  - CI passes
+files_touched:
+  - middleware.ts
+  - app/layout.tsx
+  - .env.example

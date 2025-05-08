@@ -1,0 +1,11 @@
+id: T-162
+title: "Add link to Build-Fix notes in README (micro-PR)"
+phase: 5b
+acceptance:
+  - README.md contains the new bullet (exact link text above)
+  - docs/ground-truth.md, openapi/finex.yaml untouched
+  - `npm run lint` → 0 errors
+  - CI doc-integrity check remains green
+files_touched:
+  - README.md
+  - tasks/T-162_link_readme_docs.yml

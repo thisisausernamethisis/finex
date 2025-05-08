@@ -1,0 +1,52 @@
+id: T-167
+title: "Search & filter Template Library (Phase 5b)"
+phase: 5b
+modify_contract: true
+acceptance:
+  - CI passes
+  - OpenAPI updated to include query parameters for GET /theme-templates
+  - New contract test in tests/contract/template_library_search.test.ts green
+  - E2E happy-path (search + filter) green
+  - Rate-limit headers returned for search endpoints
+  - "Spec drift" check passes (no undocumented OpenAPI changes)
+
+files_touched:
+  - openapi/finex.yaml (add query params and 429 response)
+  - app/api/theme-templates/route.ts (GET handler: accept q, publicOnly, ownerOnly, page params)
+  - lib/repositories/themeTemplateRepository.ts (add search+pagination)
+  - app/templates/page.tsx (pass query params from UI to API)
+  - components/TemplateSearchBar.tsx (new client component)
+  - components/TemplateCard.tsx (show highlight when text matches)
+  - docs/ground-truth.md (update §6 and §10 with new parameters and limits)
+  - tests/contract/template_library_search.test.ts (new)
+  - tests/e2e/templateLibrarySearch.spec.ts (new)
+
+scope:
+  - Simple text search on name (ILIKE %q%)
+  - Toggle chips: All / Mine / Public (client-side state → query params)
+  - Cursor or page-based pagination (page size = 20)
+  - Update OpenAPI spec with new query parameters:
+    - q (string, optional, maxLength 100)
+    - mine (boolean, optional)
+    - page (integer, ≥1, optional)
+  - Add 429 Too Many Requests response schema to OpenAPI
+  - Add rate-limiting headers (X-RateLimit-Remaining, Retry-After) as placeholders
+  - UI must handle 429 responses gracefully with "Slow down" toast
+
+tests:
+  - Contract: GET /api/theme-templates?q=solar&page=1 returns paginated schema and only matching rows
+  - Contract: Verify rate-limit headers are present in successful responses
+  - Contract: Mock 429 response and ensure proper error schema
+  - E2E (Playwright): user types into search bar, results update; toggling "Mine" hides others
+  - E2E: Test UI handling of 429 responses
+
+coverage:
+  - ≥80% for new repo/query functions
+  - Rate-limiting header verification in tests
+
+why_this_next:
+  - Completes the browse workflow (discover, filter, decide)
+  - No new DB schema or AI pieces – keeps the slice small
+  - Sets us up for later features (sort by popularity, categories, etc.)
+  - Addresses important gaps in the contract specification
+  - Starts implementing rate limiting best practices

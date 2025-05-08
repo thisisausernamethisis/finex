@@ -1,0 +1,72 @@
+{
+  "name": "finex_v3",
+  "version": "1.0.0",
+  "description": "For autonomous coding agents",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "config": {
+    "OPENAPI_GENERATOR_TAG": "7.13.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "typecheck": "tsc --noEmit",
+    "api:generate": "node ./scripts/run-api-gen.js",
+    "test:contract": "jest tests/contract",
+    "test:unit": "vitest run",
+    "test": "npm run test:unit && npm run test:contract",
+    "test:e2e": "playwright test --config=playwright.config.ts",
+    "pretest:contract": "npm run api:generate || echo 'Warning: API type generation failed, continuing with tests'",
+    "doc:check": "powershell -ExecutionPolicy Bypass -File ./scripts/check-docs-integrity.ps1",
+    "esm:check": "powershell -ExecutionPolicy Bypass -File ./scripts/check-esm-compatibility.ps1 || bash scripts/check-esm-compatibility.sh && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@clerk/nextjs": "^6.18.5",
+    "@openapitools/openapi-generator-cli": "^2.20.0",
+    "@prisma/client": "^6.7.0",
+    "bullmq": "^5.52.1",
+    "dotenv": "^16.5.0",
+    "eslint": "8.57.0",
+    "eslint-config-next": "13.5.6",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.507.0",
+    "next": "^14.2.28",
+    "prom-client": "^15.1.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "winston": "^3.17.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@prisma/extension-accelerate": "^1.3.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.15.3",
+    "@types/node-fetch": "^2.6.12",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.3",
+    "autoprefixer": "^10.4.21",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jest-mock-extended": "^4.0.0-beta1",
+    "postcss": "^8.5.3",
+    "prisma": "^6.7.0",
+    "tailwindcss": "^3.4.4",
+    "ts-jest": "^29.3.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  }
+}

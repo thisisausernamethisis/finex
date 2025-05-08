@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id      String  @id
+  assets  Asset[]
+}
+
+enum AssetKind {
+  REGULAR
+  TEMPLATE
+}
+
+model Asset {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  growthValue     Float?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  kind            AssetKind @default(REGULAR)
+  sourceTemplateId String?
+  themes          Theme[]
+  matrixResults   MatrixAnalysisResult[]
+  accesses        AssetAccess[]
+  isPublic        Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model AssetAccess {
+  id      String  @id @default(cuid())
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assetId String
+  userId  String
+  role    AccessRole
+  
+  @@unique([assetId, userId])
+}
+
+enum AccessRole {
+  VIEWER
+  EDITOR
+  ADMIN
+}
+
+enum ThemeType { 
+  STANDARD 
+  GROWTH 
+  PROBABILITY 
+}
+
+model Theme {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  category        String   @default("Default")
+  themeType       ThemeType @default(STANDARD)
+  asset           Asset?   @relation(fields: [assetId], references: [id])
+  assetId         String?
+  scenario        Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId      String?
+  calculatedValue Float?
+  manualValue     Float?
+  useManualValue  Boolean @default(false)
+  cards           Card[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Theme should have either assetId OR scenarioId set, but not both
+  // This constraint is enforced at the application layer
+}
+
+model Card {
+  id         String   @id @default(cuid())
+  title      String
+  content    String   @db.Text
+  importance Int?     @default(1)
+  source     String?
+  theme      Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  themeId    String
+  chunks     Chunk[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Chunk {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  order     Int
+  embedding Unsupported("vector(1536)")
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardId    String
+}
+
+model Scenario {
+  id       String @id @default(cuid())
+  name     String
+  description String?
+  probability Float?
+  themes   Theme[]
+  matrixResults MatrixAnalysisResult[]
+}
+
+model ThemeTemplate {
+  id          String   @id @default(cuid())
+  ownerId     String
+  name        String
+  description String?
+  payload     Json     // serialised Theme + Card structure
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MatrixAnalysisResult {
+  id          String    @id @default(cuid())
+  asset       Asset     @relation(fields: [assetId], references: [id])
+  assetId     String
+  scenario    Scenario  @relation(fields: [scenarioId], references: [id])
+  scenarioId  String
+  impact      Int       // −5…+5
+  summary     String?
+  evidenceIds String
+  status      String    @default("pending")
+  error       String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([assetId, scenarioId])
+}

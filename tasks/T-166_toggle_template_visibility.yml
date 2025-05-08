@@ -1,0 +1,47 @@
+id: T-166
+title: "Implement visibility toggle & publish flow for ThemeTemplates"
+phase: 5b               # Template Library / Sharing
+
+# ────────────────────────  Context  ────────────────────────
+# Finex Bot already lets users browse + clone published templates.
+# Analysts now need to:
+#   • Publish / un-publish  (isPublic ⇄ private)  their own templates
+#   • See real-time status reflected in the UI
+#   • Enforce RBAC in the API (only owner ↔ template)
+
+acceptance:
+  - CI passes (lint → type → unit → contract → e2e).
+  - openapi/finex.yaml unchanged.
+  - tests/contract/template_library_visibility.test.ts  green.
+  - Playwright happy-path:
+      * user visits /templates
+      * clicks "Publish" on a private template that they own
+      * toast "Template published" appears
+      * list refreshes and shows visibility badge = Public
+  - RBAC:
+      * non-owner receives 403 when calling PATCH /api/theme-templates/{id}.
+  - Coverage for lib/services/templateService ≥ 80 % lines.
+
+files_touched:
+  # API
+  - app/api/theme-templates/[id]/route.ts        # add PATCH handler
+  - lib/services/templateService.ts              # expose toggleVisibility()
+  - tests/contract/template_library_visibility.test.ts
+
+  # UI
+  - components/TemplateCard.tsx                  # Add Publish/Unpublish button
+  - app/templates/page.tsx                       # Refetch after toggle
+
+  # E2E
+  - tests/e2e/templateLibraryVisibility.spec.ts
+
+notes:
+  # Hints / constraints for implementers
+  - PATCH body: { "isPublic": true | false }
+  - zodParse the body; 400 on invalid.
+  - Only ownerId may toggle. 403 otherwise.
+  - Reuse existing useToast hook for UX feedback.
+  - Keep server-client boundary: 
+      * page.tsx = server component
+      * TemplateCard.tsx = "use client"
+  - No breaking change to OpenAPI schema (PATCH already stubbed).

@@ -1,0 +1,12 @@
+id: T-165
+title: "Implement minimal Template-Library UI stub + Playwright test (Phase 5)"
+phase: 5b
+acceptance:
+  - Basic server-rendered template library page at /templates
+  - E2E Playwright test for happy path
+  - No changes to OpenAPI schema or backend routes
+  - Clone functionality works with success feedback
+files_touched:
+  - app/templates/page.tsx
+  - components/TemplateCard.tsx
+  - tests/e2e/templateLibrary.spec.ts

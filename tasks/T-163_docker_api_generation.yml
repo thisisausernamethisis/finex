@@ -1,0 +1,19 @@
+id: T-163
+title: "Docker-based api:generate & CI Drift-Guard"
+phase: 5b
+acceptance:
+  - npm run api:generate works on Mac / Linux / Windows (no Java pre-req)
+  - types/api/**/* regenerates from openapi/finex.yaml with zero manual edits
+  - CI step fails when generated output differs from HEAD
+  - Docs updated: how to regenerate, why Docker, how to fix a failing drift-check
+  - Ground-truth & OpenAPI remain unchanged by this PR
+files_touched:
+  - package.json
+  - scripts/run-api-gen.js
+  - scripts/generate-api-types.sh
+  - scripts/generate-api-types.ps1
+  - .github/workflows/ci.yml
+  - types/api/README-GENERATED_DO_NOT_EDIT.md
+  - README.md
+  - docs/runbooks/testing.md
+  - .gitignore

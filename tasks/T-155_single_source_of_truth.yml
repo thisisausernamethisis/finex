@@ -1,0 +1,18 @@
+id: T-155
+title: "Establish Single Source of Truth Documentation (Phase 5)"
+phase: 5
+acceptance:
+  - ci passes
+  - ground-truth.md contains all normative content
+  - README.md simplified to link to docs/ground-truth.md
+  - docs integrity check script works on both Linux and Windows
+  - SSE documentation moved to runbooks directory
+files_touched:
+  - docs/ground-truth.md (created)
+  - README.md (simplified)
+  - CONTRIBUTING.md (created)
+  - scripts/check-docs-integrity.sh (created)
+  - scripts/check-docs-integrity.ps1 (created)
+  - .github/workflows/ci.yml (updated with docs integrity check)
+  - docs/runbooks/sse-implementation.md (moved from docs/)
+  - docs/runbooks/examples/sse-client.js (moved from docs/examples/)

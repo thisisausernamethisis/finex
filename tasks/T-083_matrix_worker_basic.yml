@@ -1,0 +1,12 @@
+id: T-083
+title: "Implement basic matrix worker (Phase 4)"
+phase: 4
+acceptance:
+  - ci passes
+  - worker correctly processes matrix analysis jobs
+  - updates MatrixAnalysisResult status appropriately
+  - handles errors gracefully
+files_touched:
+  - workers/matrixWorker.ts
+  - lib/services/contextAssemblyService.ts
+  - tests/unit/workers/matrixWorker.test.ts

@@ -1,0 +1,10 @@
+id: T-164
+title: "Fix PowerShell script markers in generate-api-types.ps1 (Phase 6) [DONE]"
+phase: 6
+status: COMPLETED
+acceptance:
+  - ci passes on Windows runners
+  - npm run api:generate succeeds on Windows without PowerShell errors
+  - keeps backward compatibility with the bash script
+files_touched:
+  - scripts/generate-api-types.ps1

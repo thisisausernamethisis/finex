@@ -1,0 +1,627 @@
+openapi: 3.1.0
+info:
+  title: Finex Bot API
+  version: "0.1.0"
+servers:
+  - url: /api
+paths:
+  /assets:
+    get:
+      summary: List assets
+      security: [ { BearerAuth: [] } ]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of assets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAssets"
+    post:
+      summary: Create asset
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssetCreate" }
+      responses:
+        "201": 
+          description: Created
+          content: 
+            application/json: 
+              schema: { $ref: "#/components/schemas/Asset" }
+  
+  /assets/{assetId}:
+    parameters:
+      - name: assetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get asset by ID
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Asset details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "404":
+          description: Asset not found
+    put:
+      summary: Update asset
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssetUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "404":
+          description: Asset not found
+    delete:
+      summary: Delete asset
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Asset not found
+  
+  /assets/{assetId}/themes:
+    parameters:
+      - name: assetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List themes for asset
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: List of themes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Theme"
+    post:
+      summary: Create theme for asset
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ThemeCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Theme"
+  
+  /themes/{themeId}:
+    parameters:
+      - name: themeId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get theme by ID
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Theme details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Theme"
+        "404":
+          description: Theme not found
+    put:
+      summary: Update theme
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ThemeUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Theme"
+    delete:
+      summary: Delete theme
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Theme not found
+  
+  /themes/{themeId}/cards:
+    parameters:
+      - name: themeId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List cards for theme
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: List of cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Card"
+    post:
+      summary: Create card for theme
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CardCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+  
+  /cards/{cardId}:
+    parameters:
+      - name: cardId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get card by ID
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Card details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+    put:
+      summary: Update card
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CardUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+    delete:
+      summary: Delete card
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "204":
+          description: Deleted
+  
+  /scenarios:
+    get:
+      summary: List scenarios
+      security: [ { BearerAuth: [] } ]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of scenarios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedScenarios"
+    post:
+      summary: Create scenario
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScenarioCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scenario"
+  
+  /scenarios/{scenarioId}:
+    parameters:
+      - name: scenarioId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get scenario by ID
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Scenario details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scenario"
+    put:
+      summary: Update scenario
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScenarioUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scenario"
+    delete:
+      summary: Delete scenario
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "204":
+          description: Deleted
+  
+  /matrix:
+    get:
+      summary: Get matrix analysis results
+      security: [ { BearerAuth: [] } ]
+      parameters:
+        - name: assetId
+          in: query
+          schema: { type: string }
+        - name: scenarioId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Matrix analysis results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatrixAnalysisResult"
+    post:
+      summary: Request matrix analysis
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MatrixAnalysisRequest" }
+      responses:
+        "202":
+          description: Analysis request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+  
+  /search:
+    get:
+      summary: Search across assets and scenarios
+      security: [ { BearerAuth: [] } ]
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string }
+        - name: assetId
+          in: query
+          schema: { type: string }
+        - name: scenarioId
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+  
+  /events:
+    get:
+      summary: Server-Sent Events (SSE) endpoint for real-time updates
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              
+  /assets/{assetId}/access:
+    parameters:
+      - name: assetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List access grants for asset
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Access grants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetAccess"
+    post:
+      summary: Grant access to asset
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssetAccessCreate" }
+      responses:
+        "201":
+          description: Access granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetAccess"
+    delete:
+      summary: Remove access from asset
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssetAccessRemove" }
+      responses:
+        "204":
+          description: Access removed
+          
+  /assets/{assetId}/clone:
+    parameters:
+      - name: assetId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Clone an asset template
+      description: Deep-clone an Asset template into the caller's workspace
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "201":
+          description: Template cloned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "403":
+          description: Forbidden - No access to template
+        "404":
+          description: Template not found
+  
+  /theme-templates:
+    get:
+      summary: List theme templates
+      description: Browse available theme templates
+      security: [ { BearerAuth: [] } ]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1, minimum: 1 }
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 50 }
+          description: Number of templates per page (max 50)
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 100 }
+          description: Search query for template name
+        - name: mine
+          in: query
+          schema: { type: boolean, default: false }
+          description: When true, returns only templates owned by the current user
+        - name: publicOnly
+          in: query
+          schema: { type: boolean, default: true }
+          description: When true, returns only public templates
+      responses:
+        "200":
+          description: List of theme templates
+          headers:
+            X-RateLimit-Remaining:
+              schema:
+                type: string
+              description: Number of requests remaining in the current rate limit window
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying if rate limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedThemeTemplates"
+        "400":
+          description: Bad Request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: string
+        "429":
+          description: Too Many Requests - Rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Rate limit exceeded"
+    post:
+      summary: Create theme template
+      description: Publish a new theme template
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ThemeTemplateCreate"
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThemeTemplate"
+  
+  /theme-templates/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get theme template by ID
+      description: Retrieve a single theme template by ID
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Theme template details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThemeTemplate"
+        "403":
+          description: Forbidden - No access to template
+        "404":
+          description: Template not found
+    put:
+      summary: Update theme template
+      description: Update an existing theme template
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ThemeTemplateUpdate"
+      responses:
+        "200":
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThemeTemplate"
+        "403":
+          description: Forbidden - Only owner can update
+        "404":
+          description: Template not found
+    delete:
+      summary: Delete theme template
+      description: Delete a theme template
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "204":
+          description: Template deleted
+        "403":
+          description: Forbidden - Only owner can delete
+        "404":
+          description: Template not found
+  
+  /theme-templates/{id}/clone:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Clone a theme template
+      description: Clone a theme template into the specified asset
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ThemeTemplateClone"
+      responses:
+        "201":
+          description: Template cloned successfully
