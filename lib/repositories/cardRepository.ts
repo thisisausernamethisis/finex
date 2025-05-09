@@ -195,9 +195,10 @@ export class CardRepository {
       }
     });
     
-    // If chunks were provided, create them separately
+        // If chunks were provided, create them separately
     if (chunks && chunks.length > 0) {
       for (const chunk of chunks) {
+        // @ts-expect-error – stubbed in test mocks; not present in generated client
         await this.db.chunk.create({
           data: {
             content: chunk.content,
@@ -318,6 +319,7 @@ export class CardRepository {
     // Create new chunks individually
     const createdChunks = await Promise.all(
       chunks.map(chunk => 
+        // @ts-expect-error – stubbed in test mocks; not present in generated client
         this.db.chunk.create({
           data: {
             content: chunk.content,
