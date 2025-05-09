@@ -2,6 +2,9 @@ import { prisma } from '../db';
 import { logger } from '../logger';
 import type { PrismaClient, Scenario, Prisma, ThemeType } from '@prisma/client';
 
+// Define concrete payload type for Scenario
+export type ScenarioResult = Prisma.ScenarioGetPayload<{}>;
+
 // Maximum page size allowed, can be overridden by environment variable
 const MAX_PAGE_SIZE = parseInt(process.env.MAX_PAGE_SIZE || '50', 10);
 
@@ -61,13 +64,11 @@ export class ScenarioRepository {
         id: true,
         name: true,
         description: true,
-        probability: true,
-        createdAt: true,
-        updatedAt: true
+        probability: true
       },
-      orderBy: {
-        updatedAt: 'desc'
-      },
+      orderBy: [
+        { id: 'desc' }
+      ],
       skip,
       take: clampedLimit
     });
@@ -93,9 +94,7 @@ export class ScenarioRepository {
         id: true,
         name: true,
         description: true,
-        probability: true,
-        createdAt: true,
-        updatedAt: true
+        probability: true
       }
     }) as Promise<Scenario | null>;
   }
@@ -132,9 +131,7 @@ export class ScenarioRepository {
         id: true,
         name: true,
         description: true,
-        probability: true,
-        createdAt: true,
-        updatedAt: true
+        probability: true
       }
     }) as Promise<Scenario>;
   }
@@ -181,9 +178,7 @@ export class ScenarioRepository {
           id: true,
           name: true,
           description: true,
-          probability: true,
-          createdAt: true,
-          updatedAt: true
+          probability: true
         }
       }) as Promise<Scenario>;
     } catch (error) {
