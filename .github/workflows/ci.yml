@@ -121,6 +121,12 @@ jobs:
           node-version: '18'
           cache: 'npm'
       - run: npm ci
+      - name: Seed database with deterministic data
+        run: npm run db:seed:ci
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/finex_test
+          DIRECT_URL: postgres://postgres:postgres@localhost:5432/finex_test
+          SEED_UID: ci
       - name: Check for mocked handlers in contract tests
         run: |
           if grep -R --line-number "mockImplementation(" tests/contract | grep "route"; then

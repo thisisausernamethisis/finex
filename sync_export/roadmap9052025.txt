@@ -1,0 +1,32 @@
+Gap-Check: live website ↔ road-map alignment
+Below is a concise audit of what’s shipping, what’s planned, and where the current plan may still miss real-world seams.
+
+Area / Feature	Live behaviour (today)	Road-map coverage	Gaps / Adjustments recommended
+Worker auto-start in dev	Matrix & Growth numbers stay “pending” unless make worker is run manually.	Phase 7 observability mentions traces & DLQ drain but not auto-boot in make dev.	Add ticket in Phase 6.3: “T-181a dev-worker bootstrap – spin up BullMQ workers automatically when make dev runs”. Minimal but huge DX win.
+Seed re-run idempotence for prod	Deterministic seed (T-175) guarantees IDs, but repeated seeding in staging/prod will 409 on PK conflicts.	Not addressed.	In T-175 PR, add ON CONFLICT DO NOTHING helper or a truncate → seed script for non-local environments, or create “T-175b idempotent seed command”.
+Scenario RAG explanations	Placeholder lorem ipsum still shows on /scenarios.	Phase 6 RAG gate improves quality, but there’s no explicit ticket to replace placeholders with real summaries in UI.	New ticket Phase 6.4: “T-180b surface real RAG summary in Scenario card”.
+Hybrid search error UX	Template Library throws generic 500 toast when OpenAI quota exceeded.	T-178 cost sentinel prevents the call but UI still shows a 500.	Phase 6.3 add sub-task: map cost-sentinel error → user-friendly toast (“Search quota exceeded, try later”).
+Org switcher visual placeholder	Header switcher hidden; users can’t tell multi-tenant is coming.	Phase 8 adds backend, but UI task doesn’t exist.	Add Phase 8 ticket: “T-186b expose org switcher when tenant flag enabled”.
+Insight Feed dependency on RAG	Planned Phase 9 feature relies on ∆Risk/∆Growth deltas, but growth/probability workers still stub manual values.	Road-map doesn’t formalise “auto-recompute growth %/probability nightly”.	Insert Phase 7 ticket: “T-184b nightly growth & probability recompute worker” so Insight math isn’t static.
+E2E Playwright snapshots	Will stabilise after T-175, but Playwright config isn’t in CI yet.	Not listed.	Enhance T-175 acceptance or add separate Phase 6 ticket: “Add Playwright smoke flow to CI” to catch UI regressions.
+Docs parity	Helper-cleanup docs still reference lodash-es merge approach which we dropped for native spread.	Phase 6 has no doc-update slots.	Quick doc task: “T-176b update legacy-helper doc references”.
+User-visible latency	No CI budget for Matrix page load time (<2 s goal).	Road-map emphasises P95 hybrid search latency but not full page metrics.	Optional Phase 7 ticket: web-vitals capture + Lighthouse CI run.
+
+Recommended minor roadmap edits
+Add T-181a – Dev worker bootstrap (Phase 6.3):
+“Running make dev starts background workers automatically; Matrix page no longer shows perpetual ‘pending’ in local dev.”
+
+Split T-175 into two PRs if time-boxed:
+T-175a deterministic IDs (as planned) + T-175b idempotent seed script (optional truncate or UPSERT guard).
+
+Explicit UX tickets whenever backend guard-rails surface errors (cost sentinel, 401, etc.). Avoid generic 500 toasts.
+
+Nightly recomputation worker (T-184b) so Insight Feed has fresh ∆Risk/∆Growth data.
+
+Playwright flow in CI right after contract tests (Phase 6.2) – cheap safety net before we add new features.
+
+Doc refresh chores can piggy-back on T-176 PR (update helper-cleanup docs, remove lodash mention).
+
+Perf budget in CI (optional Phase 7): run Lighthouse on /assets + /matrix; fail if TTI > 2 s or CLS > 0.1.
+
+These are incremental; none blocks T-175 or the banner-removal work, but scheduling them keeps the roadmap realistic and feature rollouts smoother.

@@ -1,0 +1,20 @@
+id: T-177
+title: "Remove @ts-nocheck (Batch 2 – test infra) and lift coverage to ≥80%"
+phase: 6.2
+definition_of_ready:
+  failing_tests: []  # will appear once banners drop; list in PR
+  files_touched:
+    - tests/jest.setup.ts
+    - tests/contract/template_library.test.ts
+    - tests/contract/template_library_search.test.ts
+    - tests/contract/template_library_visibility.test.ts
+    - tests/mocks/prisma.ts
+    - tests/unit/workers/matrixWorker.test.ts
+    - tests/_setup/contractTestUtils.ts
+    - tests/_setup/prismaTestEnv.js
+    - tests/_setup/prismaTestEnv.mjs
+acceptance:
+  - All listed files compile without banners.
+  - Type-coverage report ≥ 80 %.
+  - All contract, unit, and Playwright tests pass.
+  - No @ts-nocheck banners remain anywhere in the repo (rg "@ts-nocheck" returns 0).

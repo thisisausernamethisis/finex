@@ -1,0 +1,53 @@
+{
+  "name": "finex",
+  "version": "0.5.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:contract": "jest --testMatch=\"**/tests/contract/**/*.test.ts\"",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "type-coverage": "type-coverage --detail --at-least 70",
+    "esm:check": "node scripts/check-esm-compatibility.js",
+    "db:push": "prisma db push",
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:seed:ci": "cross-env SEED_UID=ci ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^4.29.3",
+    "@prisma/client": "^5.7.1",
+    "cuid2": "^2.0.0",
+    "dayjs": "^1.11.10", 
+    "next": "14.0.4",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.1",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@types/dayjs": "^1.8.0",
+    "@types/jest": "^29.5.11",
+    "@types/node": "20.10.5",
+    "@types/react": "18.2.45",
+    "@types/react-dom": "18.2.18",
+    "autoprefixer": "10.4.16",
+    "cross-env": "^7.0.3",
+    "eslint": "8.56.0",
+    "eslint-config-next": "14.0.4",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "postcss": "8.4.31",
+    "prisma": "^5.7.1",
+    "tailwindcss": "3.3.6",
+    "ts-node": "^10.9.2",
+    "type-coverage": "^2.27.0",
+    "typescript": "5.3.3"
+  }
+}

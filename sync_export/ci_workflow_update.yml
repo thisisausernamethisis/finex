@@ -1,0 +1,40 @@
+# Example CI workflow update for .github/workflows/ci.yml
+
+name: Continuous Integration
+
+# ... existing workflow configuration ...
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      # ... existing database services ...
+      
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      # Add the deterministic seed step before tests
+      - name: Seed database with deterministic data
+        run: npm run db:seed:ci
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SEED_UID: ci
+          
+      # ... existing test steps ...
+      
+      - name: Run contract tests
+        run: npm run test:contract
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          
+      # ... other existing steps ...

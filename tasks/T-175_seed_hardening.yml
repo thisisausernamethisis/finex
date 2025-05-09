@@ -1,0 +1,29 @@
+id: T-175
+title: "Seed-hardening: deterministic IDs & UTC default"
+phase: 5b
+definition_of_ready:
+  failing_tests:
+    - tests/contract/template_library.test.ts
+    - tests/contract/template_library_search.test.ts
+    - tests/contract/template_library_visibility.test.ts
+  files_touched:
+    - prisma/seed.ts
+    - package.json
+    - .github/workflows/ci.yml
+    - docs/seed-readme.md
+acceptance:
+  - Running `SEED_UID=ci npm run db:seed:ci` produces identical DB dumps across two runs.
+  - Contract, unit, and Playwright tests pass locally and in CI.
+  - In `prisma/seed.ts`, add:
+    - `import 'dayjs/locale/en';`
+    - `import utc from 'dayjs/plugin/utc';`
+    - `import timezone from 'dayjs/plugin/timezone';`
+    - `dayjs.extend(utc); dayjs.extend(timezone);`
+    - `dayjs.tz.setDefault('UTC')`; ensuring timestamps match across time-zones.
+  - CI workflow seeds DB deterministically *before* tests.
+tasks:
+  - "Add cuid2 dependency and deterministic ID helper."
+  - "Add dayjs UTC & timezone plugins, locale, and set default timezone."
+  - "Expose npm script db:seed:ci."
+  - "Patch CI job to call db:seed:ci."
+  - "Replace expect.any(String) with exact IDs in contract tests."

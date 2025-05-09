@@ -1,0 +1,17 @@
+id: T-176
+title: "Remove @ts-nocheck (Batch 1 – prod code) and raise coverage to ≥70%"
+phase: 6.1
+definition_of_ready:
+  failing_tests: []   # typecheck will fail until banners are fixed
+  files_touched:
+    - app/templates/page.tsx
+    - components/TemplateCard.tsx
+    - components/TemplateSearchBar.tsx
+    - lib/repositories/cardRepository.ts
+    - lib/repositories/matrixRepository.ts
+    - lib/repositories/scenarioRepository.ts
+acceptance:
+  - All above files compile with `npm run typecheck` (no banners).
+  - Global type-coverage ≥ 70 % (`npm run type-coverage`).
+  - No remaining @ts-nocheck in src/**/* (production code).
+  - All CI gates green (lint, tests, esm:check).
