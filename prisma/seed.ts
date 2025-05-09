@@ -15,34 +15,27 @@ dayjs.tz.setDefault('UTC')
 const prisma = new PrismaClient()
 
 // Our own implementation of deterministic ID generation
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
-// Set up ID generator
-function createDeterministicId(seed, counter = 0) {
-  // Create a seeded RNG
-  const rng = seedrandom(`${seed}_${counter}`);
-  
-  // Generate an ID of specified size using the alphabet and RNG
-  let id = '';
-  const len = alphabet.length;
-  for (let i = 0; i < 24; i++) {
-    id += alphabet[Math.floor(rng() * len)];
-  }
-  return id;
-}
+// Create a stable RNG instance at the top level
+const rng = seedrandom(process.env.SEED_UID ?? '');
 
 // Counter to ensure uniqueness even with the same seed
 let idCounter = 0;
 
 // The main ID generation function
 function mkId() {
-  // If SEED_UID is set, use deterministic ID generation
+  // If SEED_UID is set, use deterministic ID generation with the stable RNG
   if (process.env.SEED_UID) {
-    return createDeterministicId(process.env.SEED_UID, idCounter++);
+    // Use nanoid with our stable RNG instance
+    const generateId = customAlphabet(ALPHABET, 24, rng);
+    // Increment counter to ensure uniqueness across calls
+    idCounter++;
+    return generateId();
   }
   
   // Otherwise, use nanoid's customAlphabet for non-deterministic IDs
-  return customAlphabet(alphabet, 24)();
+  return customAlphabet(ALPHABET, 24)();
 }
 
 if (process.env.SEED_UID) {
