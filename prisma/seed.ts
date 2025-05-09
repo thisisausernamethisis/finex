@@ -18,23 +18,20 @@ const prisma = new PrismaClient()
 const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 // Counter to ensure uniqueness even with the same seed
-let idCounter = 0;
+let counter = 0;
 
 // The main ID generation function
 function mkId() {
   // If SEED_UID is set, use deterministic ID generation
   if (process.env.SEED_UID) {
-    // Store the counter value before incrementing
-    const counter = idCounter++;
+    // Use a fresh RNG instance seeded with SEED_UID_counter
+    const localRng = seedrandom(`${process.env.SEED_UID}_${counter++}`);
     
-    // We need to seed the same exact way each time
-    const localRng = seedrandom(`${process.env.SEED_UID}_${counter}`);
-    
-    // Generate a truly deterministic ID
+    // Generate ID directly
     let id = '';
-    const len = ALPHABET.length;
     for (let i = 0; i < 24; i++) {
-      id += ALPHABET[Math.floor(localRng() * len)];
+      const index = Math.floor(localRng() * ALPHABET.length);
+      id += ALPHABET[index];
     }
     return id;
   }
