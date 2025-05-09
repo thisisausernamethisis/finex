@@ -1,12 +1,20 @@
 // @ts-nocheck
+// TODO(T-173b): Prisma generics
 import { prisma } from '../db';
 import { logger } from '../logger';
+import { Scenario, Prisma, ThemeType } from '@prisma/client';
 
 // Maximum page size allowed, can be overridden by environment variable
 const MAX_PAGE_SIZE = parseInt(process.env.MAX_PAGE_SIZE || '50', 10);
 
 // Create a repository-specific logger
 const repoLogger = logger.child({ component: 'ScenarioRepository' });
+
+// Define paginated response type
+export interface PaginatedScenarios {
+  items: Scenario[];
+  total: number;
+}
 
 /**
  * Repository for Scenario operations
@@ -26,10 +34,7 @@ export class ScenarioRepository {
     page: number = 1,
     limit: number = 10,
     search?: string
-  ): Promise<{
-    items: Array<any>;
-    total: number;
-  }> {
+  ): Promise<PaginatedScenarios> {
     // Clamp limit to prevent excessive queries
     const clampedLimit = Math.min(limit, MAX_PAGE_SIZE);
     const skip = (page - 1) * clampedLimit;
@@ -37,7 +42,7 @@ export class ScenarioRepository {
     repoLogger.debug('Listing scenarios', { userId, page, limit: clampedLimit, search });
     
     // Build the where clause
-    const where: any = {};
+    const where: Prisma.ScenarioWhereInput = {};
     
     // Add search filter if provided
     if (search && search.trim()) {
@@ -69,7 +74,7 @@ export class ScenarioRepository {
     });
     
     return {
-      items: scenarios,
+      items: scenarios as Scenario[],
       total
     };
   }
@@ -80,7 +85,7 @@ export class ScenarioRepository {
    * @param scenarioId The ID of the scenario to retrieve
    * @returns The scenario if found, null otherwise
    */
-  public async getScenarioById(scenarioId: string): Promise<any | null> {
+  public async getScenarioById(scenarioId: string): Promise<Scenario | null> {
     repoLogger.debug('Getting scenario by ID', { scenarioId });
     
     return prisma.scenario.findUnique({
@@ -93,7 +98,7 @@ export class ScenarioRepository {
         createdAt: true,
         updatedAt: true
       }
-    });
+    }) as Promise<Scenario | null>;
   }
   
   /**
@@ -104,7 +109,7 @@ export class ScenarioRepository {
    */
   public async createScenario(
     data: { name: string; description?: string; probability?: number }
-  ): Promise<any> {
+  ): Promise<Scenario> {
     repoLogger.debug('Creating scenario', { data });
     
     return prisma.scenario.create({
@@ -114,7 +119,7 @@ export class ScenarioRepository {
           create: [
             { 
               name: 'Probability',
-              themeType: 'PROBABILITY',
+              themeType: 'PROBABILITY' as ThemeType,
               manualValue: data.probability || 0.5,
               useManualValue: true
             },
@@ -132,7 +137,7 @@ export class ScenarioRepository {
         createdAt: true,
         updatedAt: true
       }
-    });
+    }) as Promise<Scenario>;
   }
   
   /**
@@ -145,7 +150,7 @@ export class ScenarioRepository {
   public async updateScenario(
     scenarioId: string,
     data: { name?: string; description?: string; probability?: number }
-  ): Promise<any | null> {
+  ): Promise<Scenario | null> {
     repoLogger.debug('Updating scenario', { scenarioId, data });
     
     // Check if probability is being updated
@@ -154,7 +159,7 @@ export class ScenarioRepository {
       const probabilityTheme = await prisma.theme.findFirst({
         where: {
           scenarioId,
-          themeType: 'PROBABILITY'
+          themeType: 'PROBABILITY' as ThemeType
         }
       });
       
@@ -169,18 +174,23 @@ export class ScenarioRepository {
       }
     }
     
-    return prisma.scenario.update({
-      where: { id: scenarioId },
-      data,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        probability: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+    try {
+      return prisma.scenario.update({
+        where: { id: scenarioId },
+        data,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          probability: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      }) as Promise<Scenario>;
+    } catch (error) {
+      repoLogger.error('Error updating scenario', { scenarioId, error });
+      return null;
+    }
   }
   
   /**

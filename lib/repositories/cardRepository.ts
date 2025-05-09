@@ -1,12 +1,50 @@
 // @ts-nocheck
+// TODO(T-173b): Prisma generics
 import { prisma } from '../db';
 import { logger } from '../logger';
+import { Card, Chunk, Prisma } from '@prisma/client';
 
 // Maximum page size allowed, can be overridden by environment variable
 const MAX_PAGE_SIZE = parseInt(process.env.MAX_PAGE_SIZE || '50', 10);
 
 // Create a repository-specific logger
 const repoLogger = logger.child({ component: 'CardRepository' });
+
+// Define type for Card with Chunks expanded
+export type CardWithChunks = Omit<Card, 'chunks'> & {
+  chunks: Array<Pick<Chunk, 'id' | 'content' | 'order'>>;
+};
+
+// Define the return type of select queries
+type CardSelect = {
+  id: true;
+  title: true;
+  content: true;
+  importance: true;
+  source: true;
+  themeId: true;
+  chunks: {
+    select: {
+      id: true;
+      content: true;
+      order: true;
+    };
+    orderBy: {
+      order: 'asc';
+    };
+  };
+  createdAt: true;
+  updatedAt: true;
+};
+
+// Type for the result of the select query
+type CardSelectResult = Prisma.CardGetPayload<{ select: CardSelect }>;
+
+// Define paginated response type
+export interface PaginatedCards {
+  items: CardWithChunks[];
+  total: number;
+}
 
 /**
  * Repository for Card operations
@@ -27,10 +65,7 @@ export class CardRepository {
     page: number = 1,
     limit: number = 10,
     search?: string
-  ): Promise<{
-    items: Array<any>;
-    total: number;
-  }> {
+  ): Promise<PaginatedCards> {
     // Clamp limit to prevent excessive queries
     const clampedLimit = Math.min(limit, MAX_PAGE_SIZE);
     const skip = (page - 1) * clampedLimit;
@@ -43,7 +78,7 @@ export class CardRepository {
     });
     
     // Build the where clause
-    const where: any = {
+    const where: Prisma.CardWhereInput = {
       themeId
     };
     
@@ -70,52 +105,7 @@ export class CardRepository {
     const total = await prisma.card.count({ where });
     
     // Get the cards for this page with chunks
-    const cards = await prisma.card.findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        importance: true,
-        source: true,
-        themeId: true,
-        chunks: {
-          select: {
-            id: true,
-            content: true,
-            order: true
-          },
-          orderBy: {
-            order: 'asc'
-          }
-        },
-        createdAt: true,
-        updatedAt: true
-      },
-      orderBy: {
-        updatedAt: 'desc'
-      },
-      skip,
-      take: clampedLimit
-    });
-    
-    return {
-      items: cards,
-      total
-    };
-  }
-  
-  /**
-   * Retrieves a single card by ID
-   * 
-   * @param cardId The ID of the card to retrieve
-   * @returns The card if found, null otherwise
-   */
-  public async getCardById(cardId: string): Promise<any | null> {
-    repoLogger.debug('Getting card by ID', { cardId });
-    
-    return prisma.card.findUnique({
-      where: { id: cardId },
+    const selectQuery: { select: CardSelect } = {
       select: {
         id: true,
         title: true,
@@ -136,7 +126,63 @@ export class CardRepository {
         createdAt: true,
         updatedAt: true
       }
+    };
+    
+    const cards = await prisma.card.findMany({
+      where,
+      ...selectQuery,
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      skip,
+      take: clampedLimit
     });
+    
+    // Now the result type is properly inferred
+    return {
+      items: cards as CardWithChunks[],
+      total
+    };
+  }
+  
+  /**
+   * Retrieves a single card by ID
+   * 
+   * @param cardId The ID of the card to retrieve
+   * @returns The card if found, null otherwise
+   */
+  public async getCardById(cardId: string): Promise<CardWithChunks | null> {
+    repoLogger.debug('Getting card by ID', { cardId });
+    
+    const selectQuery: { select: CardSelect } = {
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        importance: true,
+        source: true,
+        themeId: true,
+        chunks: {
+          select: {
+            id: true,
+            content: true,
+            order: true
+          },
+          orderBy: {
+            order: 'asc'
+          }
+        },
+        createdAt: true,
+        updatedAt: true
+      }
+    };
+    
+    const card = await prisma.card.findUnique({
+      where: { id: cardId },
+      ...selectQuery
+    });
+    
+    return card as CardWithChunks | null;
   }
   
   /**
@@ -157,28 +203,29 @@ export class CardRepository {
         order: number;
       }>;
     }
-  ): Promise<any> {
+  ): Promise<CardWithChunks> {
     repoLogger.debug('Creating card', { data });
     
     // Extract chunks to create separately if provided
     const { chunks, ...cardData } = data;
     
-    // Create the card
-    const card = await prisma.card.create({
-      data: {
-        ...cardData,
-        // If chunks are provided, create them
-        ...(chunks && chunks.length > 0 ? {
-          chunks: {
-            create: chunks.map(chunk => ({
-              content: chunk.content,
-              order: chunk.order,
-              // Embedding will be added separately by a background job
-              embedding: null
-            }))
-          }
-        } : {})
-      },
+    // Build the data with typed chunks
+    const createData: Prisma.CardCreateInput = {
+      ...cardData,
+      // If chunks are provided, create them
+      ...(chunks && chunks.length > 0 ? {
+        chunks: {
+          create: chunks.map(chunk => ({
+            content: chunk.content,
+            order: chunk.order,
+            // Embedding will be added separately by a background job
+            embedding: null
+          }))
+        }
+      } : {})
+    };
+
+    const selectQuery: { select: CardSelect } = {
       select: {
         id: true,
         title: true,
@@ -199,9 +246,15 @@ export class CardRepository {
         createdAt: true,
         updatedAt: true
       }
+    };
+    
+    // Create the card with typed data
+    const card = await prisma.card.create({
+      data: createData,
+      ...selectQuery
     });
     
-    return card;
+    return card as CardWithChunks;
   }
   
   /**
@@ -219,13 +272,11 @@ export class CardRepository {
       importance?: number;
       source?: string;
     }
-  ): Promise<any | null> {
+  ): Promise<CardWithChunks | null> {
     repoLogger.debug('Updating card', { cardId, data });
     
     try {
-      return prisma.card.update({
-        where: { id: cardId },
-        data,
+      const selectQuery: { select: CardSelect } = {
         select: {
           id: true,
           title: true,
@@ -246,7 +297,15 @@ export class CardRepository {
           createdAt: true,
           updatedAt: true
         }
+      };
+      
+      const card = await prisma.card.update({
+        where: { id: cardId },
+        data,
+        ...selectQuery
       });
+      
+      return card as CardWithChunks;
     } catch (error) {
       repoLogger.error('Error updating card', { cardId, error });
       return null;
@@ -299,9 +358,9 @@ export class CardRepository {
     chunks: Array<{
       content: string;
       order: number;
-      embedding?: any; // Flexible type for embedding vector
+      embedding?: Buffer | null; // Embedding vector as Buffer type
     }>
-  ): Promise<any[]> {
+  ): Promise<Chunk[]> {
     repoLogger.debug('Creating chunks for card', { cardId, chunkCount: chunks.length });
     
     // First clear any existing chunks
@@ -309,7 +368,7 @@ export class CardRepository {
       where: { cardId }
     });
     
-    // Create new chunks
+    // Create new chunks individually
     const createdChunks = await Promise.all(
       chunks.map(chunk => 
         prisma.chunk.create({
@@ -317,7 +376,7 @@ export class CardRepository {
             content: chunk.content,
             order: chunk.order,
             embedding: chunk.embedding,
-            card: { connect: { id: cardId } }
+            cardId: cardId
           }
         })
       )

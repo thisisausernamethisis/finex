@@ -1,7 +1,9 @@
 // @ts-nocheck
+// TODO(T-173b): BullMQ + Prisma generics
 import { prisma } from '../db';
 import { logger } from '../logger';
-import { Queue } from 'bullmq';
+import { Queue, QueueOptions } from 'bullmq';
+import { MatrixAnalysisResult, Prisma } from '@prisma/client';
 
 // Maximum page size allowed, can be overridden by environment variable
 const MAX_PAGE_SIZE = parseInt(process.env.MAX_PAGE_SIZE || '50', 10);
@@ -14,6 +16,18 @@ const redisConnection = {
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379')
 };
+
+// Define paginated response type
+export interface PaginatedMatrixResults {
+  items: MatrixAnalysisResult[];
+  total: number;
+}
+
+// Define job response type
+export interface MatrixAnalysisJob {
+  jobId: string;
+  status: string;
+}
 
 /**
  * Repository for Matrix Analysis operations
@@ -35,7 +49,7 @@ export class MatrixRepository {
         removeOnComplete: true,
         removeOnFail: 100
       }
-    });
+    } as QueueOptions);
   }
   
   /**
@@ -55,10 +69,7 @@ export class MatrixRepository {
     limit: number = 10,
     assetId?: string,
     scenarioId?: string
-  ): Promise<{
-    items: Array<any>;
-    total: number;
-  }> {
+  ): Promise<PaginatedMatrixResults> {
     // Clamp limit to prevent excessive queries
     const clampedLimit = Math.min(limit, MAX_PAGE_SIZE);
     const skip = (page - 1) * clampedLimit;
@@ -72,7 +83,7 @@ export class MatrixRepository {
     });
     
     // Build the where clause
-    const where: any = {};
+    const where: Prisma.MatrixAnalysisResultWhereInput = {};
     
     // Add filters if provided
     if (assetId) {
@@ -110,7 +121,7 @@ export class MatrixRepository {
     });
     
     return {
-      items: results,
+      items: results as MatrixAnalysisResult[],
       total
     };
   }
@@ -125,7 +136,7 @@ export class MatrixRepository {
   public async getMatrixResult(
     assetId: string,
     scenarioId: string
-  ): Promise<any | null> {
+  ): Promise<MatrixAnalysisResult | null> {
     repoLogger.debug('Getting matrix result', { assetId, scenarioId });
     
     return prisma.matrixAnalysisResult.findUnique({
@@ -148,7 +159,7 @@ export class MatrixRepository {
         createdAt: true,
         updatedAt: true
       }
-    });
+    }) as Promise<MatrixAnalysisResult | null>;
   }
   
   /**
@@ -161,7 +172,7 @@ export class MatrixRepository {
   public async queueMatrixAnalysis(
     assetId: string,
     scenarioId: string
-  ): Promise<{ jobId: string; status: string }> {
+  ): Promise<MatrixAnalysisJob> {
     repoLogger.debug('Queueing matrix analysis', { assetId, scenarioId });
     
     // Find existing or create new matrix result record
