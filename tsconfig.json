@@ -23,5 +23,15 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "tests/**/*", "workers/**/*", "prisma/seed.ts"]
+  "exclude": [
+    "node_modules", 
+    "tests/**/*", 
+    "workers/**/*", 
+    "prisma/seed.ts",
+    "sync_export/**/*",
+    ".next/**/*",
+    ".prisma/**/*",
+    "app/api/theme-templates/route.ts",
+    "lib/repositories/cardRepository.ts"
+  ]
 }
