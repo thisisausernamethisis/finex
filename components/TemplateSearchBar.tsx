@@ -1,11 +1,11 @@
-// @ts-nocheck
-// TODO(T-173b): strict typing for Template components
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, forwardRef, ForwardRefRenderFunction } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
+// @ts-expect-error TODO(T-176b) - Add type declarations for UI components
 import { Button } from '@/components/ui/button';
+// @ts-expect-error TODO(T-176b) - Add type declarations for UI components
 import { Input } from '@/components/ui/input';
+// @ts-expect-error TODO(T-176b) - Add type declarations for UI components
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { debounce } from '@/lib/utils/debounce';
 
@@ -16,12 +16,12 @@ interface TemplateSearchBarProps {
   onFilterChange?: (mine: boolean) => void;
 }
 
-export function TemplateSearchBar({
+const SearchBar: ForwardRefRenderFunction<HTMLDivElement, TemplateSearchBarProps> = ({
   initialSearch = '',
   initialFilterMine = false,
   onSearchChange,
   onFilterChange
-}: TemplateSearchBarProps) {
+}, ref) => {
   const router = useRouter();
   const [searchText, setSearchText] = useState(initialSearch);
   const [filterMine, setFilterMine] = useState(initialFilterMine);
@@ -85,7 +85,7 @@ export function TemplateSearchBar({
   };
   
   return (
-    <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-center w-full mb-6">
+    <div ref={ref} className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-center w-full mb-6">
       <div className="relative flex-1">
         <Input
           type="text"
@@ -130,4 +130,12 @@ export function TemplateSearchBar({
       </div>
     </div>
   );
-}
+};
+
+// Export the forwarded ref component
+const TemplateSearchBar = forwardRef<HTMLDivElement, TemplateSearchBarProps>(SearchBar);
+
+// Add displayName to silence eslint-react
+TemplateSearchBar.displayName = 'TemplateSearchBar';
+
+export default TemplateSearchBar;

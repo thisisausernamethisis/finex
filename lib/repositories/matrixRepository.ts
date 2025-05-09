@@ -1,9 +1,8 @@
-// @ts-nocheck
-// TODO(T-173b): BullMQ + Prisma generics
 import { prisma } from '../db';
 import { logger } from '../logger';
-import { Queue, QueueOptions } from 'bullmq';
-import { MatrixAnalysisResult, Prisma } from '@prisma/client';
+import { Queue } from 'bullmq';
+import type { QueueOptions } from 'bullmq';
+import type { PrismaClient, MatrixAnalysisResult, Prisma } from '@prisma/client';
 
 // Maximum page size allowed, can be overridden by environment variable
 const MAX_PAGE_SIZE = parseInt(process.env.MAX_PAGE_SIZE || '50', 10);
@@ -36,7 +35,7 @@ export class MatrixRepository {
   // BullMQ queue for matrix analysis jobs
   private matrixQueue: Queue;
   
-  constructor() {
+  constructor(private readonly db: PrismaClient = prisma) {
     // Initialize the BullMQ queue
     this.matrixQueue = new Queue('matrix-analysis', {
       connection: redisConnection,
@@ -95,10 +94,10 @@ export class MatrixRepository {
     }
     
     // Get the total count
-    const total = await prisma.matrixAnalysisResult.count({ where });
+    const total = await this.db.matrixAnalysisResult.count({ where });
     
     // Get the matrix results for this page
-    const results = await prisma.matrixAnalysisResult.findMany({
+    const results = await this.db.matrixAnalysisResult.findMany({
       where,
       select: {
         id: true,
@@ -139,12 +138,9 @@ export class MatrixRepository {
   ): Promise<MatrixAnalysisResult | null> {
     repoLogger.debug('Getting matrix result', { assetId, scenarioId });
     
-    return prisma.matrixAnalysisResult.findUnique({
+    return this.db.matrixAnalysisResult.findUnique({
       where: {
-        assetId_scenarioId: {
-          assetId,
-          scenarioId
-        }
+        assetId_scenarioId: { assetId, scenarioId }
       },
       select: {
         id: true,
@@ -176,18 +172,15 @@ export class MatrixRepository {
     repoLogger.debug('Queueing matrix analysis', { assetId, scenarioId });
     
     // Find existing or create new matrix result record
-    let result = await prisma.matrixAnalysisResult.findUnique({
+    let result = await this.db.matrixAnalysisResult.findUnique({
       where: {
-        assetId_scenarioId: {
-          assetId,
-          scenarioId
-        }
+        assetId_scenarioId: { assetId, scenarioId }
       }
     });
     
     if (result) {
       // Update status to pending
-      await prisma.matrixAnalysisResult.update({
+      await this.db.matrixAnalysisResult.update({
         where: { id: result.id },
         data: {
           status: 'pending',
@@ -196,7 +189,7 @@ export class MatrixRepository {
       });
     } else {
       // Create new matrix result record
-      result = await prisma.matrixAnalysisResult.create({
+      result = await this.db.matrixAnalysisResult.create({
         data: {
           assetId,
           scenarioId,
@@ -240,12 +233,12 @@ export class MatrixRepository {
     assetId: string,
     scenarioId: string
   ): Promise<boolean> {
-    const count = await prisma.matrixAnalysisResult.count({
+    const count = await this.db.matrixAnalysisResult.count({
       where: {
-        assetId_scenarioId: {
-          assetId,
-          scenarioId
-        }
+        AND: [
+          { assetId },
+          { scenarioId }
+        ]
       }
     });
     return count > 0;

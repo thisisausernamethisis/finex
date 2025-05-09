@@ -1,23 +1,19 @@
-// @ts-nocheck
-// TODO(T-173b): strict typing for Template components
-
 import React from 'react';
 import Link from 'next/link';
+// @ts-expect-error TODO(T-176b) - Add type declarations for UI components
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+// @ts-expect-error TODO(T-176b) - Add type declarations for UI components
 import { Button } from '@/components/ui/button';
+// @ts-expect-error TODO(T-176b) - Add type declarations for UI components
 import { Badge } from '@/components/ui/badge';
 import { Eye, User, Calendar } from 'lucide-react';
+// Import ThemeTemplate from Prisma
+import type { ThemeTemplate } from '@prisma/client';
 
 export interface TemplateCardProps {
-  template: {
-    id: string;
-    name: string;
-    description?: string;
-    isPublic: boolean;
-    ownerId: string;
+  template: ThemeTemplate & {
     isCurrentUserOwner: boolean;
     highlightText?: string;
-    createdAt?: string;
   };
 }
 
