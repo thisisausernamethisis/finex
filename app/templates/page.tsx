@@ -1,7 +1,9 @@
 // @ts-nocheck
+// TODO(T-173b): strict typing for Template components
+
 import { headers } from 'next/headers';
 import { currentUser } from '@clerk/nextjs/server';
-import TemplateCard from '@/components/TemplateCard';
+import { TemplateCard } from '@/components/TemplateCard';
 import { TemplateSearchBar } from '@/components/TemplateSearchBar';
 import { Suspense } from 'react';
 
@@ -11,8 +13,29 @@ interface SearchParams {
   page?: string;
 }
 
+interface Template {
+  id: string;
+  name: string;
+  description?: string;
+  isPublic: boolean;
+  ownerId: string;
+  createdAt?: string;
+}
+
+interface TemplateWithOwnership extends Template {
+  isCurrentUserOwner: boolean;
+  highlightText?: string;
+}
+
+interface TemplatesResponse {
+  items: Template[];
+  total: number;
+  hasMore: boolean;
+  currentUserId: string;
+}
+
 // Get all templates from API with search/filter parameters
-async function getTemplates(searchParams: SearchParams) {
+async function getTemplates(searchParams: SearchParams): Promise<TemplatesResponse> {
   const user = await currentUser();
   if (!user) {
     return { items: [], total: 0, hasMore: false, currentUserId: '' };
@@ -85,7 +108,7 @@ export default async function TemplatesPage({
         <Suspense fallback={<TemplatesLoading />}>
           {templatesData.items && templatesData.items.length > 0 ? (
             <div className="grid gap-4">
-              {templatesData.items.map((template: any) => (
+              {templatesData.items.map((template: Template) => (
                 <TemplateCard 
                   key={template.id} 
                   template={{
@@ -95,7 +118,8 @@ export default async function TemplatesPage({
                     isPublic: template.isPublic,
                     ownerId: template.ownerId,
                     isCurrentUserOwner: template.ownerId === templatesData.currentUserId,
-                    highlightText: searchQuery // Pass the search query for highlighting
+                    highlightText: searchQuery, // Pass the search query for highlighting
+                    createdAt: template.createdAt
                   }} 
                 />
               ))}

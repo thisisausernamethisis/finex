@@ -1,4 +1,6 @@
 // @ts-nocheck
+// TODO(T-173b): strict typing for Template components
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
