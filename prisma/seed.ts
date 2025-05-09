@@ -17,21 +17,26 @@ const prisma = new PrismaClient()
 // Our own implementation of deterministic ID generation
 const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
-// Create a stable RNG instance at the top level
-const rng = seedrandom(process.env.SEED_UID ?? '');
-
 // Counter to ensure uniqueness even with the same seed
 let idCounter = 0;
 
 // The main ID generation function
 function mkId() {
-  // If SEED_UID is set, use deterministic ID generation with the stable RNG
+  // If SEED_UID is set, use deterministic ID generation
   if (process.env.SEED_UID) {
-    // Use nanoid with our stable RNG instance
-    const generateId = customAlphabet(ALPHABET, 24, rng);
-    // Increment counter to ensure uniqueness across calls
-    idCounter++;
-    return generateId();
+    // Store the counter value before incrementing
+    const counter = idCounter++;
+    
+    // We need to seed the same exact way each time
+    const localRng = seedrandom(`${process.env.SEED_UID}_${counter}`);
+    
+    // Generate a truly deterministic ID
+    let id = '';
+    const len = ALPHABET.length;
+    for (let i = 0; i < 24; i++) {
+      id += ALPHABET[Math.floor(localRng() * len)];
+    }
+    return id;
   }
   
   // Otherwise, use nanoid's customAlphabet for non-deterministic IDs
