@@ -1,4 +1,5 @@
 // @ts-nocheck
+// TODO(T-173b): Deep Prisma mock typings
 import { PrismaClient } from '@prisma/client';
 import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
 

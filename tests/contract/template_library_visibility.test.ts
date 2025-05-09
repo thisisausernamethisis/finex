@@ -1,3 +1,6 @@
+// @ts-nocheck
+// TODO(T-173b): Clerk SDK typings and mock repository usage
+
 import { describe, expect, it, beforeAll, afterAll, jest } from '@jest/globals';
 import { prisma } from '../mocks/prisma';
 import { ThemeTemplateRepository } from '../../lib/repositories';

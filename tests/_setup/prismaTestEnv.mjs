@@ -1,3 +1,6 @@
+// @ts-nocheck
+// TODO(T-173b): Deep Prisma mock typings
+
 /**
  * ESM shim for prismaTestEnv.js
  * 
