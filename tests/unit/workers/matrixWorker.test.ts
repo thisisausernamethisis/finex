@@ -1,4 +1,5 @@
 // @ts-nocheck
+// TODO(T-173b): BullMQ job payload generics still any; unblock later
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Worker, Queue, QueueEvents, Job } from 'bullmq';
 import { startMatrixWorker, processMatrixJob } from '../../../workers/matrixWorker';

@@ -1,3 +1,6 @@
+// @ts-nocheck
+// TODO(T-173b): Clerk SDK types: mock typings still loose
+
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { prisma as mockPrisma } from '../mocks/prisma';

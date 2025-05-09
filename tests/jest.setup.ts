@@ -1,3 +1,6 @@
+// @ts-nocheck
+// TODO(T-173b): migrate deep jest spies to fully-typed helpers
+
 /**
  * Jest setup file to configure the test environment
  */

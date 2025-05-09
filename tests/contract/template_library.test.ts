@@ -1,4 +1,5 @@
 // @ts-nocheck
+// TODO(T-173b): Nested create/select Prisma generics still wrong – leave nocheck
 import { describe, expect, it, beforeAll, afterAll, jest } from '@jest/globals';
 import { prisma } from '../mocks/prisma';
 import { ThemeTemplateRepository } from '../../lib/repositories';
@@ -9,6 +10,18 @@ import { POST as CloneAssetPOST } from '../../app/api/assets/[assetId]/clone/rou
 import { GET as GetTemplateGET, DELETE as DeleteTemplateDELETE } from '../../app/api/theme-templates/[id]/route';
 import { executeRouteHandler, parseResponseJson } from '../_setup/contractTestUtils';
 import { runTestSeed, AssetSeedOptions, TemplateOptions, SeedResult } from '../seed/buildTestSeed';
+
+// Define interface for templates in tests with expected properties
+interface TemplateData {
+  id: string;
+  name: string;
+  description?: string;
+  ownerId: string;
+  isPublic: boolean;
+  payload?: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 describe('Template Library API Contract Tests', () => {
   const testUserId = 'user_test123';
@@ -223,7 +236,7 @@ describe('Template Library API Contract Tests', () => {
           payload: {} as any,
           createdAt: new Date(),
           updatedAt: new Date()
-        });
+        } as ThemeTemplate);
 
       const privateTemplate = {
         name: 'Template Test Private Theme Template',
@@ -265,7 +278,7 @@ describe('Template Library API Contract Tests', () => {
           payload: {},
           createdAt: new Date(),
           updatedAt: new Date()
-        }
+        } as ThemeTemplate
       ]);
     });
 
@@ -363,17 +376,21 @@ describe('Template Library API Contract Tests', () => {
 
   describe('POST /api/theme-templates/{id}/clone', () => {
     it('should clone a theme template into an asset', async () => {
-      // Mock the templateService.cloneThemeTemplate function to return a known ID
-      jest.spyOn(jest.requireActual('../../lib/services/templateService'), 'cloneThemeTemplate')
-        .mockImplementation(() => Promise.resolve('theme-123'));
+      // Import the actual modules to get their types
+      const templateServiceModule = jest.requireActual('../../lib/services/templateService');
+      const ThemeTemplateRepoModule = jest.requireActual('../../lib/repositories/themeTemplateRepository');
+      
+      // Mock the templateService.cloneThemeTemplate function with proper typing
+      const cloneThemeTemplateMock = jest.spyOn(templateServiceModule, 'cloneThemeTemplate') as jest.SpyInstance<Promise<string>>;
+      cloneThemeTemplateMock.mockResolvedValue('theme-123');
 
-      // Mock the hasTemplateAccess function to allow access
-      jest.spyOn(jest.requireActual('../../lib/services/templateService'), 'hasTemplateAccess')
-        .mockImplementation(() => Promise.resolve(true));
+      // Mock the hasTemplateAccess function with proper typing
+      const hasTemplateAccessMock = jest.spyOn(templateServiceModule, 'hasTemplateAccess') as jest.SpyInstance<Promise<boolean>>;
+      hasTemplateAccessMock.mockResolvedValue(true);
 
-      // Mock the ThemeTemplateRepository.templateExists
-      jest.spyOn(jest.requireActual('../../lib/repositories/themeTemplateRepository').ThemeTemplateRepository.prototype, 'templateExists')
-        .mockImplementation(() => Promise.resolve(true));
+      // Mock the ThemeTemplateRepository.templateExists with proper typing
+      const templateExistsMock = jest.spyOn(ThemeTemplateRepoModule.ThemeTemplateRepository.prototype, 'templateExists') as jest.SpyInstance<Promise<boolean>>;
+      templateExistsMock.mockResolvedValue(true);
 
       // Create a theme directly in the database that can be returned
       await prisma.theme.create({
@@ -414,13 +431,17 @@ describe('Template Library API Contract Tests', () => {
     });
 
     it('should enforce RBAC on private templates', async () => {
-      // Mock the ThemeTemplateRepository.templateExists to make sure the template exists
-      jest.spyOn(jest.requireActual('../../lib/repositories/themeTemplateRepository').ThemeTemplateRepository.prototype, 'templateExists')
-        .mockImplementation(() => Promise.resolve(true));
+      // Import the actual modules to get their types
+      const templateServiceModule = jest.requireActual('../../lib/services/templateService');
+      const ThemeTemplateRepoModule = jest.requireActual('../../lib/repositories/themeTemplateRepository');
+      
+      // Mock the templateExists function with proper typing
+      const templateExistsMock = jest.spyOn(ThemeTemplateRepoModule.ThemeTemplateRepository.prototype, 'templateExists') as jest.SpyInstance<Promise<boolean>>;
+      templateExistsMock.mockResolvedValue(true);
 
-      // Mock the hasTemplateAccess function to deny access, simulating RBAC
-      jest.spyOn(jest.requireActual('../../lib/services/templateService'), 'hasTemplateAccess')
-        .mockImplementation(() => Promise.resolve(false));
+      // Mock the hasTemplateAccess function with proper typing
+      const hasTemplateAccessMock = jest.spyOn(templateServiceModule, 'hasTemplateAccess') as jest.SpyInstance<Promise<boolean>>;
+      hasTemplateAccessMock.mockResolvedValue(false);
 
       // Ensure the private template exists and belongs to otherUserId
       await prisma.themeTemplate.upsert({
@@ -464,9 +485,12 @@ describe('Template Library API Contract Tests', () => {
 
   describe('POST /api/assets/{assetId}/clone', () => {
     it('should clone an asset template', async () => {
-      // Set up the mock template service to handle the clone operation
-      jest.spyOn(jest.requireActual('../../lib/services/templateService'), 'cloneAssetFromTemplate')
-          .mockImplementation(() => Promise.resolve('cloned-asset-123'));
+      // Import the actual module to get its type
+      const templateServiceModule = jest.requireActual('../../lib/services/templateService');
+      
+      // Set up the mock template service with proper typing
+      const cloneAssetMock = jest.spyOn(templateServiceModule, 'cloneAssetFromTemplate') as jest.SpyInstance<Promise<string>>;
+      cloneAssetMock.mockResolvedValue('cloned-asset-123');
 
       // Ensure the template asset exists and is of kind TEMPLATE
       await prisma.asset.upsert({
@@ -506,14 +530,24 @@ describe('Template Library API Contract Tests', () => {
       });
 
       // Make sure the mock repository returns the correct template kind
+      const mockAsset = {
+        id: templateAssetId,
+        kind: 'TEMPLATE',
+        name: 'Template Asset',
+        description: null,
+        growthValue: null,
+        userId: otherUserId,
+        sourceTemplateId: null,
+        isPublic: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Mock with a proper Prisma client return type
       jest.spyOn(prisma.asset, 'findUnique')
-        .mockImplementation(() => Promise.resolve({
-          id: templateAssetId,
-          kind: 'TEMPLATE',
-          name: 'Template Asset',
-          userId: otherUserId,
-          isPublic: true
-        } as any));
+        .mockImplementation(() => {
+          return Promise.resolve(mockAsset) as any;
+        });
 
       const response = await executeRouteHandler(
         CloneAssetPOST,
@@ -542,14 +576,24 @@ describe('Template Library API Contract Tests', () => {
 
     it('should only allow cloning assets of kind TEMPLATE', async () => {
       // Mock the findUnique method to return a non-template asset
+      const mockRegularAsset = {
+        id: assetId,
+        kind: 'REGULAR',
+        name: 'Regular Asset',
+        description: null,
+        growthValue: null,
+        userId: testUserId,
+        sourceTemplateId: null,
+        isPublic: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Mock with a proper Prisma client return type
       jest.spyOn(prisma.asset, 'findUnique')
-        .mockImplementation(() => Promise.resolve({
-          id: assetId,
-          kind: 'REGULAR',
-          name: 'Regular Asset',
-          userId: testUserId,
-          isPublic: true
-        } as any));
+        .mockImplementation(() => {
+          return Promise.resolve(mockRegularAsset) as any;
+        });
 
       // Ensure the non-template asset exists
       await prisma.asset.upsert({

@@ -1,4 +1,5 @@
 // @ts-nocheck
+// TODO(T-173b): Nested create/select Prisma generics still wrong – leave nocheck
 import { describe, expect, it, beforeAll, afterAll, jest } from '@jest/globals';
 
 import { prisma } from '../mocks/prisma';
