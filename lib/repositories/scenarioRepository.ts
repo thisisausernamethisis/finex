@@ -1,8 +1,9 @@
-// @ts-nocheck
-// TODO(T-173b): Prisma generics
 import { prisma } from '../db';
 import { logger } from '../logger';
-import { Scenario, Prisma, ThemeType } from '@prisma/client';
+import type { PrismaClient, Scenario, Prisma, ThemeType } from '@prisma/client';
+
+// Define concrete payload type for Scenario
+export type ScenarioResult = Prisma.ScenarioGetPayload<{}>;
 
 // Maximum page size allowed, can be overridden by environment variable
 const MAX_PAGE_SIZE = parseInt(process.env.MAX_PAGE_SIZE || '50', 10);
@@ -20,6 +21,7 @@ export interface PaginatedScenarios {
  * Repository for Scenario operations
  */
 export class ScenarioRepository {
+  constructor(private readonly db: PrismaClient = prisma) {}
   /**
    * Retrieves a list of scenarios with pagination
    * 
@@ -53,22 +55,20 @@ export class ScenarioRepository {
     }
     
     // Get the total count
-    const total = await prisma.scenario.count({ where });
+    const total = await this.db.scenario.count({ where });
     
     // Get the scenarios for this page
-    const scenarios = await prisma.scenario.findMany({
+    const scenarios = await this.db.scenario.findMany({
       where,
       select: {
         id: true,
         name: true,
         description: true,
-        probability: true,
-        createdAt: true,
-        updatedAt: true
+        probability: true
       },
-      orderBy: {
-        updatedAt: 'desc'
-      },
+      orderBy: [
+        { id: 'desc' }
+      ],
       skip,
       take: clampedLimit
     });
@@ -88,15 +88,13 @@ export class ScenarioRepository {
   public async getScenarioById(scenarioId: string): Promise<Scenario | null> {
     repoLogger.debug('Getting scenario by ID', { scenarioId });
     
-    return prisma.scenario.findUnique({
+    return this.db.scenario.findUnique({
       where: { id: scenarioId },
       select: {
         id: true,
         name: true,
         description: true,
-        probability: true,
-        createdAt: true,
-        updatedAt: true
+        probability: true
       }
     }) as Promise<Scenario | null>;
   }
@@ -112,7 +110,7 @@ export class ScenarioRepository {
   ): Promise<Scenario> {
     repoLogger.debug('Creating scenario', { data });
     
-    return prisma.scenario.create({
+    return this.db.scenario.create({
       data: {
         ...data,
         themes: {
@@ -133,9 +131,7 @@ export class ScenarioRepository {
         id: true,
         name: true,
         description: true,
-        probability: true,
-        createdAt: true,
-        updatedAt: true
+        probability: true
       }
     }) as Promise<Scenario>;
   }
@@ -153,18 +149,18 @@ export class ScenarioRepository {
   ): Promise<Scenario | null> {
     repoLogger.debug('Updating scenario', { scenarioId, data });
     
-    // Check if probability is being updated
-    if (data.probability !== undefined) {
-      // Also update the probability theme
-      const probabilityTheme = await prisma.theme.findFirst({
+      // Check if probability is being updated
+      if (data.probability !== undefined) {
+        // Also update the probability theme
+        const probabilityTheme = await this.db.theme.findFirst({
         where: {
           scenarioId,
           themeType: 'PROBABILITY' as ThemeType
         }
       });
       
-      if (probabilityTheme) {
-        await prisma.theme.update({
+        if (probabilityTheme) {
+          await this.db.theme.update({
           where: { id: probabilityTheme.id },
           data: { 
             manualValue: data.probability,
@@ -175,16 +171,14 @@ export class ScenarioRepository {
     }
     
     try {
-      return prisma.scenario.update({
+      return this.db.scenario.update({
         where: { id: scenarioId },
         data,
         select: {
           id: true,
           name: true,
           description: true,
-          probability: true,
-          createdAt: true,
-          updatedAt: true
+          probability: true
         }
       }) as Promise<Scenario>;
     } catch (error) {
@@ -203,7 +197,7 @@ export class ScenarioRepository {
     repoLogger.debug('Deleting scenario', { scenarioId });
     
     try {
-      await prisma.scenario.delete({
+      await this.db.scenario.delete({
         where: { id: scenarioId }
       });
       return true;
@@ -220,7 +214,7 @@ export class ScenarioRepository {
    * @returns True if the scenario exists, false otherwise
    */
   public async scenarioExists(scenarioId: string): Promise<boolean> {
-    const count = await prisma.scenario.count({
+    const count = await this.db.scenario.count({
       where: { id: scenarioId }
     });
     return count > 0;
