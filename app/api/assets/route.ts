@@ -4,7 +4,8 @@ import { AssetRepository } from '../../../lib/repositories/assetRepository';
 import { z } from 'zod';
 import { createChildLogger } from '../../../lib/logger';
 import { serverError, unauthorized } from '../../../lib/utils/http';
-import { getQueryOptions, validateSchema, withPagination } from '../../../lib/utils/api';
+import { validateSchema } from '../../../lib/utils/api';
+import { ListParamsSchema } from '../../../lib/validators/zod_list_params';
 
 // Create a route-specific logger
 const listLogger = createChildLogger({ route: 'GET /api/assets' });
@@ -29,23 +30,26 @@ export async function GET(req: NextRequest) {
       return unauthorized('Authentication required', listLogger);
     }
     
-    // Get query parameters
-    const url = new URL(req.url);
-    const queryOptions = getQueryOptions(url);
+    // Parse and validate query parameters
+    const searchParams = req.nextUrl.searchParams;
+    const { page, limit, q } = ListParamsSchema.parse(searchParams);
     
-    // Use withPagination utility
-    const paginationResult = await withPagination(
-      queryOptions,
-      (page, limit, search) => assetRepository.listAssets(user.id, page, limit, search),
-      listLogger
+    // Get assets with validated parameters
+    const paginationResult = await assetRepository.listAssets(
+      user.id,
+      page,
+      limit,
+      q
     );
     
-    if (paginationResult.error) {
-      return paginationResult.error;
-    }
-    
-    // Return the standardized response format
-    return NextResponse.json(paginationResult.result);
+    // Return the standardized response format with pagination metadata
+    return NextResponse.json({
+      items: paginationResult.items,
+      total: paginationResult.total,
+      page,
+      limit,
+      pages: Math.ceil(paginationResult.total / limit)
+    });
   } catch (error) {
     return serverError(error instanceof Error ? error : new Error('Unknown error'), listLogger);
   }
