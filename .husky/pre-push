@@ -3,5 +3,4 @@
 
 # Run normal verification with contract test skipped
 export SKIP_CONTRACT_RED=1
-export SKIP_E2E_RED=1  # Temporarily skip E2E tests until fixed
 npm run verify

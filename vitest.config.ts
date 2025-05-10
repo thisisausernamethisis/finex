@@ -12,6 +12,7 @@ export default defineConfig({
     }
   },
   test: {
-    setupFiles: ['./vitest.setup.ts']
+    setupFiles: ['./vitest.setup.ts', './tests/setup/alias-shim.cjs'],
+    exclude: ['tests/e2e/**']
   }
 });
