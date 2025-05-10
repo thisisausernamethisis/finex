@@ -1,23 +1,24 @@
-import { vi, expect } from 'vitest';
+// Export a minimal Jest-like surface backed by Vitest
+const vitest = require('vitest');
 
 /* Export a minimal Jest-like surface backed by Vitest */
 const jestLike = {
-  fn: vi.fn,
-  spyOn: vi.spyOn,
-  mock: vi.mock,
+  fn: vitest.vi.fn,
+  spyOn: vitest.vi.spyOn,
+  mock: vitest.vi.mock,
 
   /* mock-control */
-  resetAllMocks: vi.resetAllMocks,
-  restoreAllMocks: vi.restoreAllMocks,
-  clearAllMocks: vi.clearAllMocks,
+  resetAllMocks: vitest.vi.resetAllMocks,
+  restoreAllMocks: vitest.vi.restoreAllMocks,
+  clearAllMocks: vitest.vi.clearAllMocks,
 
   /* timers */
-  useFakeTimers: vi.useFakeTimers,
-  useRealTimers: vi.useRealTimers,
-  runAllTimers: vi.runAllTimers,
+  useFakeTimers: vitest.vi.useFakeTimers,
+  useRealTimers: vitest.vi.useRealTimers,
+  runAllTimers: vitest.vi.runAllTimers,
 
   /* expectations */
-  expect
+  expect: vitest.expect
 };
 
 module.exports = jestLike;
