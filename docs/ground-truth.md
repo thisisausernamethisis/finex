@@ -16,6 +16,8 @@ For autonomous coding agents
 Green CI = deliverable accepted.
 If any spec ambiguity remains, emit `CLARIFICATION NEEDED: …` and halt.
 
+
+> **Doc sync note (v0.8, 2025-05-09)** &nbsp;– For sprint timelines and ticket statuses see **`roadmap_v0.8.md`**. This `ground-truth.md` remains the contractual API & testing spec.
 ## 1 · Mission & Product
 
 Finex Bot is an AI‑powered research workspace that lets analysts:
@@ -286,31 +288,20 @@ export async function hasTemplateAccess(
 NOTE: searchService executes two raw SQL queries (tsvector & pgvector) and fuses them via RRF.
 
 ## 8 · Phased Road‑map & Task Seeds
-
 | Phase | Key deliverables | Example task YAML |
 |-------|------------------|------------------|
 | 1 – Auth + Base UI | Clerk integration, layout scaffold, seed data | T‑001_add_clerk_middleware.yml |
-| 2 – UI Prototype + OpenAPI | All CRUD UI with mock data, openapi/finex.yaml, failing contract tests | T‑023_generate_openapi_stub.yml |
+| 2 – UI Prototype + OpenAPI | CRUD UI with mock data + openapi.yaml stub, failing contract tests | T‑023_generate_openapi_stub.yml |
 | 3 – DB + Core API | Prisma schema, /assets, /themes, /cards routes, pass contract tests | T‑041_implement_GET_assets.yml |
-| 4 – AI Pipelines | chunking, embeddings, hybrid search, workers, analysis routes | T‑083_matrix_worker_basic.yml |
-| 5 – Sharing + SSE | RBAC enforcement, share endpoints, SSE for job updates | T‑112_sse_endpoint.yml |
-| 5b – Template Library | Template publishing, browsing, and cloning between analysts | T‑156_update_ground_truth_for_template_library.yml |
-| 6 – Optimisation & RAG eval | RAGAS reports, performance budgets, cost guard, monitoring hooks | T‑130_ragas_ci_job.yml |
-
-Each YAML contains:
-
-```yaml
-id: T-041
-title: "Implement GET /assets (Phase 3)"
-phase: 3
-acceptance:
-  - ci passes
-  - openapi unchanged
-  - tests/contract/assets.test.ts green
-files_touched:
-  - app/api/assets/route.ts
-  - lib/repositories/assetRepository.ts
-```
+| 4 – AI Pipelines | Chunking, embeddings, hybrid search, worker jobs, analysis routes | T‑083_matrix_worker_basic.yml |
+| 5 – Sharing + SSE | RBAC enforcement, share endpoints, Server‑Sent Events for job updates | T‑112_sse_endpoint.yml |
+| 5b – Template Library | Template publishing, browsing, cloning between analysts | T‑156_update_ground_truth_for_template_library.yml |
+| 6.0 – Seed polish & helper docs | Deterministic nanoid seed, helper‑cleanup docs | T‑175_seed_hardening.yml |
+| 6.1 – Type‑safety (prod) | Remove 6 `@ts-nocheck` banners, ≥ 68 % prod line‑coverage | T‑176_remove_nocheck_batch1.yml |
+| 6.1b – Validation ＋ RBAC | Standardized validation, ~70% coverage | T‑177_remove_nocheck_batch2.yml |
+| 6.2 – Injector / Alias | Remove remaining banners, ≥ 80 % repo coverage, Playwright smoke flow | T‑180, T‑181 |
+| 6.3 – Cost & DX guard‑rails | Prompt‑cost sentinel, dev‑worker bootstrap, quota toast | T‑182, T‑183 |
+| 6.4 – RAG quality surfacing | Hybrid cache layer, RAGAS ≥ 0.80, matrix card summary | T‑184 |
 
 ## 9 · Validation & Testing
 
@@ -319,85 +310,4 @@ files_touched:
 - **E2E**: Playwright seeds DB, logs in via Clerk test user, exercises UI flows.
 - **RAG**: npm run rag:eval produces CSV of precision/recall/faithfulness for 50 curated Q‑A.
 - **CI** (.github/workflows/ci.yml) must stay green.
-
-## 10 · Security & Quality Gates
-
-- All mutations must pass zodParse(bodySchema).
-- Edge routes must use @prisma/adapter-neon and never fs.
-- Rate‑limit per‑IP (/middleware/rateLimit.ts placeholder).
-- Never store secrets in code – environment variables only.
-- Coverage target ≥ 80 % lines for lib/services & API routes.
-- Worker-job prompt budgets: Theme ≤400 tokens, Board ≤300 tokens, Impact ≤500 tokens.
-- JSON outputs (ImpactExplain) must pass schema validation ≥99.5 % and RAGAS faithfulness ≥0.8.
-
-## 11 · Seed Data (prisma/seed.ts)
-
-```typescript
-await prisma.asset.create({
-  data: {
-    name: 'NVIDIA',
-    userId,
-    themes: {
-      create: [
-        { name: 'Growth', themeType: 'GROWTH', manualValue: 25.0 },
-        { name: 'Default Theme' }
-      ]
-    }
-  }
-})
-// … Tesla, Bitcoin, scenarios, cards, chunks …
-
-// DEMO TEMPLATE ASSET
-```
-
-Running `make db:seed` must leave the Matrix page fully populated.
-
-## 12 · Runbooks & Monitoring (stubs)
-
-- [docs/runbooks/worker.md](./runbooks/worker.md) – restart procedure, DLQ drain, metric names (bullmq.active, bullmq.failed).
-- [docs/runbooks/db.md](./runbooks/db.md) – Neon connection limits, how to use psql+pgvector.
-- Alerting: sample Prometheus rules in [ops/prometheus-rules.yml](../ops/prometheus-rules.yml).
-
-## 13 · Style & Lint
-
-- ESLint + Prettier configs pre‑committed.
-- `npm run lint:fix` before pushing.
-- Commit messages: `feat(api): implement DELETE /themes/:id`.
-- Branch naming: `phase3/T-041_get_assets`.
-
-## 14 · Environment template (.env.example)
-
-```env
-DATABASE_URL="postgres://user:pass@neon.db.../finex?pgbouncer=true&connect_timeout=15"
-DIRECT_URL="postgres://user:pass@neon.db.../finex"
-OPENAI_API_KEY="sk-..."
-CLERK_SECRET_KEY="sk_..."
-REDIS_HOST="localhost"
-REDIS_PORT="6379"
-```
-
-## 15 · FAQs for Agents
-
-| Symptom | Likely cause | Fix |
-|---------|--------------|-----|
-| P1001 can't reach database in local tests | using pooled URL for migrations | set DIRECT_URL env & run prisma migrate dev |
-| MaxListenersExceededWarning from BullMQ | forgot setMaxListeners(0) after adding N workers/tests | update queueEvents.setMaxListeners(0) in worker bootstrap |
-
-## 16 · Definition of Done (per task)
-
-- All referenced tests green.
-- openapi/finex.yaml unchanged unless task says "modify contract".
-- Lint & typecheck pass.
-- No TODOs or console.log in changed lines.
-- At least one new unit test when fixing a bug.
-
-ONE MORE TIME:
-If anything above is ambiguous, output exactly:
-
-```
-CLARIFICATION NEEDED: <question>
-```
-
-Otherwise, run the failing tests, implement, commit, push, and we're done.
-
-Happy shipping 🛫
+- **Type Coverage**: Currently ~70%, working toward 80%+ in Phase 6.2.
