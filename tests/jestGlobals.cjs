@@ -1,3 +1,2 @@
-// CJS wrapper that re-exports the Vitest shim
-const shim = require('./vitestJestShim.ts');
-module.exports = shim;
+/* Single export keeps hoisting semantics */
+module.exports = require('./vitestJestShim.cjs');

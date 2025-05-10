@@ -2,49 +2,13 @@
 import { test, expect } from '@playwright/test';
 import { createJWTForTest } from '../utils/auth';
 import { prisma } from '../../lib/db';
-
-// Test constants
-const TEST_USER_ID = 'user_test123';
-const TEST_USER_EMAIL = 'test@example.com';
-const TEST_USER_NAME = 'Test User';
-const TEST_TEMPLATE_NAME = 'Visibility Test Template';
-
-// Helper function to reset DB state for tests
-async function resetDB() {
-  // Clear existing test data
-  await prisma.themeTemplate.deleteMany({
-    where: {
-      name: {
-        startsWith: 'Visibility Test'
-      }
-    }
-  });
-  
-  // Create a private template owned by the test user
-  await prisma.themeTemplate.create({
-    data: {
-      id: 'visibility_test_template',
-      ownerId: TEST_USER_ID,
-      name: TEST_TEMPLATE_NAME,
-      description: 'A private template for visibility testing',
-      isPublic: false,
-      payload: {
-        theme: {
-          name: 'Test Theme',
-          description: 'Test Description',
-          category: 'Test'
-        },
-        cards: [
-          {
-            title: 'Test Card',
-            content: 'Test Content',
-            importance: 1
-          }
-        ]
-      }
-    }
-  });
-}
+import { 
+  TEST_USER_ID, 
+  TEST_USER_EMAIL, 
+  TEST_USER_NAME, 
+  TEST_TEMPLATE_NAME, 
+  resetDB 
+} from './helpers/templateHelpers';
 
 test.describe('Template Library Visibility E2E Tests', () => {
   // Set up auth token and reset DB before tests
