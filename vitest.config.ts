@@ -6,7 +6,8 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname),
       'lib/repositories': resolve(__dirname, 'tests/__mocks__/lib/repositories'),
-      '@/lib/repositories': resolve(__dirname, 'tests/__mocks__/lib/repositories')
+      '@/lib/repositories': resolve(__dirname, 'tests/__mocks__/lib/repositories'),
+      '@jest/globals': resolve(__dirname, 'tests/vitestJestShim.ts')
     }
   },
   test: {
