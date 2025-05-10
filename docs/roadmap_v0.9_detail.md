@@ -10,7 +10,7 @@ This annotated roadmap folds in **Deep-Research Phase-6 Audit** artefacts
 | Sub-phase | Window | Outcome KPI | Primary engineer | Reviewer |
 |-----------|--------|-------------|------------------|----------|
 | **6.1 a — Green-CI Hot-Fix** | **14 – 15 May** | `npm run verify` exit-code 0 on `main`; line-coverage ≥ 68 % | Alex P. | CI-bot → Daniel |
-| **6.1 b — Validation ＋ RBAC** ✔ | 15 – 16 May | All contract assertions pass; skipped tests = 0; coverage ≥ 70 % | Alex P. | Daniel |
+| **6.1 b — Validation ＋ RBAC** ✔ | 15 – 16 May | All contract assertions pass; skipped tests = 0; coverage ≥ 72 % | Alex P. | Daniel |
 | **6.2 — Injector / Alias** | 17 – 23 May | 100 % routes use `Services` DI; Jest has **one** alias; type-cov ≥ 75 % | Michelle L. | Code-owners |
 | **6.3 — Scaffold** | 24 May | Husky pre-push runs `verify`; ESLint nocheck-ban 0 hits | Michelle L. | Dev-Ex WG |
 | **6.4 — Cost Guard-Rails** | 24 – 31 May | Token ceiling metadata in all funcs; weekly OpenAI bill Δ ≤ +5 % | Rahul T. | FinOps |

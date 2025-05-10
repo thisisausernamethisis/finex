@@ -310,4 +310,4 @@ NOTE: searchService executes two raw SQL queries (tsvector & pgvector) and fuses
 - **E2E**: Playwright seeds DB, logs in via Clerk test user, exercises UI flows.
 - **RAG**: npm run rag:eval produces CSV of precision/recall/faithfulness for 50 curated Q‑A.
 - **CI** (.github/workflows/ci.yml) must stay green.
-- **Type Coverage**: Currently ~70%, working toward 80%+ in Phase 6.2.
+- **Type Coverage**: Currently ~72%, working toward 80%+ in Phase 6.2.
