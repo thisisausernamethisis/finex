@@ -64,6 +64,8 @@ function rawListTemplates(
 }
 
 export class ThemeTemplateRepository {
+  private themeRepo = new ThemeRepository();
+  private cardRepo = new CardRepository();
   listTemplates(userIdOrOpts: any, opts?: any) {
     if (typeof userIdOrOpts === 'string') {
       return rawListTemplates({ ownerId: opts?.mine ? userIdOrOpts : undefined, ...opts });
@@ -150,3 +152,16 @@ export const CardRepository = vi.fn();      // keep stubs for other tests
 export const AssetRepository = vi.fn();
 export const ScenarioRepository = vi.fn();  // Add other repositories
 export const ThemeRepository = vi.fn();
+export const MatrixRepository = vi.fn();
+
+// Use the ThemeTemplateRepository to create the mock
+export const themeTemplateRepository = {
+  list: vi.fn(),
+  find: vi.fn(),
+  create: vi.fn(),
+};
+
+export default {
+  themeTemplateRepository,
+  // ...other repo mocks already here...
+};

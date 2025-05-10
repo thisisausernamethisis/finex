@@ -9,6 +9,7 @@
 
 // Export repositories
 export { ThemeTemplateRepository, DEFAULT_PAGE_SIZE } from './themeTemplateRepository';
+export * as themeTemplateRepository from './themeTemplateRepository';
 export { AssetRepository } from './assetRepository';
 export { ScenarioRepository } from './scenarioRepository';
 export { ThemeRepository } from './themeRepository';

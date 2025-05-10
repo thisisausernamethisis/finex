@@ -1,4 +1,4 @@
-import { defineConfig, configDefaults } from 'vitest/config'; // ⬇️ make sure vitest ≥ 0.34 is installed
+import { defineConfig, configDefaults } from 'vitest/config';
 import { resolve } from 'path';
 import { fileURLToPath } from 'node:url';
 
@@ -6,22 +6,25 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname),
-      'lib/repositories': resolve(__dirname, 'tests/__mocks__/lib/repositories'),
-      '@/lib/repositories': resolve(__dirname, 'tests/__mocks__/lib/repositories'),
+      '^lib/(.*)$': resolve(__dirname, 'lib/$1'),
+      'lib/(.*)$': resolve(__dirname, 'lib/$1'),
       '@jest/globals': fileURLToPath(new URL('./tests/jestGlobals.cjs', import.meta.url))
     }
   },
   test: {
-    globals: true,                        // Enable globals mode for describe/it
+    globals: true,
     setupFiles: [
       './vitest.setup.ts',
       './tests/setup/alias-shim.cjs',
-      './tests/setup/mock-aliases.ts'     // Add our mock-aliases setup
+      './tests/setup/mock-aliases.ts',
+      './tests/setup/reset-rate-limit.ts'
     ],
     exclude: [
-      ...configDefaults.exclude,  // Keep default exclusions (node_modules, dist, etc.)
-      'tests/e2e/**'              // Add our custom exclusion
+      ...configDefaults.exclude,
+      'tests/e2e/**'
     ],
-    deps: { moduleDirectories: ['node_modules', '__mocks__'] } // Let Vitest locate manual mocks
+    deps: {
+      moduleDirectories: ['node_modules', '__mocks__']
+    }
   }
 });

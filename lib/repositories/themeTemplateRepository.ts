@@ -12,6 +12,27 @@ const MAX_PAGE_SIZE = parseInt(process.env.MAX_PAGE_SIZE || '50', 10);
 // Create a repository-specific logger
 const repoLogger = logger.child({ component: 'ThemeTemplateRepository' });
 
+// Create simplified exports matching the structure expected in the mock
+export const list = async (userIdOrOpts?: string | any, opts?: any) => {
+  const repo = new ThemeTemplateRepository();
+  if (typeof userIdOrOpts === 'string') {
+    return repo.listTemplates(userIdOrOpts, opts);
+  } else {
+    // Handle the case where only options are provided
+    return repo.listTemplates('', userIdOrOpts);
+  }
+};
+
+export const find = async (id: string) => {
+  const repo = new ThemeTemplateRepository();
+  return repo.getTemplateById(id);
+};
+
+export const create = async (userId: string, data: any) => {
+  const repo = new ThemeTemplateRepository();
+  return repo.createTemplate(userId, data);
+};
+
 /**
  * Repository for ThemeTemplate operations
  */

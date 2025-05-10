@@ -8,15 +8,20 @@ describe('Rate Limiter', () => {
     expect(typeof rl.check).toBe('function');
   });
   
-  it('limit function resolves to true', async () => {
-    const rl = createRateLimiter();
-    const result = await rl.limit();
-    expect(result).toBe(true);
+  it('limit function resolves to success on first call, failure on second', async () => {
+    const rl = createRateLimiter(1); // Set limit to 1 so second call fails
+    const { success: first } = rl.limit();
+    expect(first).toBe(true);
+    
+    const { success: second } = rl.limit();
+    expect(second).toBe(false);
   });
   
-  it('check function returns true', () => {
+  it('check function returns RLResult with success=true on first call', () => {
     const rl = createRateLimiter();
     const result = rl.check();
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
+    expect(result.limit).toBeGreaterThan(0);
+    expect(typeof result.remaining).toBe('number');
   });
 });
