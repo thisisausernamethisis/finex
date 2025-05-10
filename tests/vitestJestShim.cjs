@@ -6,10 +6,13 @@
 // Check if we're in a Vitest context
 const isVitestEnv = typeof vi !== 'undefined';
 
+// Check if Jest exists in global scope
+const hasJest = typeof jest !== 'undefined';
+
 // Create stubs that will work in both Vitest and Jest environments
-const mockFn = isVitestEnv ? vi.fn : jest ? jest.fn : () => ({ mockReturnValue: () => ({}) });
-const mockModule = isVitestEnv ? vi.mock : jest ? jest.mock : () => {};
-const spyOn = isVitestEnv ? vi.spyOn : jest ? jest.spyOn : () => ({});
+const mockFn = isVitestEnv ? vi.fn : hasJest ? jest.fn : () => ({ mockReturnValue: () => ({}) });
+const mockModule = isVitestEnv ? vi.mock : hasJest ? jest.mock : () => {};
+const spyOn = isVitestEnv ? vi.spyOn : hasJest ? jest.spyOn : () => ({});
 
 // Export basic Jest compatible functions that map to Vitest functions when available
 module.exports = {
@@ -18,9 +21,9 @@ module.exports = {
     fn: mockFn,
     mock: mockModule,
     spyOn: spyOn,
-    resetAllMocks: isVitestEnv ? vi.resetAllMocks : jest ? jest.resetAllMocks : () => {},
-    restoreAllMocks: isVitestEnv ? vi.restoreAllMocks : jest ? jest.restoreAllMocks : () => {},
-    clearAllMocks: isVitestEnv ? vi.clearAllMocks : jest ? jest.clearAllMocks : () => {},
+    resetAllMocks: isVitestEnv ? vi.resetAllMocks : hasJest ? jest.resetAllMocks : () => {},
+    restoreAllMocks: isVitestEnv ? vi.restoreAllMocks : hasJest ? jest.restoreAllMocks : () => {},
+    clearAllMocks: isVitestEnv ? vi.clearAllMocks : hasJest ? jest.clearAllMocks : () => {},
   },
   
   // Global test functions - these should be available in both Jest and Vitest
@@ -40,9 +43,9 @@ module.exports = {
   mockFn,
   
   // Additional Jest-specific functions that map to Vitest equivalents
-  useFakeTimers: () => isVitestEnv ? vi.useFakeTimers() : jest ? jest.useFakeTimers() : {},
-  useRealTimers: () => isVitestEnv ? vi.useRealTimers() : jest ? jest.useRealTimers() : {},
-  runAllTimers: () => isVitestEnv ? vi.runAllTimers() : jest ? jest.runAllTimers() : {},
-  runOnlyPendingTimers: () => isVitestEnv ? vi.runOnlyPendingTimers() : jest ? jest.runOnlyPendingTimers() : {},
-  advanceTimersByTime: (ms) => isVitestEnv ? vi.advanceTimersByTime(ms) : jest ? jest.advanceTimersByTime(ms) : {}
+  useFakeTimers: () => isVitestEnv ? vi.useFakeTimers() : hasJest ? jest.useFakeTimers() : {},
+  useRealTimers: () => isVitestEnv ? vi.useRealTimers() : hasJest ? jest.useRealTimers() : {},
+  runAllTimers: () => isVitestEnv ? vi.runAllTimers() : hasJest ? jest.runAllTimers() : {},
+  runOnlyPendingTimers: () => isVitestEnv ? vi.runOnlyPendingTimers() : hasJest ? jest.runOnlyPendingTimers() : {},
+  advanceTimersByTime: (ms) => isVitestEnv ? vi.advanceTimersByTime(ms) : hasJest ? jest.advanceTimersByTime(ms) : {}
 };
