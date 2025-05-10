@@ -1,2 +1,3 @@
 # Set line endings for shell scripts
 *.sh text eol=lf
+run_verify.sh text eol=lf

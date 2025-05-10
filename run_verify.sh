@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # ----- cross-platform guard -----
 if [ -n "$WINDIR" ]; then
   # ensure we're running under Git-Bash / MSYS
@@ -10,7 +10,7 @@ fi
 
 set -euo pipefail
 
-echo "🔍  Running Finex verify pipeline…"
+echo "🔍 Running Finex verify pipeline..."
 
 npm run lint
 npm run typecheck -- --noEmit
@@ -18,4 +18,4 @@ npm run test -- --passWithNoTests
 npm run coverage -- --reporter=text
 npm run esm:check
 
-echo "✅  verify complete"
+echo "✅ verify complete"

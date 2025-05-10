@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+. "$(dirname "$0")/_/husky.sh"
+
+# Ensure run_verify.sh always has LF line endings
+npx --no-install shx sed -i 's/\r$//' run_verify.sh
+
+# Check for CRLF in verify script
+npm run lint:verify-script
