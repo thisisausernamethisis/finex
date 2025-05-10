@@ -22,6 +22,15 @@ const jestLike = vi ? {
   useRealTimers: vi.useRealTimers,
   runAllTimers: vi.runAllTimers,
 
+  // NEW — suite helpers forwarded from Vitest globals
+  describe: globalThis.describe,
+  it: globalThis.it,
+  test: globalThis.test,
+  beforeAll: globalThis.beforeAll,
+  afterAll: globalThis.afterAll,
+  beforeEach: globalThis.beforeEach,
+  afterEach: globalThis.afterEach,
+
   // Expectations
   expect: globalThis.expect
 } : {
@@ -40,6 +49,15 @@ const jestLike = vi ? {
   useRealTimers: noop,
   runAllTimers: noop,
 
+  // NEW — no-op fall-backs so import never crashes
+  describe: noop,
+  it: noop,
+  test: noop,
+  beforeAll: noop,
+  afterAll: noop,
+  beforeEach: noop,
+  afterEach: noop,
+
   // Expectations stub
   expect: () => ({
     toBe: noop,
@@ -53,4 +71,6 @@ const jestLike = vi ? {
   })
 };
 
+// allow `import { jest }` pattern too
+jestLike.jest = jestLike;
 module.exports = jestLike;
