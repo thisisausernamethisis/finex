@@ -21,7 +21,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@jest/globals": ["tests/vitestJestShim.ts"]
+      "@jest/globals": ["tests/jestGlobals.cjs"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
