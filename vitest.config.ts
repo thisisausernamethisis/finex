@@ -13,10 +13,15 @@ export default defineConfig({
   },
   test: {
     globals: true,                        // Enable globals mode for describe/it
-    setupFiles: ['./vitest.setup.ts', './tests/setup/alias-shim.cjs'],
+    setupFiles: [
+      './vitest.setup.ts',
+      './tests/setup/alias-shim.cjs',
+      './tests/setup/mock-aliases.ts'     // Add our mock-aliases setup
+    ],
     exclude: [
       ...configDefaults.exclude,  // Keep default exclusions (node_modules, dist, etc.)
       'tests/e2e/**'              // Add our custom exclusion
-    ]
+    ],
+    deps: { moduleDirectories: ['node_modules', '__mocks__'] } // Let Vitest locate manual mocks
   }
 });
