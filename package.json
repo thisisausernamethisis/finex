@@ -15,6 +15,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "postinstall": "husky install",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "lint:verify-script": "(findstr /R /C:\"\r$\" run_verify.sh && echo CRLF detected && exit 1) || echo run_verify.sh OK",

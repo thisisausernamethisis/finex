@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # ----- cross-platform guard -----
 if [ -n "$WINDIR" ]; then
   # ensure we're running under Git-Bash / MSYS
