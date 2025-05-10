@@ -1,146 +1,146 @@
 import { vi } from 'vitest';
+import crypto from 'crypto';
 
-// --- dummy data helpers ----------
-export const fakeTemplates = [
+// Define ThemeTemplate type if not imported from elsewhere
+type ThemeTemplate = {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  isPublic: boolean;
+  payload: any;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+const PAGE_SIZE = 10;
+// Template store for easier reference in the user instructions
+const templateStore: ThemeTemplate[] = [
   {
-    id: '1',
-    ownerId: 'user1',
-    name: 'Supply Chain Analysis',
-    description: 'Template for analyzing supply chain risks',
-    payload: {},
+    id: 'tpl_pub_1',
+    ownerId: 'user_test123',
+    name: 'Public template A',
+    description: 'Demo',
     isPublic: true,
-    isCurrentUserOwner: false,
-    createdAt: new Date('2025-02-15'),
-    updatedAt: new Date('2025-02-15'),
+    payload: {},
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
-    id: '2',
-    ownerId: 'user2',
-    name: 'Market Expansion',
-    description: 'Template for market expansion planning',
-    payload: {},
-    isPublic: true,
-    isCurrentUserOwner: false,
-    createdAt: new Date('2025-03-01'),
-    updatedAt: new Date('2025-03-01'),
-  },
-  {
-    id: '3',
-    ownerId: 'user1',
-    name: 'New Product Development',
-    description: 'Template for product development risk assessment',
-    payload: {},
+    id: 'tpl_priv_1',
+    ownerId: 'user_other456',
+    name: 'Private template B',
+    description: 'Demo',
     isPublic: false,
-    isCurrentUserOwner: false,
-    createdAt: new Date('2025-03-10'),
-    updatedAt: new Date('2025-03-10'),
-  },
+    payload: {},
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
 ];
 
-// --- function exports ------------------------------------
-export function listTemplates(
-  opts: {
-    page: number;
-    limit: number;
-    userId: string;
-    q?: string | null;
-    mine?: boolean;
-  }
-) {
-  // Mark templates owned by current user
-  const templatesWithOwnership = fakeTemplates.map(t => ({
-    ...t,
-    isCurrentUserOwner: t.ownerId === opts.userId,
-  }));
+function paginate<T>(items: T[], page = 1, pageSize = PAGE_SIZE) {
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  const slice = items.slice(start, end);
+  return { items: slice, total: items.length, hasMore: end < items.length };
+}
 
-  // Apply filters
-  let filtered = [...templatesWithOwnership];
+export class ThemeTemplateRepository {
+  listTemplates = vi.fn(
+    async (userId: string,
+           { page = 1, pageSize = 10, mine = false, q = '' } = {}) => {
+      let items = [...templateStore];
+      if (mine) items = items.filter(t => t.ownerId === userId);
+      if (q)    items = items.filter(t =>
+                  t.name.includes(q) || (t.description ?? '').includes(q));
 
-  // Filter by search query
-  if (opts.q) {
-    const qLower = opts.q.toLowerCase();
-    filtered = filtered.filter(
-      t =>
-        t.name.toLowerCase().includes(qLower) ||
-        (t.description ?? '').toLowerCase().includes(qLower)
-    );
-  }
+      const start = (page - 1) * pageSize;
+      const slice = items.slice(start, start + pageSize);
 
-  // Filter by ownership
-  if (opts.mine) {
-    filtered = filtered.filter(t => t.ownerId === opts.userId);
-  }
-
-  // Apply pagination
-  const paginatedItems = filtered.slice(
-    (opts.page - 1) * opts.limit,
-    opts.page * opts.limit
+      return {
+        items: slice,
+        total: items.length,
+        hasMore: start + pageSize < items.length
+      };
+    }
   );
 
-  return {
-    items: paginatedItems,
-    total: filtered.length,
-    page: opts.page,
-    limit: opts.limit,
-    totalPages: Math.ceil(filtered.length / opts.limit),
-  };
+  createTemplate = vi.fn(async (userId: string, data: { name: string; description?: string; themeId: string; isPublic?: boolean }) => {
+    const { name, description = '', themeId, isPublic = false } = data;
+    
+    // Create a mock payload based on themeId
+    const payload = {
+      theme: {
+        name: `Theme from ${themeId}`,
+        description: 'Auto-generated theme for mock',
+        category: 'mock',
+        themeType: 'standard'
+      },
+      cards: [
+        {
+          title: 'Sample Card 1',
+          content: 'This is sample content',
+          importance: 'high',
+          source: 'mock'
+        }
+      ]
+    };
+    const tpl: ThemeTemplate = {
+      id: crypto.randomUUID(),
+      ownerId: userId,
+      name,
+      description,
+      payload,
+      isPublic,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    templateStore.push(tpl);
+    return tpl;
+  });
+
+  getTemplateById = vi.fn(async (id: string) => templateStore.find(t => t.id === id) ?? null);
+
+  updateTemplate = vi.fn(async (id: string, data: Partial<Omit<ThemeTemplate, 'id'>>) => {
+    const idx = templateStore.findIndex(t => t.id === id);
+    if (idx === -1) return null;
+    templateStore[idx] = { ...templateStore[idx], ...data, updatedAt: new Date() };
+    return templateStore[idx];
+  });
+
+  deleteTemplate = vi.fn(async (id: string) => {
+    const idx = templateStore.findIndex(t => t.id === id);
+    if (idx === -1) return false;
+    templateStore.splice(idx, 1);
+    return true;
+  });
+
+  // Add missing methods
+  templateExists = vi.fn(async (id: string) => {
+    return templateStore.some(t => t.id === id);
+  });
+
+  cloneTemplate = vi.fn(async (templateId: string, userId: string, options: { name?: string; isPublic?: boolean } = {}) => {
+    const template = templateStore.find(t => t.id === templateId);
+    if (!template) return null;
+
+    const newTemplate: ThemeTemplate = {
+      id: crypto.randomUUID(),
+      ownerId: userId,
+      name: options.name || `Copy of ${template.name}`,
+      description: template.description,
+      payload: JSON.parse(JSON.stringify(template.payload)), // Deep copy
+      isPublic: options.isPublic !== undefined ? options.isPublic : false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    templateStore.push(newTemplate);
+    return newTemplate;
+  });
 }
 
-// --- class mocks -----------------------------------------
-export class ThemeTemplateRepository {
-  public listTemplates = vi.fn();
-  public getTemplateById = vi.fn();
-  public createTemplate = vi.fn();
-  public templateExists = vi.fn();
-  public deleteTemplate = vi.fn();
-  public cloneTemplate = vi.fn();
-}
-
-export class AssetRepository {
-  public listAssets = vi.fn();
-  public getAssetById = vi.fn();
-  public createAsset = vi.fn();
-  public updateAsset = vi.fn();
-  public deleteAsset = vi.fn();
-  public assetExists = vi.fn();
-  public cloneAsset = vi.fn();
-}
-
-export const CardRepository = vi.fn().mockImplementation(() => {
-  return {
-    listCards: vi.fn(),
-    getCardById: vi.fn(),
-    createCard: vi.fn(),
-    updateCard: vi.fn(),
-    deleteCard: vi.fn(),
-  };
-});
-
-export const ScenarioRepository = vi.fn().mockImplementation(() => {
-  return {
-    listScenarios: vi.fn(),
-    getScenarioById: vi.fn(),
-    createScenario: vi.fn(),
-    updateScenario: vi.fn(),
-    deleteScenario: vi.fn(),
-  };
-});
-
-export const MatrixRepository = vi.fn().mockImplementation(() => {
-  return {
-    listMatrixResults: vi.fn(),
-    getMatrixResult: vi.fn(),
-    queueMatrixAnalysis: vi.fn(),
-    matrixResultExists: vi.fn(),
-  };
-});
-
-export const ThemeRepository = vi.fn().mockImplementation(() => {
-  return {
-    listThemes: vi.fn(),
-    getThemeById: vi.fn(),
-    createTheme: vi.fn(),
-    updateTheme: vi.fn(),
-    deleteTheme: vi.fn(),
-  };
-});
+export const CardRepository = vi.fn();      // keep stubs for other tests
+export const AssetRepository = vi.fn();
+export const ScenarioRepository = vi.fn();  // Add other repositories
+export const ThemeRepository = vi.fn();
