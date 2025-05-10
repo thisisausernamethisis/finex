@@ -154,14 +154,23 @@ export const ScenarioRepository = vi.fn();  // Add other repositories
 export const ThemeRepository = vi.fn();
 export const MatrixRepository = vi.fn();
 
-// Use the ThemeTemplateRepository to create the mock
+// Export the full themeTemplateRepository implementation 
 export const themeTemplateRepository = {
   list: vi.fn(),
   find: vi.fn(),
-  create: vi.fn(),
+  listTemplates: vi.fn(),
+  getTemplateById: vi.fn(),
+  updateTemplate: vi.fn(),
+  deleteTemplate: vi.fn(),
+  templateExists: vi.fn(),
+  cloneTemplate: vi.fn(),
 };
 
 export default {
   themeTemplateRepository,
-  // ...other repo mocks already here...
+  cardRepository: new CardRepository(),
+  assetRepository: new AssetRepository(),
+  scenarioRepository: new ScenarioRepository(),
+  themeRepository: new ThemeRepository(),
+  matrixRepository: new MatrixRepository(),
 };

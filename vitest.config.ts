@@ -8,7 +8,8 @@ export default defineConfig({
       '@': resolve(__dirname),
       '^lib/(.*)$': resolve(__dirname, 'lib/$1'),
       'lib/(.*)$': resolve(__dirname, 'lib/$1'),
-      '@jest/globals': fileURLToPath(new URL('./tests/jestGlobals.cjs', import.meta.url))
+      '@jest/globals': fileURLToPath(new URL('./tests/jestGlobals.cjs', import.meta.url)),
+      './themeTemplateRepository': resolve(__dirname, 'lib/repositories/themeTemplateRepository.ts')
     }
   },
   test: {
@@ -17,7 +18,8 @@ export default defineConfig({
       './vitest.setup.ts',
       './tests/setup/alias-shim.cjs',
       './tests/setup/mock-aliases.ts',
-      './tests/setup/reset-rate-limit.ts'
+      './tests/setup/reset-rate-limit.ts',
+      './tests/setup/verbose.ts'
     ],
     exclude: [
       ...configDefaults.exclude,
