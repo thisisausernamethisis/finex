@@ -45,25 +45,30 @@ function paginate<T>(items: T[], page = 1, pageSize = PAGE_SIZE) {
   return { items: slice, total: items.length, hasMore: end < items.length };
 }
 
+function rawListTemplates(
+  { page = 1, pageSize = 10, mine = false, q = '', ownerId = undefined } = {}
+) {
+  let items = [...templateStore];
+  if (ownerId) items = items.filter(t => t.ownerId === ownerId);
+  if (q) items = items.filter(t =>
+    t.name.includes(q) || (t.description ?? '').includes(q));
+
+  const start = (page - 1) * pageSize;
+  const slice = items.slice(start, start + pageSize);
+
+  return {
+    items: slice,
+    total: items.length,
+    hasMore: start + pageSize < items.length
+  };
+}
+
 export class ThemeTemplateRepository {
-  listTemplates = vi.fn(
-    async (userId: string,
-           { page = 1, pageSize = 10, mine = false, q = '' } = {}) => {
-      let items = [...templateStore];
-      if (mine) items = items.filter(t => t.ownerId === userId);
-      if (q)    items = items.filter(t =>
-                  t.name.includes(q) || (t.description ?? '').includes(q));
-
-      const start = (page - 1) * pageSize;
-      const slice = items.slice(start, start + pageSize);
-
-      return {
-        items: slice,
-        total: items.length,
-        hasMore: start + pageSize < items.length
-      };
-    }
-  );
+  listTemplates(userIdOrOpts: any, maybeOpts?: any) {
+    const opts = typeof userIdOrOpts === 'string' ? maybeOpts ?? {} : userIdOrOpts ?? {};
+    const userId = typeof userIdOrOpts === 'string' ? userIdOrOpts : opts.ownerId;
+    return rawListTemplates({ ...opts, ownerId: opts.mine ? userId : undefined });
+  }
 
   createTemplate = vi.fn(async (userId: string, data: { name: string; description?: string; themeId: string; isPublic?: boolean }) => {
     const { name, description = '', themeId, isPublic = false } = data;

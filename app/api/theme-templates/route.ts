@@ -48,8 +48,7 @@ export async function GET(request: NextRequest) {
     
     // Apply rate limiting
     const headers = new Headers();
-    const res = { headers };
-    await rateLimiter.limit(res);
+    const isLimited = await rateLimiter.limit();
     
     // Special case for testing rate limiting - check for special "rate-limit-test" header
     if (request.headers.get('X-Test-Rate-Limit') === 'simulate-429') {
@@ -120,8 +119,7 @@ export async function POST(request: NextRequest) {
     
     // Apply rate limiting
     const headers = new Headers();
-    const res = { headers };
-    await rateLimiter.limit(res);
+    const isLimited = await rateLimiter.limit();
     
     // The production rateLimit stub doesn't actually limit requests
     // but for tests, we can use a mock to simulate rate limiting

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GET } from '../../../../app/api/theme-templates/route';
 
 // Mock dependencies
-vi.mock('@/lib/repositories/themeTemplateRepository', () => ({
+vi.mock('@/lib/repositories', () => ({
   ThemeTemplateRepository: vi.fn().mockImplementation(() => ({
     listTemplates: vi.fn().mockResolvedValue({
       items: [],
@@ -18,9 +18,10 @@ vi.mock('@clerk/nextjs', () => ({
 
 vi.mock('@/lib/rateLimit', () => ({
   createRateLimiter: vi.fn().mockReturnValue({
-    limit: vi.fn().mockResolvedValue(true),
+    limit: vi.fn().mockResolvedValue(false), // Don't limit by default
     check: vi.fn().mockReturnValue(true)
-  })
+  }),
+  __resetRateLimit: vi.fn()
 }));
 
 describe('Theme Templates API Route', () => {
@@ -42,7 +43,7 @@ describe('Theme Templates API Route', () => {
     await GET(req);
     
     // Verify that the repository was called with mine=true as a boolean
-    const mockThemeTemplateRepository = require('@/lib/repositories/themeTemplateRepository').ThemeTemplateRepository;
+    const mockThemeTemplateRepository = require('@/lib/repositories').ThemeTemplateRepository;
     const mockInstance = mockThemeTemplateRepository.mock.instances[0];
     const listTemplatesCall = mockInstance.listTemplates.mock.calls[0][0];
     
@@ -65,7 +66,7 @@ describe('Theme Templates API Route', () => {
     await GET(req);
     
     // Verify that the repository was called with correctly parsed parameters
-    const mockThemeTemplateRepository = require('@/lib/repositories/themeTemplateRepository').ThemeTemplateRepository;
+    const mockThemeTemplateRepository = require('@/lib/repositories').ThemeTemplateRepository;
     const mockInstance = mockThemeTemplateRepository.mock.instances[0];
     const listTemplatesCall = mockInstance.listTemplates.mock.calls[0][0];
     
