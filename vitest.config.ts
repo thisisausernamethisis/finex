@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config'; // ⬇️ make sure vitest ≥ 0.34 is installed
 import { resolve } from 'path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,6 +13,9 @@ export default defineConfig({
   },
   test: {
     setupFiles: ['./vitest.setup.ts', './tests/setup/alias-shim.cjs'],
-    exclude: ['tests/e2e/**']
+    exclude: [
+      ...configDefaults.exclude,  // Keep default exclusions (node_modules, dist, etc.)
+      'tests/e2e/**'              // Add our custom exclusion
+    ]
   }
 });
