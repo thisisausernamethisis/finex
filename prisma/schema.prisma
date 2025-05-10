@@ -12,8 +12,8 @@ datasource db {
 }
 
 model User {
-  id      String  @id
-  assets  Asset[]
+  id     String  @id
+  assets Asset[]
 }
 
 enum AssetKind {
@@ -22,29 +22,29 @@ enum AssetKind {
 }
 
 model Asset {
-  id              String    @id @default(cuid())
-  name            String
-  description     String?
-  growthValue     Float?
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
-  kind            AssetKind @default(REGULAR)
+  id               String                 @id @default(cuid())
+  name             String
+  description      String?
+  growthValue      Float?
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  kind             AssetKind              @default(REGULAR)
   sourceTemplateId String?
-  themes          Theme[]
-  matrixResults   MatrixAnalysisResult[]
-  accesses        AssetAccess[]
-  isPublic        Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  themes           Theme[]
+  matrixResults    MatrixAnalysisResult[]
+  accesses         AssetAccess[]
+  isPublic         Boolean                @default(false)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
 }
 
 model AssetAccess {
-  id      String  @id @default(cuid())
-  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id      String     @id @default(cuid())
+  asset   Asset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
   assetId String
   userId  String
   role    AccessRole
-  
+
   @@unique([assetId, userId])
 }
 
@@ -54,29 +54,29 @@ enum AccessRole {
   ADMIN
 }
 
-enum ThemeType { 
-  STANDARD 
-  GROWTH 
-  PROBABILITY 
+enum ThemeType {
+  STANDARD
+  GROWTH
+  PROBABILITY
 }
 
 model Theme {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   name            String
   description     String?
-  category        String   @default("Default")
+  category        String    @default("Default")
   themeType       ThemeType @default(STANDARD)
-  asset           Asset?   @relation(fields: [assetId], references: [id])
+  asset           Asset?    @relation(fields: [assetId], references: [id])
   assetId         String?
   scenario        Scenario? @relation(fields: [scenarioId], references: [id])
   scenarioId      String?
   calculatedValue Float?
   manualValue     Float?
-  useManualValue  Boolean @default(false)
+  useManualValue  Boolean   @default(false)
   cards           Card[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
   // Theme should have either assetId OR scenarioId set, but not both
   // This constraint is enforced at the application layer
 }
@@ -95,20 +95,20 @@ model Card {
 }
 
 model Chunk {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
+  id        String                      @id @default(cuid())
+  content   String                      @db.Text
   order     Int
   embedding Unsupported("vector(1536)")
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  card      Card                        @relation(fields: [cardId], references: [id], onDelete: Cascade)
   cardId    String
 }
 
 model Scenario {
-  id       String @id @default(cuid())
-  name     String
-  description String?
-  probability Float?
-  themes   Theme[]
+  id            String                 @id @default(cuid())
+  name          String
+  description   String?
+  probability   Float?
+  themes        Theme[]
   matrixResults MatrixAnalysisResult[]
 }
 
@@ -117,7 +117,7 @@ model ThemeTemplate {
   ownerId     String
   name        String
   description String?
-  payload     Json     // serialised Theme + Card structure
+  payload     Json // serialised Theme + Card structure
   isPublic    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -129,7 +129,7 @@ model MatrixAnalysisResult {
   assetId     String
   scenario    Scenario  @relation(fields: [scenarioId], references: [id])
   scenarioId  String
-  impact      Int       // −5…+5
+  impact      Int // −5…+5
   summary     String?
   evidenceIds String
   status      String    @default("pending")
@@ -137,6 +137,6 @@ model MatrixAnalysisResult {
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  
+
   @@unique([assetId, scenarioId])
 }

@@ -64,15 +64,17 @@ async function textSearch(
   }
   
   // Execute the full-text search with ranking
-  const results = await prisma.$queryRaw<Array<{ id: string; rank: number }>>`
-    SELECT c.id, ts_rank(to_tsvector('english', c.content), to_tsquery('english', ${tsQuery})) as rank
-    FROM "Card" c
-    JOIN "Theme" t ON c.theme_id = t.id
-    WHERE to_tsvector('english', c.content) @@ to_tsquery('english', ${tsQuery})
-    ${Prisma.raw(whereClause)}
-    ORDER BY rank DESC
-    LIMIT ${limit}
-  `;
+  const results = await prisma.$queryRaw<Array<{ id: string; rank: number }>>(
+    Prisma.sql`
+      SELECT c.id, ts_rank(to_tsvector('english', c.content), to_tsquery('english', ${Prisma.sql`${tsQuery}`})) as rank
+      FROM "Card" c
+      JOIN "Theme" t ON c.theme_id = t.id
+      WHERE to_tsvector('english', c.content) @@ to_tsquery('english', ${Prisma.sql`${tsQuery}`})
+      ${Prisma.sql`${whereClause}`}
+      ORDER BY rank DESC
+      LIMIT ${limit}
+    `
+  );
   
   return results;
 }
@@ -110,16 +112,18 @@ async function vectorSearch(
   }
   
   // Execute the vector search
-  const results = await prisma.$queryRaw<Array<{ id: string; similarity: number }>>`
-    SELECT ch.card_id as id, 1 - (ch.embedding <=> ${queryEmbedding}::vector) as similarity
-    FROM "Chunk" ch
-    JOIN "Card" c ON ch.card_id = c.id
-    JOIN "Theme" t ON c.theme_id = t.id
-    WHERE ch.embedding IS NOT NULL
-    ${Prisma.raw(whereClause)}
-    ORDER BY similarity DESC
-    LIMIT ${limit}
-  `;
+  const results = await prisma.$queryRaw<Array<{ id: string; similarity: number }>>(
+    Prisma.sql`
+      SELECT ch.card_id as id, 1 - (ch.embedding <=> ${queryEmbedding}::vector) as similarity
+      FROM "Chunk" ch
+      JOIN "Card" c ON ch.card_id = c.id
+      JOIN "Theme" t ON c.theme_id = t.id
+      WHERE ch.embedding IS NOT NULL
+      ${Prisma.sql`${whereClause}`}
+      ORDER BY similarity DESC
+      LIMIT ${limit}
+    `
+  );
   
   return results;
 }
