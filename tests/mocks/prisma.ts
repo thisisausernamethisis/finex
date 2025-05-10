@@ -1,7 +1,7 @@
 // @ts-nocheck
 // TODO(T-173b): Deep Prisma mock typings
 import { PrismaClient } from '@prisma/client';
-import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
+import { mockDeep, mockReset, DeepMockProxy } from 'vitest-mock-extended';
 
 // Create a mock version of PrismaClient
 export const prisma = mockDeep<PrismaClient>();
