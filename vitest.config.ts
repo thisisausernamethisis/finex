@@ -12,6 +12,7 @@ export default defineConfig({
     }
   },
   test: {
+    globals: true,                        // Enable globals mode for describe/it
     setupFiles: ['./vitest.setup.ts', './tests/setup/alias-shim.cjs'],
     exclude: [
       ...configDefaults.exclude,  // Keep default exclusions (node_modules, dist, etc.)
