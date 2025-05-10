@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       user.id,
       page,
       limit,
-      q
+      q ?? undefined
     );
     
     // Return the standardized response format with pagination metadata
