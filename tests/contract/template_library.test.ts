@@ -4,25 +4,13 @@ import { describe, expect, it, beforeAll, afterAll, jest } from '@jest/globals';
 import { prisma } from '../mocks/prisma';
 import { ThemeTemplateRepository } from '../../lib/repositories';
 import { createJWTForTest } from '../utils/auth';
-import '../mocks/rateLimit'; // Import the rate limit mock
 import { GET as ListTemplatesGET, POST as CreateTemplatePOST } from '../../app/api/theme-templates/route';
 import { POST as CloneTemplatePOST } from '../../app/api/theme-templates/[id]/clone/route';
 import { POST as CloneAssetPOST } from '../../app/api/assets/[assetId]/clone/route';
 import { GET as GetTemplateGET, DELETE as DeleteTemplateDELETE } from '../../app/api/theme-templates/[id]/route';
 import { executeRouteHandler, parseResponseJson } from '../_setup/contractTestUtils';
 import { runTestSeed, AssetSeedOptions, TemplateOptions, SeedResult } from '../seed/buildTestSeed';
-
-// Define interface for templates in tests with expected properties
-interface TemplateData {
-  id: string;
-  name: string;
-  description?: string;
-  ownerId: string;
-  isPublic: boolean;
-  payload?: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { ThemeTemplate } from '@prisma/client';
 
 describe('Template Library API Contract Tests', () => {
   const testUserId = 'user_test123';
@@ -165,7 +153,7 @@ describe('Template Library API Contract Tests', () => {
   });
 
   describe('POST /api/theme-templates', () => {
-  it.skip('should create a new theme template', async () => {
+    it('should create a new theme template', async () => {
       const newTemplate = {
         name: 'Template Test New Theme Template',
         description: 'Test template for contract validation',
@@ -182,7 +170,7 @@ describe('Template Library API Contract Tests', () => {
         { 'Authorization': `Bearer ${seedResult.jwt}` }
       );
 
-      // Skipping due to T-167 pending fix for rate limit mock
+      // With the rate limit mock now in place
       expect(response.status).toBe(201);
 
       const data = await parseResponseJson(response);
@@ -198,7 +186,7 @@ describe('Template Library API Contract Tests', () => {
       expect(data).toHaveProperty('updatedAt');
     });
 
-    it.skip('should validate required fields', async () => {
+    it('should validate required fields', async () => {
       const invalidTemplate = {
         // Missing required 'name' field
         description: 'This should fail validation',
@@ -226,7 +214,7 @@ describe('Template Library API Contract Tests', () => {
       expect(Array.isArray(error.details)).toBe(true);
     });
 
-    it.skip('should create a private theme template', async () => {
+    it('should create a private theme template', async () => {
       // Mock the Prisma create method to guarantee specific values
       jest.spyOn(prisma.themeTemplate, 'create')
         .mockResolvedValueOnce({
@@ -284,7 +272,7 @@ describe('Template Library API Contract Tests', () => {
       ]);
     });
 
-    it.skip('should list available theme templates', async () => {
+    it('should list available theme templates', async () => {
       const response = await executeRouteHandler(
         ListTemplatesGET,
         'GET',
@@ -314,7 +302,7 @@ describe('Template Library API Contract Tests', () => {
       expect(data.items.length).toBeGreaterThan(0);
     });
 
-    it.skip('should only include public templates by default', async () => {
+    it('should only include public templates by default', async () => {
       const response = await executeRouteHandler(
         ListTemplatesGET,
         'GET',
@@ -337,7 +325,7 @@ describe('Template Library API Contract Tests', () => {
       }
     });
 
-    it.skip('should include own private templates', async () => {
+    it('should include own private templates', async () => {
       // First ensure we have a private template in the database
       if (privateThemeTemplateId) {
         try {

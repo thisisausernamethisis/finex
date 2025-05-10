@@ -30,8 +30,6 @@
     "prisma/seed.ts",
     "sync_export/**/*",
     ".next/**/*",
-    ".prisma/**/*",
-    "app/api/theme-templates/route.ts",
-    "lib/repositories/cardRepository.ts"
+    ".prisma/**/*"
   ]
 }
