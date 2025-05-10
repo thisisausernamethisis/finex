@@ -3,25 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GET } from '../../../../app/api/theme-templates/route';
 
 // Mock dependencies
-vi.mock('@/lib/repositories', () => ({
-  ThemeTemplateRepository: vi.fn().mockImplementation(() => ({
-    listTemplates: vi.fn().mockResolvedValue({
-      items: [],
-      total: 0
-    })
-  }))
-}));
-
+vi.mock('lib/repositories');
+vi.mock('lib/rateLimit');
 vi.mock('@clerk/nextjs', () => ({
   auth: vi.fn().mockReturnValue({ userId: 'test_user_id' })
-}));
-
-vi.mock('@/lib/rateLimit', () => ({
-  createRateLimiter: vi.fn().mockReturnValue({
-    limit: vi.fn().mockResolvedValue(false), // Don't limit by default
-    check: vi.fn().mockReturnValue(true)
-  }),
-  __resetRateLimit: vi.fn()
 }));
 
 describe('Theme Templates API Route', () => {
@@ -36,20 +21,26 @@ describe('Theme Templates API Route', () => {
     // Mock NextResponse.json to capture the response
     const jsonSpy = vi.spyOn(NextResponse, 'json');
     jsonSpy.mockImplementation((data) => {
-      return { data } as any;
+      return { status: 200, data } as any;
     });
     
     // Call the GET handler
-    await GET(req);
+    const response = await GET(req);
     
-    // Verify that the repository was called with mine=true as a boolean
-    const mockThemeTemplateRepository = require('@/lib/repositories').ThemeTemplateRepository;
+    // Expect proper response status
+    expect(response.status).toBe(200);
+    
+    // Access the mocked repository
+    const mockThemeTemplateRepository = vi.mocked(require('lib/repositories').ThemeTemplateRepository);
     const mockInstance = mockThemeTemplateRepository.mock.instances[0];
-    const listTemplatesCall = mockInstance.listTemplates.mock.calls[0][0];
     
-    // Check that mine was parsed as a boolean true value
-    expect(listTemplatesCall.mine).toBe(true);
-    expect(typeof listTemplatesCall.mine).toBe('boolean');
+    // Check that listTemplates was called
+    expect(mockInstance.listTemplates).toHaveBeenCalled();
+    
+    // Verify call had boolean mine parameter
+    const call = mockInstance.listTemplates.mock.calls[0];
+    expect(call[1]?.mine).toBe(true);
+    expect(typeof call[1]?.mine).toBe('boolean');
   });
   
   it('handles search parameters correctly', async () => {
@@ -59,20 +50,24 @@ describe('Theme Templates API Route', () => {
     // Mock NextResponse.json
     const jsonSpy = vi.spyOn(NextResponse, 'json');
     jsonSpy.mockImplementation((data) => {
-      return { data } as any;
+      return { status: 200, data } as any;
     });
     
     // Call the GET handler
-    await GET(req);
+    const response = await GET(req);
     
-    // Verify that the repository was called with correctly parsed parameters
-    const mockThemeTemplateRepository = require('@/lib/repositories').ThemeTemplateRepository;
+    // Expect proper response status
+    expect(response.status).toBe(200);
+    
+    // Access the mocked repository
+    const mockThemeTemplateRepository = vi.mocked(require('lib/repositories').ThemeTemplateRepository);
     const mockInstance = mockThemeTemplateRepository.mock.instances[0];
-    const listTemplatesCall = mockInstance.listTemplates.mock.calls[0][0];
     
-    expect(listTemplatesCall.page).toBe(2);
-    expect(listTemplatesCall.limit).toBe(30);
-    expect(listTemplatesCall.q).toBe('test');
-    expect(listTemplatesCall.mine).toBe(false);
+    // Verify listTemplates was called with correct parameters
+    const call = mockInstance.listTemplates.mock.calls[0];
+    expect(call[1]?.page).toBe(2);
+    expect(call[1]?.limit).toBe(30);
+    expect(call[1]?.q).toBe('test');
+    expect(call[1]?.mine).toBe(false);
   });
 });

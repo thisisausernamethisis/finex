@@ -64,10 +64,11 @@ function rawListTemplates(
 }
 
 export class ThemeTemplateRepository {
-  listTemplates(userIdOrOpts: any, maybeOpts?: any) {
-    const opts = typeof userIdOrOpts === 'string' ? maybeOpts ?? {} : userIdOrOpts ?? {};
-    const userId = typeof userIdOrOpts === 'string' ? userIdOrOpts : opts.ownerId;
-    return rawListTemplates({ ...opts, ownerId: opts.mine ? userId : undefined });
+  listTemplates(userIdOrOpts: any, opts?: any) {
+    if (typeof userIdOrOpts === 'string') {
+      return rawListTemplates({ ownerId: opts?.mine ? userIdOrOpts : undefined, ...opts });
+    }
+    return rawListTemplates(userIdOrOpts ?? {});
   }
 
   createTemplate = vi.fn(async (userId: string, data: { name: string; description?: string; themeId: string; isPublic?: boolean }) => {
