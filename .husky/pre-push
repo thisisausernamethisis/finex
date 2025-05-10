@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
+. "$(dirname "$0")/_/husky.sh"
+
 export SKIP_CONTRACT_RED=1
-bash ./run_verify.sh
+npm run verify
