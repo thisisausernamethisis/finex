@@ -43,12 +43,11 @@ export async function GET(req: NextRequest) {
     );
     
     // Return the standardized response format with pagination metadata
+    const hasMore = paginationResult.total > page * limit;
     return NextResponse.json({
       items: paginationResult.items,
       total: paginationResult.total,
-      page,
-      limit,
-      pages: Math.ceil(paginationResult.total / limit)
+      hasMore
     });
   } catch (error) {
     return serverError(error instanceof Error ? error : new Error('Unknown error'), listLogger);

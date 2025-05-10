@@ -52,7 +52,7 @@ if (process.env.DEBUG_SEED === 'true') {
 
 async function main() {
   // Create a test user - use a fixed ID whether deterministic or not
-  const userId = 'user_2NfBzXTP7UMgDtKs'
+  const userId = 'user_test123'
   
   // Check if the user already exists
   const existingUser = await prisma.user.findUnique({

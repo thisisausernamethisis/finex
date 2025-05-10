@@ -10,7 +10,7 @@ export default {
   },
   modulePaths: ['<rootDir>'],
   moduleNameMapper: {
-    '^(.*)$': '<rootDir>/$1',
+    '^@/(.*)$': '<rootDir>/$1'
   },
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
   setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'],
