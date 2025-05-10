@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 . "$(dirname "$0")/_/husky.sh"
 
+# Only check run_verify.sh if it's staged
+git diff --cached --name-only | grep -q run_verify.sh || exit 0
+
 # Ensure run_verify.sh always has LF line endings
-npx --no-install shx sed -i 's/\r$//' run_verify.sh
+npx --no-install shx sed -i "s/\r$//" run_verify.sh
 
 # Check for CRLF in verify script
 npm run lint:verify-script
