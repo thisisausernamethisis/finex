@@ -1,0 +1,8 @@
+/**
+ * Jest alias block – generated via pathsToModuleNameMapper(tsconfig.paths)
+ * Paste the two lines below into jest.config.js
+ */
+modulePaths: ['<rootDir>'],
+moduleNameMapper: {
+  '^@/(.*)$': '<rootDir>/$1'
+},
