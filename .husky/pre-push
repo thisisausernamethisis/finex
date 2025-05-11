@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
 . "$(dirname "$0")/_/husky.sh"
 
-# Run normal verification with contract test skipped
-export SKIP_CONTRACT_RED=1
-npm run verify
+SKIP_CONTRACT_RED=1 ./run_verify.sh

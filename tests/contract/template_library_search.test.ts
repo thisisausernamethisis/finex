@@ -250,6 +250,10 @@ describe('Template Library Search API Contract Tests', () => {
       // This test will fail until implementation - intentional
       expect(response.status).toBe(400);
       
+      // Check for ZodError validation message
+      const json = await parseResponseJson(response);
+      expect(json.error).toBe('ValidationError');
+      
       // Too long search query
       const longQuery = 'a'.repeat(101); // Over the 100 char limit
       const response2 = await executeRouteHandler(
@@ -261,8 +265,12 @@ describe('Template Library Search API Contract Tests', () => {
         { 'Authorization': `Bearer ${testUserJwt}` }
       );
       
-      // This test will fail until implementation - intentional
+      // This test will fail until implementation - intentional 
       expect(response2.status).toBe(400);
+      
+      // Verify the validation error
+      const json2 = await parseResponseJson(response2);
+      expect(json2.error).toBe('ValidationError');
     });
   });
 });

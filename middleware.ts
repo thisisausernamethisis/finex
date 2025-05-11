@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 //import { authMiddleware } from '@clerk/nextjs/server'
 
 import { createRateLimiter } from 'lib/rateLimit';
-const rl = createRateLimiter();          // 50/min in prod
+const rl = createRateLimiter();       // 50/min in prod
 
 // Mock implementation of auth middleware until proper types are in place
 const mockAuthMiddleware = (config: any) => {
@@ -27,6 +27,8 @@ export default mockAuthMiddleware({
     
     // Get client IP
     const ip = req.ip ?? 'GLOBAL'
+    
+    // Check rate limit
     const { success, limit, remaining } = rl.check(ip)
     
     if (!success) {
@@ -43,9 +45,9 @@ export default mockAuthMiddleware({
       )
     }
     
-    // Add rate limit headers
+    // Add rate limit headers to successful response
     const res = NextResponse.next()
-    rl.limit(res, ip);          // sets headers consistently
+    rl.limit(res, ip);  // Sets headers with consistent format
     return res
   }
 })

@@ -7,9 +7,8 @@
  * easier mocking and dependency injection in tests.
  */
 
-// Export repositories
+// Export repositories with consistent naming pattern
 export { ThemeTemplateRepository, DEFAULT_PAGE_SIZE } from './themeTemplateRepository';
-export * as themeTemplateRepository from './themeTemplateRepository';
 export { AssetRepository } from './assetRepository';
 export { ScenarioRepository } from './scenarioRepository';
 export { ThemeRepository } from './themeRepository';

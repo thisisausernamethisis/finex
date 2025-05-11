@@ -15,7 +15,9 @@ echo "🔍 Running Finex verify pipeline..."
 npm run lint
 npm run typecheck --noEmit
 npm run test:unit
+[[ -n "${SKIP_CONTRACT_RED:-}" ]] || npm run test:contract
 [[ -n "${SKIP_E2E_RED:-}" ]] || npx playwright test || echo "⚠️ E2E tests skipped (SKIP_E2E_RED=1 or test failure)"
 npm run esm:check
+npm run coverage -- --reporter=text
 
 echo "✅ verify complete"

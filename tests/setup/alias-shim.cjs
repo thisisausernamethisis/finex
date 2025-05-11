@@ -43,9 +43,10 @@ if (!global.__cjsAliasPatched) {
       // Handle themeTemplateRepository import
       else if (request.startsWith('lib/repositories/themeTemplateRepository') || 
                request === 'lib/repositories/themeTemplateRepository.ts' ||
-               request === './themeTemplateRepository') {
+               request === './themeTemplateRepository' ||
+               request === 'themeTemplateRepository') {
         request = resolve(projRoot, 'lib/repositories/themeTemplateRepository.ts');
-        if (process.env.DEBUG_ALIAS) console.log('[alias]', request, '→', request);
+        if (process.env.DEBUG_ALIAS) console.log('[alias]', `${request} (from ${parent?.filename || 'unknown'})`, '→', request);
       }
       // Handle bare lib import
       else if (request === 'lib') {

@@ -5,16 +5,14 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
   resolve: {
     alias: {
-      '@': resolve(__dirname),
-      '^lib/(.*)$': resolve(__dirname, 'lib/$1'),
-      'lib/(.*)$': resolve(__dirname, 'lib/$1'),
-      '@jest/globals': fileURLToPath(new URL('./tests/jestGlobals.cjs', import.meta.url)),
-      './themeTemplateRepository': resolve(__dirname, 'lib/repositories/themeTemplateRepository.ts')
+      '@': fileURLToPath(new URL('.', import.meta.url)),
+      '@jest/globals': fileURLToPath(new URL('./tests/jestGlobals.cjs', import.meta.url))
     }
   },
   test: {
     globals: true,
     setupFiles: [
+      './tests/setup/clerk-mock.ts',
       './vitest.setup.ts',
       './tests/setup/alias-shim.cjs',
       './tests/setup/mock-aliases.ts',

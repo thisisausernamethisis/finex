@@ -11,8 +11,8 @@ const badRequest = (data: any, headers = new Headers()) => {
   return NextResponse.json(data, { status: 400, headers });
 };
 
-// Mock auth for tests - real auth would be imported from '@clerk/nextjs'
-const auth = () => ({ userId: 'user_test123' });
+// Import auth from Clerk
+import { auth } from '@clerk/nextjs/server';
 
 // Simplified request body parser for tests
 const parseRequestBody = async (req: NextRequest) => {
@@ -44,11 +44,19 @@ const apiLogger = logger.child({ route: 'api/theme-templates' });
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user
-    const { userId } = auth();
+    const { userId } = await auth();
     
     // Apply rate limiting
     const headers = new Headers();
-    const isLimited = await rateLimiter.limit();
+    const isAllowed = await rateLimiter.limit({ headers });
+    
+    // If rate limited, return 429 response
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429, headers }
+      );
+    }
     
     // Special case for testing rate limiting - check for special "rate-limit-test" header
     if (request.headers.get('X-Test-Rate-Limit') === 'simulate-429') {
@@ -115,14 +123,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user
-    const { userId } = auth();
+    const { userId } = await auth();
     
     // Apply rate limiting
     const headers = new Headers();
-    const isLimited = await rateLimiter.limit();
+    const isAllowed = await rateLimiter.limit({ headers });
     
-    // The production rateLimit stub doesn't actually limit requests
-    // but for tests, we can use a mock to simulate rate limiting
+    // If rate limited, return 429 response
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429, headers }
+      );
+    }
+    
+    // Check authentication
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

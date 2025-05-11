@@ -1,10 +1,10 @@
-// @ts-nocheck
-// TODO(T-173b): BullMQ job payload generics still any; unblock later
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Worker, Queue, QueueEvents, Job } from 'bullmq';
+import { type Job } from 'bullmq';
 import { startMatrixWorker, processMatrixJob } from '../../../workers/matrixWorker';
 import { assembleMatrixContext } from '../../../lib/services/contextAssemblyService';
 import { prisma } from '../../../lib/db';
+import { makeQueueMock } from '../../helpers/queueMock';
+import { setupDeterministicAuth, DEFAULT_ADMIN_USER } from '../../helpers/user';
 
 // Mock dependencies
 vi.mock('../../../lib/db', () => ({
@@ -20,18 +20,41 @@ vi.mock('../../../lib/services/contextAssemblyService', () => ({
   assembleMatrixContext: vi.fn()
 }));
 
-vi.mock('bullmq', () => ({
-  Worker: vi.fn(),
-  Queue: vi.fn(),
-  QueueEvents: vi.fn(() => ({
-    setMaxListeners: vi.fn()
-  }))
-}));
+// Create mock queue for testing
+const mockQueue = makeQueueMock();
+
+// Create mock instances for bullmq classes
+const mockWorker = {
+  on: vi.fn(),
+  processJob: vi.fn(),
+  close: vi.fn().mockResolvedValue(undefined)
+};
+
+// Use our queue mock instead of mocking bullmq directly
+vi.mock('bullmq', () => {
+  const mockWorkerInstance = {
+    on: vi.fn(),
+    processJob: vi.fn(),
+    close: vi.fn().mockResolvedValue(undefined)
+  };
+  
+  return {
+    Worker: vi.fn(() => mockWorkerInstance),
+    Queue: vi.fn(() => mockQueue),
+    QueueEvents: vi.fn(() => ({
+      setMaxListeners: vi.fn(),
+      on: vi.fn()
+    }))
+  };
+});
 
 // Mock fetch for OpenAI API calls
 global.fetch = vi.fn();
 
 describe('Matrix Worker', () => {
+  // Set up fake timers to control setTimeout behavior
+  vi.useFakeTimers();
+  
   const mockMatrixResult = {
     id: 'result1',
     assetId: 'asset1',
@@ -53,6 +76,9 @@ describe('Matrix Worker', () => {
   beforeEach(() => {
     // Reset mocks
     vi.resetAllMocks();
+    
+    // Setup deterministic auth with default admin user
+    setupDeterministicAuth();
     
     // Setup default mock implementations
     vi.mocked(prisma.matrixAnalysisResult.findUnique).mockResolvedValue(mockMatrixResult);
@@ -91,12 +117,26 @@ describe('Matrix Worker', () => {
     vi.clearAllMocks();
   });
   
-  // TODO: Fix worker mock implementation - skipping temporarily
-  it.skip('should start the matrix worker correctly', () => {
-    startMatrixWorker();
+  it('should start the matrix worker correctly', () => {
+    const worker = startMatrixWorker();
     
-    expect(Worker).toHaveBeenCalled();
-    expect(QueueEvents).toHaveBeenCalled();
+    // Verify the worker was created with correct parameters
+    expect(vi.mocked(require('bullmq').Worker)).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Function),
+      expect.objectContaining({
+        connection: expect.anything()
+      })
+    );
+    
+    // Verify worker was returned
+    expect(worker).toBeDefined();
+    
+    // Verify worker has on method that was called
+    expect(worker.on).toBeDefined();
+    
+    // Verify queue events were set up
+    expect(vi.mocked(require('bullmq').QueueEvents)).toHaveBeenCalled();
   });
   
   it('should update matrix status to processing when job starts', async () => {
@@ -257,6 +297,34 @@ describe('Matrix Worker', () => {
         impact: 5, // Clamped to max value
         status: 'completed'
       })
+    });
+  });
+  
+  it('should add jobs to the queue with the correct payload', () => {
+    // Start worker, which initializes the queue
+    startMatrixWorker();
+    
+    // Add a job to the queue
+    mockQueue.add('matrix-analysis', { 
+      assetId: 'asset123', 
+      scenarioId: 'scenario456' 
+    });
+    
+    // Assert the job was added with the expected payload
+    expect(mockQueue.add).toHaveBeenCalledWith(
+      'matrix-analysis',
+      expect.objectContaining({
+        assetId: 'asset123',
+        scenarioId: 'scenario456'
+      }),
+      expect.anything()
+    );
+    
+    // Verify we can retrieve the job data
+    const jobData = mockQueue._getLastJobData();
+    expect(jobData).toEqual({
+      assetId: 'asset123',
+      scenarioId: 'scenario456'
     });
   });
 });

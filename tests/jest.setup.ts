@@ -1,9 +1,21 @@
-// @ts-nocheck
 // TODO(T-173b): migrate deep jest spies to fully-typed helpers
 
 /**
  * Jest setup file to configure the test environment
  */
+
+// Import helper for deterministic user setup
+import { setupDeterministicAuth, DEFAULT_ADMIN_USER } from './helpers/user';
+
+// Set test rate limit to 1 as default for deterministic tests
+process.env.RL_LIMIT = '1';
+
+// For deterministic tests, use a fixed seed value for all randomness
+process.env.TEST_SEED = '42';
+
+// Setup deterministic auth with default admin user for all tests
+// This ensures any test without explicit auth will use the admin user
+setupDeterministicAuth(DEFAULT_ADMIN_USER);
 
 // Only mock Prisma when NODE_ENV is 'test'
 if (process.env.NODE_ENV === 'test') {
