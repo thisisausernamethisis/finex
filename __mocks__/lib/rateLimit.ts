@@ -1,78 +1,29 @@
 /**
- * Mock implementation of rate limit functionality for tests
+ * Mock implementation of the rate-limit middleware
+ * 
+ * This mock matches the interface of the real implementation but
+ * always allows requests through and sets standard headers.
  */
-
-// Shared mock limiter instance
-let mockLimiter: ReturnType<typeof createRateLimiter>;
 
 /**
- * Result of a rate limit check
+ * Creates a rate limiter that mocks the behavior of the real implementation
+ * 
+ * @param limit The maximum number of requests allowed in the time window (default: 10)
+ * @returns A mock rate limiter object with a limit method
  */
-export interface RLResult {
-  success: boolean;
-  limit: number;
-  remaining: number;
-}
-
-/**
- * Type for objects that have headers
- */
-export type HasHeaders = { headers: Headers | Record<string, string> };
-
-/**
- * Sets a header on an object that has headers
- */
-export function setHeader(h: any, k: string, v: string) {
-  'set' in h ? (h as Headers).set(k, v) : (h[k] = v);
-  return h;
-}
-
-/**
- * Creates a mock rate limiter with a higher limit for tests
- */
-export function createRateLimiter(LIMIT = 100) {
-  const calls = new Map<string, number>();
-
-  function check(key: string = 'GLOBAL'): RLResult {
-    const used = (calls.get(key) ?? 0) + 1;
-    calls.set(key, used);
-    return { success: used <= LIMIT, limit: LIMIT, remaining: Math.max(0, LIMIT - used) };
+export const createRateLimiter = (limit = 10) => ({
+  /**
+   * Mock implementation that always allows requests and sets rate limit headers
+   * 
+   * @param options Object containing headers to modify
+   * @returns Object with success status
+   */
+  limit: ({ headers }: { headers: Headers }) => {
+    // Set the rate limit headers to match the real implementation
+    headers.set('X-RateLimit-Limit', String(limit));
+    headers.set('X-RateLimit-Remaining', String(limit - 1));
+    
+    // Always report success in tests
+    return { success: true };
   }
-
-  function limit(res?: HasHeaders, key = 'GLOBAL'): RLResult {
-    const r = check(key);
-    if (res) {
-      setHeader(res.headers, 'X-RateLimit-Limit', String(r.limit));
-      setHeader(res.headers, 'X-RateLimit-Remaining', String(r.remaining));
-    }
-    return r;
-  }
-
-  function __reset() { calls.clear(); }
-
-  return { check, limit, __reset };
-}
-
-/**
- * Get or create the global mock rate limiter
- */
-export function getGlobalRateLimiter() {
-  if (!mockLimiter) {
-    mockLimiter = createRateLimiter();
-  }
-  return mockLimiter;
-}
-
-/**
- * Reset the global mock rate limiter
- */
-export function __resetRateLimit() {
-  if (mockLimiter) {
-    mockLimiter.__reset();
-  } else {
-    mockLimiter = createRateLimiter();
-  }
-}
-
-// Initialize mock limiter on module load
-mockLimiter = createRateLimiter();
+});

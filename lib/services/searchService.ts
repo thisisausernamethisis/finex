@@ -1,19 +1,13 @@
 import { Prisma } from '@prisma/client';
-// Manual Domain enum definition to match schema.prisma
-// Can be removed after Prisma client regeneration
-enum Domain {
-  ASSET = 'ASSET',
-  SUPPLY_CHAIN = 'SUPPLY_CHAIN',
-  GEOGRAPHY = 'GEOGRAPHY',
-  OTHER = 'OTHER'
-}
-import { getQueryEmbedding } from '../clients/vectorClient';
+import { generateDocEmbedding } from 'lib/clients';
+import { Domain } from '../types/domain';
 import { prisma } from '../db';
 import { performance } from 'node:perf_hooks';
 import { cacheGet, cacheSet, makeCacheKey } from './cacheService';
 import { logger } from '../logger';
 import { searchLatency, searchQueriesTotal } from '../metrics';
 import { scoreMerge } from '../utils/alphaScorer';
+import { calculateAlpha } from '../utils/alphaHeuristic';
 
 // Logger for search operations
 const searchLogger = logger.child({ component: 'SearchService' });
@@ -24,17 +18,19 @@ const searchLogger = logger.child({ component: 'SearchService' });
  *
  * Uses Redis caching to improve performance for repeated queries
  *
- * @param opts Options including the query, optional filters, domain, and limit
+ * @param opts Options including the query, optional filters, domain, alpha parameter, and limit
  * @returns Promise resolving to an array of results with scores
  */
 export async function hybridSearch(opts: {
   query: string;
   assetId?: string;
   scenarioId?: string;
-  domain?: Domain;
+  domain?: Domain;     // Single domain of Domain type
+  alpha?: number;     
   limit?: number;
+  topK?: number;      // For compatibility with existing calls
 }): Promise<Array<{ id: string; score: number }>> {
-  const { query, assetId, scenarioId, domain, limit = 20 } = opts;
+  const { query, assetId, scenarioId, domain, alpha, limit = 20, topK = limit } = opts;
   const startTime = performance.now();
   
   try {
@@ -65,24 +61,61 @@ export async function hybridSearch(opts: {
       vectorSearch(query, limit, domain)
     ]);
     
-    // T-303: Use dynamic alpha scorer for merging results
+    // T-303: Use dynamic alpha calculation for merging with improved heuristics
+    const dynamicAlpha = alpha ?? await calculateAlpha(query, { domain });
+    
     const combined = await scoreMerge(
       vectorResults.map(item => ({ id: item.id, score: item.similarity })),
       textResults.map(item => ({ id: item.id, score: item.rank })),
-      { domain: domain as string | undefined }
+      { 
+        domain, 
+        alpha: dynamicAlpha,
+        query // Pass query for better heuristic scoring
+      }
     );
     
+    searchLogger.debug('Used dynamic alpha for search', { 
+      query, 
+      alpha: dynamicAlpha,
+      domain
+    });
+    
+    // Calculate retrieval variance with proper normalization
+    const vecScores = vectorResults.map(v => v.similarity);
+    const variance =
+      vecScores.length > 1
+        ? vecScores.reduce((a, b) => a + Math.pow(b - (vecScores.reduce((a, b) => a + b) / vecScores.length), 2), 0) /
+          (vecScores.length - 1)
+        : 0;
+    const normalizedVariance = Math.min(1, variance);
+
+    // Improved rank correlation calculation
+    const idsVec = new Set(vectorResults.map(v => v.id));
+    const overlap = textResults.filter(k => idsVec.has(k.id)).length;
+    const denominator = Math.min(vectorResults.length, textResults.length) || 1; // Prevent division by zero
+    const rankCorr = overlap / denominator;
+
     // Limit results to requested size
-    const finalResults = combined.slice(0, limit);
+    const finalResults = combined.slice(0, topK);
+
+    // Add diagnostics as non-enumerable properties with both new and legacy names
+    Object.defineProperties(finalResults, {
+      // New standardized property names
+      retrievalVariance: { value: normalizedVariance, enumerable: false },
+      rankCorrelation: { value: rankCorr, enumerable: false },
+      // Legacy property names for backward compatibility
+      retrievalVar: { value: normalizedVariance, enumerable: false },
+      rankCorr: { value: rankCorr, enumerable: false }
+    });
     
     // Store in cache (use 5 minutes TTL)
-    await cacheSet(cacheKey, combined, 300);
+    await cacheSet(cacheKey, finalResults, 300);
     
     // Record search latency for uncached search
     const latency = (performance.now() - startTime) / 1000;
     searchLatency.set({ type: 'hybrid_uncached' }, latency);
     
-    return combined;
+    return finalResults;
   } catch (error) {
     searchLogger.error('Search error', { 
       query, 
@@ -128,8 +161,10 @@ async function textSearch(
     assetScenarioClause = Prisma.sql`AND t.scenario_id = ${scenarioId}`;
   }
   
-  // Add domain filter if specified
-  const domainFilter = domain ? Prisma.sql`AND ch.domain = ${domain}` : Prisma.empty;
+  // Add domain filter if specified - now equality filter instead of ANY
+  const domainFilter = domain
+    ? Prisma.sql`AND ch.domain = ${domain}` 
+    : Prisma.empty;
   
   // Execute the full-text search with ranking
   const results = await prisma.$queryRaw<Array<{ id: string; rank: number }>>(
@@ -155,8 +190,12 @@ import { similaritySearch as vectorSimilaritySearch } from '../clients/vectorCli
  * Performs vector-based search using pgvector
  */
 export async function vectorSearch(query: string, k = 5, domain?: Domain): Promise<Array<{ id: string; similarity: number }>> {
-  const embedding = await getQueryEmbedding(query);
-  const filter = domain ? Prisma.sql`AND "domain" = ${domain}` : Prisma.empty;
+  const embedding = await generateDocEmbedding(query);
+  
+  // Use equality filter instead of ANY
+  const filter = domain
+    ? Prisma.sql`AND "domain" = ${domain}` 
+    : Prisma.empty;
   const results = await prisma.$queryRaw<Array<{ id: string; score: number }>>`
     SELECT id,
            1 - (embedding <=> ${Prisma.join(embedding)}) AS score
@@ -243,3 +282,5 @@ async function generateEmbedding(text: string): Promise<number[]> {
   // to generate a proper embedding vector
   return Array(1536).fill(0).map(() => Math.random() - 0.5);
 }
+
+export const searchService = { hybridSearch };

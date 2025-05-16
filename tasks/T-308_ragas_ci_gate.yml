@@ -1,0 +1,53 @@
+title: "ragas_ci_gate — Fail CI on quality regressions"
+description: |
+  Create a CI quality gate that evaluates the RAG system using RAGAS metrics and fails the
+  build if the quality drops below established thresholds. The script will run the 50-pair gold set 
+  of questions/answers and compare precision, recall, answer_relevance, and faithfulness scores 
+  against baseline values to detect regressions.
+
+branch: "phase7.1/ragas_ci_gate"
+effort: "M"
+owner: "@infra"
+
+acceptance_tests:
+  - "Unit test: dummy run on seeded SQLite returns ≥ thresholds"
+  - "GH-Actions step ragas-gate correctly compares metrics against baseline on main"
+  - "CI fails if precision < 0.30 OR faithfulness < 0.85"
+  - "Metrics available in CI logs: precision, recall, answer_relevance, faithfulness"
+
+depends_on:
+  - "T-301a"
+
+notes: |
+  The RAGAS CI gate adds another layer of quality assurance by automatically detecting
+  regressions in retrieval and answer generation quality. This prevents PRs that might
+  technically work but degrade the system's performance from being merged.
+  
+  Implementation approach:
+  1. Create `scripts/ci/run_ragas_e2e.ts` that:
+     - Loads the 50-pair gold set from tests/rag/qa.csv
+     - Executes hybrid search for each question
+     - Calculates RAGAS metrics for each Q/A pair
+     - Aggregates results and compares against thresholds
+     - Outputs a structured JSON report: {precision, recall, answer_relevance, faithfulness}
+  
+  2. Update GitHub Actions workflow to include a ragas-gate step that:
+     - Runs the evaluation script against main branch baseline
+     - Fails the CI run if precision < 0.30 OR faithfulness < 0.85
+     - Reports RAGAS metrics in the job log
+  
+  3. Add unit test with dummy data that verifies:
+     - The evaluation runs successfully on a minimal dataset
+     - The thresholds are correctly applied
+     - The script returns appropriate exit codes
+  
+  RAGAS metric definitions:
+  - precision: How well the retrieved documents match the question
+  - recall: How completely the retrieved documents cover needed information
+  - answer_relevance: How well the answer addresses the original question
+  - faithfulness: How accurately the answer represents information in the context
+  
+  Expected impact:
+  - Early detection of quality regressions
+  - Visible metrics for retrieval and generation performance
+  - Gradual improvement in overall system quality

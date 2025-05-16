@@ -21,7 +21,9 @@
     ],
     "paths": {
       "@jest/globals": ["tests/jestGlobals.cjs"],
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@lib/*": ["lib/*"],
+      "lib/*": ["lib/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

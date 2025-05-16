@@ -178,11 +178,13 @@ async function main() {
               id: mkId(),
               content: 'NVIDIA reported a 220% increase in revenue year over year.',
               order: 1,
+              domain: 'ASSET', // Financial information about a company
             },
             {
               id: mkId(),
               content: 'AI chip demand continues to outpace supply, with data center revenue quadrupling.',
               order: 2,
+              domain: 'ASSET', // Tech sector market information
             }
           ]
         },

@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: finex-rechunk
+  namespace: finex-prod
+spec:
+  schedule: "0 2 * * 0"  # Run at 2 AM every Sunday
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 28800  # 8 hours max runtime
+      template:
+        spec:
+          containers:
+          - name: rechunk-job
+            image: finex:${VERSION}
+            command: ["node", "scripts/rechunk/rechunk.js"]
+            env:
+              - name: NODE_ENV
+                value: "production"
+              - name: DATABASE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: finex-db-credentials
+                    key: connection-string
+              - name: DIRECT_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: finex-db-credentials
+                    key: direct-connection-string
+              - name: REDIS_HOST
+                valueFrom:
+                  configMapKeyRef:
+                    name: redis-config
+                    key: host
+              - name: REDIS_PORT
+                valueFrom:
+                  configMapKeyRef:
+                    name: redis-config
+                    key: port
+              - name: OPENAI_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: finex-api-credentials
+                    key: openai-key
+            resources:
+              limits:
+                cpu: "2"
+                memory: "2Gi"
+              requests:
+                cpu: "1"
+                memory: "1Gi"
+          restartPolicy: OnFailure
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5

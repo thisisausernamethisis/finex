@@ -1,0 +1,154 @@
+# Test info
+
+- Name: Template Library Search and Filter >> should handle and display API rate limiting errors
+- Location: C:\finex_v3\tests\e2e\templateLibrarySearch.spec.ts:201:7
+
+# Error details
+
+```
+Error: browserType.launch: Executable doesn't exist at C:\Users\bjgut\AppData\Local\ms-playwright\chromium_headless_shell-1169\chrome-win\headless_shell.exe
+╔═════════════════════════════════════════════════════════════════════════╗
+║ Looks like Playwright Test or Playwright was just installed or updated. ║
+║ Please run the following command to download new browsers:              ║
+║                                                                         ║
+║     npx playwright install                                              ║
+║                                                                         ║
+║ <3 Playwright Team                                                      ║
+╚═════════════════════════════════════════════════════════════════════════╝
+```
+
+# Test source
+
+```ts
+  101 |     // Navigate to template library
+  102 |     await page.goto('/templates');
+  103 |     
+  104 |     // Wait for templates to load
+  105 |     await page.waitForSelector('[data-testid="template-card"]');
+  106 |     
+  107 |     // Search for "solar"
+  108 |     await page.fill('[data-testid="template-search-input"]', 'solar');
+  109 |     
+  110 |     // Wait for search results to update
+  111 |     await page.waitForTimeout(500); // Allow for debounce/throttling
+  112 |     
+  113 |     // Verify that only templates with "solar" in the name are displayed
+  114 |     const templateCards = await page.$$('[data-testid="template-card"]');
+  115 |     
+  116 |     // There should be at least one result
+  117 |     expect(templateCards.length).toBeGreaterThan(0);
+  118 |     
+  119 |     // Check if all visible templates contain "solar" in their title
+  120 |     for (const card of templateCards) {
+  121 |       const titleText = await card.textContent();
+  122 |       expect(titleText?.toLowerCase()).toContain('solar');
+  123 |     }
+  124 |     
+  125 |     // Verify that the search parameter is in the URL
+  126 |     const url = new URL(page.url());
+  127 |     expect(url.searchParams.get('q')).toBe('solar');
+  128 |   });
+  129 |   
+  130 |   test('should filter templates to show only "Mine"', async ({ page }) => {
+  131 |     // Log in
+  132 |     await page.goto('/login');
+  133 |     await page.fill('[data-testid="email-input"]', TEST_USER_EMAIL);
+  134 |     await page.fill('[data-testid="password-input"]', TEST_USER_PASSWORD);
+  135 |     await page.click('[data-testid="login-button"]');
+  136 |     
+  137 |     // Navigate to template library
+  138 |     await page.goto('/templates');
+  139 |     
+  140 |     // Wait for templates to load
+  141 |     await page.waitForSelector('[data-testid="template-card"]');
+  142 |     
+  143 |     // Click the "Mine" filter
+  144 |     await page.click('[data-testid="filter-mine"]');
+  145 |     
+  146 |     // Wait for the filter to apply
+  147 |     await page.waitForTimeout(500);
+  148 |     
+  149 |     // Verify the URL has the mine=true parameter
+  150 |     const url = new URL(page.url());
+  151 |     expect(url.searchParams.get('mine')).toBe('true');
+  152 |     
+  153 |     // Verify that only the user's templates are shown
+  154 |     // This is hard to verify exactly in E2E, but we can check that templates are displayed
+  155 |     const templateCards = await page.$$('[data-testid="template-card"]');
+  156 |     expect(templateCards.length).toBeGreaterThan(0);
+  157 |   });
+  158 |   
+  159 |   test('should handle pagination between pages of templates', async ({ page }) => {
+  160 |     // Log in
+  161 |     await page.goto('/login');
+  162 |     await page.fill('[data-testid="email-input"]', TEST_USER_EMAIL);
+  163 |     await page.fill('[data-testid="password-input"]', TEST_USER_PASSWORD);
+  164 |     await page.click('[data-testid="login-button"]');
+  165 |     
+  166 |     // Navigate to template library
+  167 |     await page.goto('/templates');
+  168 |     
+  169 |     // Wait for templates to load
+  170 |     await page.waitForSelector('[data-testid="template-card"]');
+  171 |     
+  172 |     // Get the templates on the first page
+  173 |     const firstPageTemplates = await page.$$eval('[data-testid="template-card"]', 
+  174 |       cards => cards.map(card => card.getAttribute('data-template-id'))
+  175 |     );
+  176 |     
+  177 |     // There should be 20 templates per page
+  178 |     expect(firstPageTemplates.length).toBeLessThanOrEqual(20);
+  179 |     
+  180 |     // Click the "Next Page" button
+  181 |     await page.click('[data-testid="next-page"]');
+  182 |     
+  183 |     // Wait for the next page to load
+  184 |     await page.waitForTimeout(500);
+  185 |     
+  186 |     // Verify the URL has the page=2 parameter
+  187 |     const url = new URL(page.url());
+  188 |     expect(url.searchParams.get('page')).toBe('2');
+  189 |     
+  190 |     // Get the templates on the second page
+  191 |     const secondPageTemplates = await page.$$eval('[data-testid="template-card"]', 
+  192 |       cards => cards.map(card => card.getAttribute('data-template-id'))
+  193 |     );
+  194 |     
+  195 |     // Check that the templates on page 2 are different from page 1
+  196 |     for (const templateId of secondPageTemplates) {
+  197 |       expect(firstPageTemplates).not.toContain(templateId);
+  198 |     }
+  199 |   });
+  200 |   
+> 201 |   test('should handle and display API rate limiting errors', async ({ page }) => {
+      |       ^ Error: browserType.launch: Executable doesn't exist at C:\Users\bjgut\AppData\Local\ms-playwright\chromium_headless_shell-1169\chrome-win\headless_shell.exe
+  202 |     // This test requires a mock implementation to simulate rate limiting
+  203 |     // We'll test the UI response to a 429 error
+  204 |     
+  205 |     // Since we can't easily trigger a real rate limit in E2E,
+  206 |     // this is more of a placeholder test that would need a custom
+  207 |     // implementation in the test environment
+  208 |     
+  209 |     // Log in
+  210 |     await page.goto('/login');
+  211 |     await page.fill('[data-testid="email-input"]', TEST_USER_EMAIL);
+  212 |     await page.fill('[data-testid="password-input"]', TEST_USER_PASSWORD);
+  213 |     await page.click('[data-testid="login-button"]');
+  214 |     
+  215 |     // Navigate to template library
+  216 |     await page.goto('/templates');
+  217 |     
+  218 |     // Wait for templates to load
+  219 |     await page.waitForSelector('[data-testid="template-card"]');
+  220 |     
+  221 |     // TODO: Implement a way to simulate a 429 response
+  222 |     // This might require a custom mock API route or intercepting the request
+  223 |     
+  224 |     console.log('Note: Rate limiting test in E2E requires a mock implementation.');
+  225 |     
+  226 |     // For now, we just verify the page loaded
+  227 |     expect(await page.title()).toContain('Templates');
+  228 |   });
+  229 | });
+  230 |
+```

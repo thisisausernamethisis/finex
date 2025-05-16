@@ -1,4 +1,5 @@
-import { prisma } from '../db';
+import { Container, TOKEN_PRISMA } from '../container';
+import { PrismaClient } from '@prisma/client';
 import { logger } from '../logger';
 import { ThemeRepository } from './themeRepository';
 import { CardRepository } from './cardRepository';
@@ -39,6 +40,11 @@ export const create = async (userId: string, data: any) => {
 export class ThemeTemplateRepository {
   private themeRepo = new ThemeRepository();
   private cardRepo = new CardRepository();
+  private readonly prisma: PrismaClient;
+  
+  constructor(prisma: PrismaClient = Container.get<PrismaClient>(TOKEN_PRISMA)) {
+    this.prisma = prisma;
+  }
 
   /**
    * Retrieves a list of theme templates with pagination, search, and filtering
@@ -145,10 +151,10 @@ export class ThemeTemplateRepository {
     }
     
     // Get the total count
-    const total = await prisma.themeTemplate.count({ where });
+    const total = await this.prisma.themeTemplate.count({ where });
     
     // Get the templates for this page
-    const templates = await prisma.themeTemplate.findMany({
+    const templates = await this.prisma.themeTemplate.findMany({
       where,
       select: {
         id: true,
@@ -185,7 +191,7 @@ export class ThemeTemplateRepository {
   public async getTemplateById(id: string): Promise<any | null> {
     repoLogger.debug('Getting template by ID', { id });
     
-    return prisma.themeTemplate.findUnique({
+    return this.prisma.themeTemplate.findUnique({
       where: { id },
       select: {
         id: true,
@@ -242,7 +248,7 @@ export class ThemeTemplateRepository {
     };
     
     // Create the template
-    return prisma.themeTemplate.create({
+    return this.prisma.themeTemplate.create({
       data: {
         ownerId: userId,
         name: data.name,
@@ -272,7 +278,7 @@ export class ThemeTemplateRepository {
     repoLogger.debug('Deleting template', { id });
     
     try {
-      await prisma.themeTemplate.delete({
+      await this.prisma.themeTemplate.delete({
         where: { id }
       });
       return true;
@@ -289,7 +295,7 @@ export class ThemeTemplateRepository {
    * @returns True if the template exists, false otherwise
    */
   public async templateExists(id: string): Promise<boolean> {
-    const count = await prisma.themeTemplate.count({
+    const count = await this.prisma.themeTemplate.count({
       where: { id }
     });
     return count > 0;

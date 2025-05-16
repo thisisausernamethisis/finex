@@ -1,4 +1,5 @@
-import { prisma } from '../db';
+import { Container, TOKEN_PRISMA } from '../container';
+import { PrismaClient } from '@prisma/client';
 import { logger } from '../logger';
 
 // Maximum page size allowed, can be overridden by environment variable
@@ -11,6 +12,7 @@ const repoLogger = logger.child({ component: 'ThemeRepository' });
  * Repository for Theme operations
  */
 export class ThemeRepository {
+  constructor(private readonly prisma: PrismaClient = Container.get<PrismaClient>(TOKEN_PRISMA)) {}
   /**
    * Retrieves a list of themes with pagination
    * Optionally filtered by parent asset or scenario
@@ -72,10 +74,10 @@ export class ThemeRepository {
     }
     
     // Get the total count
-    const total = await prisma.theme.count({ where });
+    const total = await this.prisma.theme.count({ where });
     
     // Get the themes for this page
-    const themes = await prisma.theme.findMany({
+    const themes = await this.prisma.theme.findMany({
       where,
       select: {
         id: true,
@@ -113,7 +115,7 @@ export class ThemeRepository {
   public async getThemeById(themeId: string): Promise<any | null> {
     repoLogger.debug('Getting theme by ID', { themeId });
     
-    return prisma.theme.findUnique({
+    return this.prisma.theme.findUnique({
       where: { id: themeId },
       select: {
         id: true,
@@ -166,7 +168,7 @@ export class ThemeRepository {
     
     repoLogger.debug('Creating theme', { data });
     
-    return prisma.theme.create({
+    return this.prisma.theme.create({
       data: {
         name: data.name,
         description: data.description,
@@ -217,7 +219,7 @@ export class ThemeRepository {
     // as these are fundamental to the theme's identity
     
     try {
-      return prisma.theme.update({
+      return this.prisma.theme.update({
         where: { id: themeId },
         data,
         select: {
@@ -256,7 +258,7 @@ export class ThemeRepository {
     repoLogger.debug('Updating theme calculated value', { themeId, calculatedValue });
     
     try {
-      return prisma.theme.update({
+      return this.prisma.theme.update({
         where: { id: themeId },
         data: { calculatedValue },
         select: {
@@ -286,7 +288,7 @@ export class ThemeRepository {
     repoLogger.debug('Deleting theme', { themeId });
     
     try {
-      await prisma.theme.delete({
+      await this.prisma.theme.delete({
         where: { id: themeId }
       });
       return true;
@@ -303,7 +305,7 @@ export class ThemeRepository {
    * @returns True if the theme exists, false otherwise
    */
   public async themeExists(themeId: string): Promise<boolean> {
-    const count = await prisma.theme.count({
+    const count = await this.prisma.theme.count({
       where: { id: themeId }
     });
     return count > 0;
@@ -318,7 +320,7 @@ export class ThemeRepository {
   public async getThemesForAsset(assetId: string): Promise<any[]> {
     repoLogger.debug('Getting themes for asset', { assetId });
     
-    return prisma.theme.findMany({
+    return this.prisma.theme.findMany({
       where: { assetId },
       select: {
         id: true,
@@ -343,7 +345,7 @@ export class ThemeRepository {
   public async getThemesForScenario(scenarioId: string): Promise<any[]> {
     repoLogger.debug('Getting themes for scenario', { scenarioId });
     
-    return prisma.theme.findMany({
+    return this.prisma.theme.findMany({
       where: { scenarioId },
       select: {
         id: true,

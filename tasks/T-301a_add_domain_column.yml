@@ -1,0 +1,44 @@
+title: "add_domain_column → Add domain enum to Chunk model with zero-downtime backfill"
+description: |
+  Add a domain enum column to the Chunk model in Prisma schema to indicate the source of each 
+  chunk (asset, scenario, theme, or generic). Create a safe, zero-downtime migration that adds 
+  the column as nullable initially. Provide a minimal backfill stub that defaults to NULL 
+  for existing records, with proper domain assignment to be handled in T-301b.
+
+status: "merged"
+merged: true
+
+branch: "phase7.1/add_domain_column"
+effort: "S"
+owner: "@data"
+
+acceptance_tests:
+  - "✅ Migration runs without errors in CI"
+  - "✅ Existing contract tests remain green"
+  - "✅ Domain field added to Chunk with NOT NULL default 'OTHER'"
+  - "✅ Prisma schema includes Domain enum with ASSET, SUPPLY_CHAIN, GEOGRAPHY, OTHER values"
+  - "✅ Migration script is safe for zero-downtime deployment"
+  - "✅ New ivfflat index created for optimized domain-filtered vector searches"
+  - "✅ Unit test for domain filtering in hybrid search"
+  - "✅ Documentation added to runbooks/db.md"
+
+related_tasks:
+  - "T-301b"
+  - "T-302"
+
+notes: |
+  This is part 1 of the re-chunking process, focused only on schema changes.
+  The actual re-chunking and domain assignment will occur in T-301b after other
+  foundational changes are complete.
+  
+  Domain enum values:
+  - asset: chunks originating from the Asset collection
+  - scenario: chunks from "Scenario" docs (macroeconomic shocks, etc.)
+  - theme: chunks from thematic research/strategy notes
+  - generic: fallback for any untyped chunk during back-fill
+  
+  Implementation approach:
+  1. Add ChunkDomain enum to schema.prisma
+  2. Add nullable domain field to Chunk model
+  3. Create migration that adds the column without affecting existing operations
+  4. Ensure existing repository code can handle the nullable field

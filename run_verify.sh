@@ -12,9 +12,17 @@ set -euo pipefail
 
 echo "🔍 Running Finex verify pipeline..."
 
+# First generate API types to ensure fresh schemas
+# npx @openapitools/openapi-generator-cli generate -i ...
+npx --yes check-java-cli >/dev/null 2>&1 && make api || \
+  echo "⚠️  Java not found – skipping OpenAPI type generation"
+npm run openapi:diff      # stub still runs
+
 npm run lint
 npm run typecheck --noEmit
-npm run test:unit
+# Run unit tests with coverage
+npm run test:unit -- --coverage
+# Run contract tests (now with up-to-date API types)
 [[ -n "${SKIP_CONTRACT_RED:-}" ]] || npm run test:contract
 [[ -n "${SKIP_E2E_RED:-}" ]] || npx playwright test || echo "⚠️ E2E tests skipped (SKIP_E2E_RED=1 or test failure)"
 npm run esm:check

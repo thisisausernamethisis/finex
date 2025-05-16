@@ -314,6 +314,31 @@ paths:
         "204":
           description: Deleted
   
+  /matrix/result/{resultId}/preview:
+    parameters:
+      - name: resultId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get matrix result preview
+      description: Retrieve a lightweight preview of a matrix analysis result with summary and confidence
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Matrix result preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatrixResultPreview"
+        "401":
+          description: Unauthorized - Authentication required
+        "403":
+          description: Forbidden - No access to this matrix result
+        "404":
+          description: Matrix result not found
+
   /matrix:
     get:
       summary: Get matrix analysis results
@@ -625,3 +650,53 @@ paths:
       responses:
         "201":
           description: Template cloned successfully
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    # Matrix Result Preview schema
+    MatrixResultPreview:
+      type: object
+      description: Lightweight preview of a matrix analysis result with summary and confidence
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the matrix analysis result
+        assetId:
+          type: string
+          description: ID of the asset analyzed
+        scenarioId:
+          type: string
+          description: ID of the scenario analyzed
+        impact:
+          type: integer
+          description: Impact score from -5 to +5
+          minimum: -5
+          maximum: 5
+        summary:
+          type: string
+          description: Generated summary of the analysis
+          nullable: true
+        confidence:
+          type: number
+          description: Confidence score for the analysis result (0-1)
+          minimum: 0
+          maximum: 1
+          nullable: true
+        status:
+          type: string
+          description: Current status of the analysis
+        completedAt:
+          type: string
+          format: date-time
+          description: When the analysis was completed
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the result was last updated

@@ -62,7 +62,7 @@ enum ThemeType {
 
 model Theme {
   id              String    @id @default(cuid())
-  name            String
+  name            String    @db.VarChar(64)
   description     String?
   category        String    @default("Default")
   themeType       ThemeType @default(STANDARD)
@@ -94,13 +94,24 @@ model Card {
   updatedAt  DateTime @updatedAt
 }
 
+enum Domain {
+  ASSET
+  SUPPLY_CHAIN 
+  GEOGRAPHY
+  OTHER
+  FINANCE
+  TECHNICAL
+  REGULATORY
+}
+
 model Chunk {
-  id        String                      @id @default(cuid())
-  content   String                      @db.Text
+  id        String   @id @default(cuid())
+  content   String   @db.Text
   order     Int
-  embedding Unsupported("vector(1536)")
-  card      Card                        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   cardId    String
+  domain    Domain   @default(OTHER)
+  embedding Unsupported("vector(1536)")?
 }
 
 model Scenario {
@@ -115,7 +126,7 @@ model Scenario {
 model ThemeTemplate {
   id          String   @id @default(cuid())
   ownerId     String
-  name        String
+  name        String   @db.VarChar(64)
   description String?
   payload     Json // serialised Theme + Card structure
   isPublic    Boolean  @default(false)
@@ -131,6 +142,7 @@ model MatrixAnalysisResult {
   scenarioId  String
   impact      Int // −5…+5
   summary     String?
+  confidence  Float?    // LLM confidence score (0-1)
   evidenceIds String
   status      String    @default("pending")
   error       String?
@@ -139,4 +151,15 @@ model MatrixAnalysisResult {
   updatedAt   DateTime  @updatedAt
 
   @@unique([assetId, scenarioId])
+}
+
+model ChunkV2 {
+  id         String   @id @default(cuid())
+  assetId    String
+  scenarioId String
+  domain     Domain?  @default(OTHER)
+  content    String   @db.Text
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

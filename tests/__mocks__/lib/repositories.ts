@@ -1,146 +1,138 @@
-import { ThemeTemplate } from '@prisma/client';
+import { vi } from 'vitest';
+import { paginate, filterTemplates } from '../../shared/mockHelpers';
+import { isOwner } from '../../../lib/rbac';
 
-// Mock implementation of listTemplates similar to actual repository
-export function listTemplates(
-  opts: {
-    page: number;
-    limit: number;
-    userId: string;
-    q?: string | null;
-    mine?: boolean;
-  }
-) {
-  // Simulate database of templates
-  const allTemplates: (ThemeTemplate & { isCurrentUserOwner: boolean })[] = [
-    {
-      id: '1',
-      ownerId: 'user1',
-      name: 'Supply Chain Analysis',
-      description: 'Template for analyzing supply chain risks',
-      payload: {},
-      isPublic: true,
-      isCurrentUserOwner: false,
-      createdAt: new Date('2025-02-15'),
-      updatedAt: new Date('2025-02-15'),
-    },
-    {
-      id: '2',
-      ownerId: 'user2',
-      name: 'Market Expansion',
-      description: 'Template for market expansion planning',
-      payload: {},
-      isPublic: true,
-      isCurrentUserOwner: false,
-      createdAt: new Date('2025-03-01'),
-      updatedAt: new Date('2025-03-01'),
-    },
-    {
-      id: '3',
-      ownerId: 'user1',
-      name: 'New Product Development',
-      description: 'Template for product development risk assessment',
-      payload: {},
-      isPublic: false,
-      isCurrentUserOwner: false,
-      createdAt: new Date('2025-03-10'),
-      updatedAt: new Date('2025-03-10'),
-    },
-  ];
+// Templates data for mocking
+const templates = [
+  {
+    id: '1',
+    ownerId: 'user1',
+    name: 'Supply Chain Analysis',
+    description: 'Template for analyzing supply chain risks',
+    payload: {},
+    isPublic: true,
+    createdAt: new Date('2025-02-15'),
+    updatedAt: new Date('2025-02-15'),
+  },
+  {
+    id: '2',
+    ownerId: 'user2',
+    name: 'Market Expansion',
+    description: 'Template for market expansion planning',
+    payload: {},
+    isPublic: true,
+    createdAt: new Date('2025-03-01'),
+    updatedAt: new Date('2025-03-01'),
+  },
+  {
+    id: '3',
+    ownerId: 'user1',
+    name: 'New Product Development',
+    description: 'Template for product development risk assessment',
+    payload: {},
+    isPublic: false,
+    createdAt: new Date('2025-03-10'),
+    updatedAt: new Date('2025-03-10'),
+  },
+];
 
-  // Mark templates owned by current user
-  const templatesWithOwnership = allTemplates.map(t => ({
-    ...t,
-    isCurrentUserOwner: t.ownerId === opts.userId,
-  }));
-
-  // Apply filters
-  let filtered = [...templatesWithOwnership];
-
-  // Filter by search query
-  if (opts.q) {
-    const qLower = opts.q.toLowerCase();
-    filtered = filtered.filter(
-      t =>
-        t.name.toLowerCase().includes(qLower) ||
-        (t.description ?? '').toLowerCase().includes(qLower)
-    );
-  }
-
-  // Filter by ownership
-  if (opts.mine) {
-    filtered = filtered.filter(t => t.ownerId === opts.userId);
-  }
-
-  // Apply pagination
-  const paginatedItems = filtered.slice(
-    (opts.page - 1) * opts.limit,
-    opts.page * opts.limit
-  );
-
-  return {
-    items: paginatedItems,
-    total: filtered.length,
-    page: opts.page,
-    limit: opts.limit,
-    totalPages: Math.ceil(filtered.length / opts.limit),
-  };
-}
-
-// Mock implementation of the themeTemplateRepository
 export class ThemeTemplateRepository {
-  public listTemplates    = jest.fn();
-  public getTemplateById  = jest.fn();
-  public createTemplate   = jest.fn();
-  public templateExists   = jest.fn();
-  public deleteTemplate   = jest.fn();
-  public cloneTemplate    = jest.fn();
+  public listTemplates = vi.fn(
+    async (opts: {
+      page: number;
+      limit: number;
+      q?: string;          // search term
+      mine?: boolean;      // filter current-user
+      userId?: string;     // injected by contract tests
+    }) => {
+      // Ensure userId is always provided to filterTemplates
+      const optsWithDefaults = {
+        ...opts,
+        userId: opts.userId || 'anonymous'
+      };
+      const filtered = filterTemplates(templates, optsWithDefaults);
+      return paginate(filtered, opts.page, opts.limit);
+    }
+  );
+  
+  public getTemplateById = vi.fn(async (id: string, ownerId?: string) => {
+    const template = templates.find(t => t.id === id);
+    
+    // Apply RBAC: return null if template not found or user doesn't have access
+    if (!template) return null;
+    if (ownerId && !template.isPublic && !isOwner(ownerId, template)) return null;
+    
+    return template;
+  });
+  
+  public createTemplate = vi.fn();
+  public templateExists = vi.fn();
+  public deleteTemplate = vi.fn();
+  public cloneTemplate = vi.fn();
 }
 
 // Mock implementation of other repositories as needed
 export class AssetRepository {
-  public listAssets   = jest.fn();
-  public getAssetById = jest.fn();
-  public createAsset  = jest.fn();
-  public updateAsset  = jest.fn();
-  public deleteAsset  = jest.fn();
-  public cloneAsset   = jest.fn();
+  public listAssets = vi.fn();
+  
+  public getAssetById = vi.fn(async (id: string, ownerId?: string) => {
+    // Mock asset data that might be returned
+    const asset = {
+      id,
+      ownerId: 'user1', // Default owner
+      name: 'Mock Asset',
+      description: 'Mock asset for testing',
+      isPublic: false, // Default to private
+    };
+    
+    // Apply RBAC: return null if user doesn't have access
+    if (ownerId && !asset.isPublic && !isOwner(ownerId, asset)) return null;
+    
+    return asset;
+  });
+  
+  public createAsset = vi.fn();
+  public updateAsset = vi.fn();
+  public deleteAsset = vi.fn();
+  public cloneAsset = vi.fn();
+  public assetExists = vi.fn(async () => true); // Default to true for most tests
 }
 
-export const CardRepository = jest.fn().mockImplementation(() => {
+export const CardRepository = vi.fn().mockImplementation(() => {
   return {
-    listCards: jest.fn(),
-    getCardById: jest.fn(),
-    createCard: jest.fn(),
-    updateCard: jest.fn(),
-    deleteCard: jest.fn(),
+    listCards: vi.fn(),
+    getCardById: vi.fn(),
+    createCard: vi.fn(),
+    updateCard: vi.fn(),
+    deleteCard: vi.fn(),
   };
 });
 
-export const ScenarioRepository = jest.fn().mockImplementation(() => {
+export const ScenarioRepository = vi.fn().mockImplementation(() => {
   return {
-    listScenarios: jest.fn(),
-    getScenarioById: jest.fn(),
-    createScenario: jest.fn(),
-    updateScenario: jest.fn(),
-    deleteScenario: jest.fn(),
+    listScenarios: vi.fn(),
+    getScenarioById: vi.fn(),
+    createScenario: vi.fn(),
+    updateScenario: vi.fn(),
+    deleteScenario: vi.fn(),
   };
 });
 
-export const MatrixRepository = jest.fn().mockImplementation(() => {
+export const MatrixRepository = vi.fn().mockImplementation(() => {
   return {
-    listMatrixResults: jest.fn(),
-    getMatrixResult: jest.fn(),
-    queueMatrixAnalysis: jest.fn(),
-    matrixResultExists: jest.fn(),
+    listMatrixResults: vi.fn(),
+    getMatrixResult: vi.fn(),
+    queueMatrixAnalysis: vi.fn(),
+    matrixResultExists: vi.fn(),
   };
 });
 
-export const ThemeRepository = jest.fn().mockImplementation(() => {
+export const ThemeRepository = vi.fn().mockImplementation(() => {
   return {
-    listThemes: jest.fn(),
-    getThemeById: jest.fn(),
-    createTheme: jest.fn(),
-    updateTheme: jest.fn(),
-    deleteTheme: jest.fn(),
+    listThemes: vi.fn(),
+    getThemeById: vi.fn(),
+    createTheme: vi.fn(),
+    updateTheme: vi.fn(),
+    deleteTheme: vi.fn(),
   };
 });

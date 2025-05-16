@@ -1,0 +1,57 @@
+title: "domain_aware_hybridSearch → Extend searchService with domain filter & configurable α"
+description: |
+  Extend the searchService.hybridSearch method to accept a domain filter parameter and a 
+  configurable alpha (α) parameter. The domain filter will limit search results to chunks 
+  from a specific domain (asset, scenario, theme, generic), while the configurable α 
+  parameter will allow adjusting the weight between BM25 and vector search results for 
+  different query types.
+
+branch: "phase7.1/domain_aware_hybridSearch"
+effort: "M"
+owner: "@ai-infra"
+
+acceptance_tests:
+  - "Unit test: query with domain=asset only returns asset chunks"
+  - "RAGAS metrics (precision, recall, answer_relevance, faithfulness) show improvement on gold set"
+  - "Contract tests pass with domain filtering enabled"
+  - "Performance remains within budget (≤ 1s P95) when using domain filters"
+  - "Alpha parameter correctly adjusts result ranking based on provided value"
+
+related_tasks:
+  - "T-301a"
+  - "T-303"
+
+depends_on:
+  - "T-301a"
+  - "T-305"
+
+notes: |
+  This task builds upon T-301a by leveraging the domain column added to the Chunk model.
+  It enables more targeted search by filtering chunks based on their domain, improving
+  retrieval relevance and reducing noise from unrelated domains.
+  
+  Implementation approach:
+  1. Update the searchService.hybridSearch method to accept:
+     - domain?: ChunkDomain - Optional domain filter
+     - alpha?: number - Weight factor between BM25 and vector (default: 0.5)
+  
+  2. Modify SQL queries to include domain filter when specified:
+     ```sql
+     WHERE ... AND (domain = $domain OR $domain IS NULL)
+     ```
+  
+  3. Adjust result merging logic to use the provided alpha value:
+     ```typescript
+     const combinedScore = (alpha * bm25Score) + ((1 - alpha) * vectorScore);
+     ```
+  
+  4. Expand RAGAS evaluation to include additional metrics:
+     - context_precision (existing)
+     - context_recall (existing)
+     - answer_relevance (new)
+     - faithfulness (new)
+  
+  Expected impact:
+  - More relevant search results by targeting specific domain knowledge
+  - Improved RAGAS metrics on the evaluation gold set
+  - Foundation for dynamic alpha adjustment in T-303

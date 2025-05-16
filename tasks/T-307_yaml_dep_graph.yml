@@ -1,0 +1,37 @@
+title: "yaml_dep_graph — Add depends_on keys"
+description: |
+  Update the YAML task files to explicitly declare dependencies between tasks. This ensures 
+  that the CI step (scripts/ci/validate_yaml.ts) can properly validate that every referenced 
+  ticket exists and that there are no dependency cycles in the task graph.
+
+branch: "phase7.1/yaml_dep_graph"
+effort: "XS"
+owner: "@infra"
+
+acceptance_tests:
+  - "CI lint step (scripts/ci/validate_yaml.ts) passes with no errors"
+  - "All dependencies accurately declared in the YAML files"
+  - "No circular dependencies detected"
+
+notes: |
+  This task ensures all YAML files have their dependencies properly declared. 
+  The specific dependency declarations are:
+  
+  - T-302 → [T-301a, T-305]
+  - T-303 → [T-302]
+  - T-304 → [T-302, T-303]
+  - T-301b → [T-301a, T-305]
+  
+  These dependency declarations match the actual implementation requirements and ensure 
+  tasks are completed in the correct order. The validation script already exists and
+  will verify these relationships.
+  
+  Implementation details:
+  - Each YAML file should include a `depends_on` array listing the ticket IDs it depends on
+  - The tickets listed in `depends_on` must exist in the project
+  - No circular dependencies are allowed (e.g., A → B → C → A)
+  
+  Expected impact:
+  - Improved CI validation for task dependencies
+  - Clear visualization of task order and relationships
+  - Prevention of circular dependencies that could cause project issues

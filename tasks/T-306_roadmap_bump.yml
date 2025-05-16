@@ -1,0 +1,31 @@
+title: "Roadmap bump → create Finex Roadmap v0.19 with Phase 7.1 milestones"
+description: |
+  Create the Finex Roadmap v0.19 document that outlines Phase 7.1 - Retrieval & Prompting Overhaul.
+  The roadmap should include the updated bird's-eye timeline, phase summaries, ticket breakdown, 
+  implementation guard-rails, and next concrete actions.
+
+branch: "phase7.1/roadmap_bump"
+effort: "XS"
+owner: "@docs"
+
+acceptance_tests:
+  - "PR updates Finex Roadmap v0.19.md with Phase 7.1 details"
+  - "CHANGELOG.md updated with Phase 7.1 entry"
+  - "Bird's-eye timeline includes Phase 7.1 with target ETA and primary goal"
+  - "Phase 7.1 section includes detailed descriptions of all tickets"
+  - "Exit criteria for Phase 7.1 is clearly defined"
+  - "Implementation guard-rails are documented"
+
+related_tasks:
+  - "T-301a"
+  - "T-301b"
+  - "T-302"
+  - "T-303"
+  - "T-304"
+  - "T-305"
+
+notes: |
+  This ticket establishes the formal roadmap for the Phase 7.1 Retrieval & Prompting Overhaul.
+  It serves as the foundation for all subsequent implementation tickets in this phase.
+  The roadmap should follow the same format as previous versions (v0.18, v0.17, etc.)
+  with appropriate updates for the new phase.

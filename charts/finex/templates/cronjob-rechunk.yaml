@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "finex.fullname" . }}-rechunk
+  labels:
+    {{- include "finex.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rechunk-job
+spec:
+  schedule: {{ .Values.rechunk.schedule | quote }}
+  concurrencyPolicy: Forbid
+  suspend: {{ not .Values.rechunk.enabled }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          labels:
+            {{- include "finex.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: rechunk-job
+        spec:
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "finex.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          restartPolicy: OnFailure
+          containers:
+            - name: rechunk
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - node
+                - scripts/rechunk/rechunk.js
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "finex.fullname" . }}-db
+                      key: url
+                - name: DIRECT_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "finex.fullname" . }}-db
+                      key: direct-url
+                - name: REDIS_HOST
+                  value: {{ .Values.redis.host | default (printf "%s-redis" (include "finex.fullname" .)) }}
+                - name: REDIS_PORT
+                  value: {{ .Values.redis.port | default "6379" | quote }}
+                - name: OPENAI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "finex.fullname" . }}-secrets
+                      key: openai-api-key
+              resources:
+                {{- toYaml .Values.rechunk.resources | nindent 16 }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

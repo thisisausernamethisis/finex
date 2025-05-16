@@ -1,5 +1,6 @@
-import { prisma } from '../db';
+import { Container, TOKEN_PRISMA } from '../container';
 import { logger } from '../logger';
+import { matrixQueueService } from '../services/matrixQueueService';
 import { Queue } from 'bullmq';
 import type { QueueOptions } from 'bullmq';
 import type { PrismaClient, MatrixAnalysisResult, Prisma } from '@prisma/client';
@@ -35,7 +36,7 @@ export class MatrixRepository {
   // BullMQ queue for matrix analysis jobs
   private matrixQueue: Queue;
   
-  constructor(private readonly db: PrismaClient = prisma) {
+  constructor(private readonly prisma: PrismaClient = Container.get<PrismaClient>(TOKEN_PRISMA)) {
     // Initialize the BullMQ queue
     this.matrixQueue = new Queue('matrix-analysis', {
       connection: redisConnection,
@@ -94,10 +95,10 @@ export class MatrixRepository {
     }
     
     // Get the total count
-    const total = await this.db.matrixAnalysisResult.count({ where });
+    const total = await this.prisma.matrixAnalysisResult.count({ where });
     
     // Get the matrix results for this page
-    const results = await this.db.matrixAnalysisResult.findMany({
+    const results = await this.prisma.matrixAnalysisResult.findMany({
       where,
       select: {
         id: true,
@@ -138,7 +139,7 @@ export class MatrixRepository {
   ): Promise<MatrixAnalysisResult | null> {
     repoLogger.debug('Getting matrix result', { assetId, scenarioId });
     
-    return this.db.matrixAnalysisResult.findUnique({
+    return this.prisma.matrixAnalysisResult.findUnique({
       where: {
         assetId_scenarioId: { assetId, scenarioId }
       },
@@ -149,6 +150,7 @@ export class MatrixRepository {
         impact: true,
         summary: true,
         evidenceIds: true,
+        confidence: true,
         status: true,
         error: true,
         completedAt: true,
@@ -160,19 +162,22 @@ export class MatrixRepository {
   
   /**
    * Creates or queues a new matrix analysis
+   * Enhanced with search metrics for improved confidence calculation
    * 
    * @param assetId The ID of the asset to analyze
    * @param scenarioId The ID of the scenario to analyze against
+   * @param query Optional search query for retrieving evidence
    * @returns Information about the queued job
    */
   public async queueMatrixAnalysis(
     assetId: string,
-    scenarioId: string
+    scenarioId: string,
+    query?: string
   ): Promise<MatrixAnalysisJob> {
-    repoLogger.debug('Queueing matrix analysis', { assetId, scenarioId });
+    repoLogger.debug('Queueing matrix analysis', { assetId, scenarioId, hasQuery: !!query });
     
     // Find existing or create new matrix result record
-    let result = await this.db.matrixAnalysisResult.findUnique({
+    let result = await this.prisma.matrixAnalysisResult.findUnique({
       where: {
         assetId_scenarioId: { assetId, scenarioId }
       }
@@ -180,7 +185,7 @@ export class MatrixRepository {
     
     if (result) {
       // Update status to pending
-      await this.db.matrixAnalysisResult.update({
+      await this.prisma.matrixAnalysisResult.update({
         where: { id: result.id },
         data: {
           status: 'pending',
@@ -189,35 +194,33 @@ export class MatrixRepository {
       });
     } else {
       // Create new matrix result record
-      result = await this.db.matrixAnalysisResult.create({
+      result = await this.prisma.matrixAnalysisResult.create({
         data: {
           assetId,
           scenarioId,
           impact: 0,
           evidenceIds: '',
+          confidence: 0,
           status: 'pending'
         }
       });
     }
     
-    // Create a unique job ID
-    const jobIdString = `matrix:${assetId}:${scenarioId}`;
-    
-    // Add job to queue
-    const job = await this.matrixQueue.add(
-      'analyze', 
-      { assetId, scenarioId },
-      { jobId: jobIdString }
-    );
+    // Use matrixQueueService to enqueue job with search metrics if query is provided
+    const jobId = await matrixQueueService.enqueueMatrixJob({
+      assetId,
+      scenarioId,
+      query
+    });
     
     repoLogger.info('Matrix analysis job queued', { 
-      jobId: job.id || jobIdString, 
+      jobId, 
       assetId, 
       scenarioId 
     });
     
     return {
-      jobId: job.id || jobIdString,
+      jobId,
       status: 'pending'
     };
   }
@@ -233,7 +236,7 @@ export class MatrixRepository {
     assetId: string,
     scenarioId: string
   ): Promise<boolean> {
-    const count = await this.db.matrixAnalysisResult.count({
+    const count = await this.prisma.matrixAnalysisResult.count({
       where: {
         AND: [
           { assetId },

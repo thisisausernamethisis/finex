@@ -1,6 +1,9 @@
 import { vi, describe, it, beforeEach, afterEach, expect, afterAll } from 'vitest';
 import { disconnectPrisma } from './tests/_setup/prismaTestEnv';
 
+// Mock Prisma client with our unified mock
+vi.mock('@prisma/client', () => require('./__mocks__/@prisma/client'));
+
 /**
  * Vitest ≥0.34 exposes globals when `globals:true`.
  * Older specs written for Jest still `expect` them, so

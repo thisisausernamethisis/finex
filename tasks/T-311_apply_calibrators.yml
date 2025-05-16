@@ -1,0 +1,32 @@
+id: T-311
+title: "apply_calibrators → Apply impact & confidence calibrators in matrix worker"
+branch: "phase7.2/worker-calibration"
+effort: "S"
+depends_on:
+  - "T-310"
+acceptance_tests:
+  - "Unit test with stub calibrators shows calibrated value matches fixture"
+  - "Kendall ρ(confidence, correctness) ≥ 0.6 on gold set"
+  - "Helper functions correctly load and apply interpolation"
+notes: |
+  Implementation approach:
+  1. Create a helper in lib/utils/calibration.ts:
+     - Load calibrator JSON files
+     - Implement interpolation function to map raw values to calibrated values
+     - Export utility functions for both impact and confidence calibration
+  
+  2. Update workers/matrixWorker.ts:
+     - Load impact calibrator via env IMPACT_CALIB_PATH
+     - Apply calibration to result.impact values
+     - Ensure backward compatibility when calibrator not available
+  
+  3. Create lib/utils/confidence.ts:
+     - Implement feature blending of logProb, retrievalEntropy, and rankGap 
+     - Pass blended confidence score through conf_calibrator
+     - Ensure values are properly normalized to [0,1] range
+  
+  Technical implementation:
+  - Linear interpolation will be used between points in the calibrator
+  - Environment variables will control calibrator paths
+  - Unit tests will verify calibration with known input/output pairs
+  - Gold test set will verify correlation improvements

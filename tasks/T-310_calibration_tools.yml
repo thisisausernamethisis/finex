@@ -1,0 +1,23 @@
+id: T-310
+title: "calibration_tools → fit isotonic impact & confidence calibrators"
+branch: "phase7.2/calibration-tools"
+effort: "S"
+depends_on: []
+acceptance_tests:
+  - "scripts/rag/fit_calibrators.ts exits 0 and writes impact_calibrator.json, conf_calibrator.json"
+  - "MAE (impact) on hold-out ≤ 90% of un-calibrated MAE"
+  - "Reliability PNG diagrams produced in /outputs/calibration/"
+notes: |
+  Implementation approach:
+  1. Create script that reads tests/rag/qa.csv (50-pair gold standard dataset)
+  2. Split the data 70/30 for training/validation
+  3. Fit two isotonic regression models:
+     a. Raw impact scores → calibrated impact (impact_calibrator.json)
+     b. Confidence features (logProb, retrievalEntropy, rankGap) → confidence (conf_calibrator.json)
+  4. Generate reliability diagrams as PNG files
+  
+  Technical implementation:
+  - Use ts-node and ml-matrix (no Python dependencies)
+  - Output format will be JSON arrays: { "x": [...], "y": [...] }
+  - Script will perform validation on hold-out set to verify MAE improvement
+  - Reliability diagrams will visualize calibration quality

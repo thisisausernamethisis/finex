@@ -1,0 +1,37 @@
+id: T-315
+title: "ci_gate_calibration → Add calibration metrics to CI gate"
+branch: "phase7.2/ragas-gate-update"
+effort: "XS"
+depends_on:
+  - "T-311"
+  - "T-312"
+acceptance_tests:
+  - "CI gate fails if composite score < 0.80"
+  - "Brier score and ECE metrics added to RAGAS evaluation"
+  - "Baseline artifacts uploaded from main branch"
+  - "PR job correctly compares against baseline"
+notes: |
+  Implementation approach:
+  1. Extend scripts/ci/run_ragas_e2e.ts:
+     - Add computation of Brier score (measures overall prediction accuracy)
+     - Add computation of Expected Calibration Error (ECE)
+     - Include these metrics in the existing evaluation report
+  
+  2. Update GitHub Actions workflow:
+     - Upload baseline artifacts when running on main branch
+     - Add job step to download baseline on PR builds
+     - Add failure condition using these thresholds:
+       - composite ≥ 0.80
+       - precision ≥ 0.30
+       - answer_relevance ≥ 0.25
+       - faithfulness ≥ 0.85
+       - brier ≤ baseline × 1.1
+       - ece ≤ baseline × 1.1
+     - Display metrics in CI logs for visibility
+  
+  Technical implementation:
+  - Brier score calculation: mean squared error between confidence and correctness
+  - ECE calculation: measures reliability of confidence scores
+  - Composite score will weight existing RAGAS metrics and new calibration metrics
+  - CI will store baseline artifacts for comparison
+  - PR builds will compare against main branch baseline

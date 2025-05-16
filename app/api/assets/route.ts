@@ -3,20 +3,16 @@ import { currentUser } from '@clerk/nextjs/server';
 import { AssetRepository } from '../../../lib/repositories/assetRepository';
 import { z } from 'zod';
 import { createChildLogger } from '../../../lib/logger';
-import { serverError, unauthorized } from '../../../lib/utils/http';
-import { validateSchema } from '../../../lib/utils/api';
+import { badRequest, serverError, unauthorized } from '../../../lib/utils/http';
+import { validateSchema, validateCuid } from '../../../lib/utils/api';
+import { ensureOwner } from '../../../lib/authz/ensureOwner';
 import { ListParamsSchema } from '../../../lib/validators/zod_list_params';
+import { AssetUpsert } from '../../../lib/validators/assets';
 
 // Create a route-specific logger
 const listLogger = createChildLogger({ route: 'GET /api/assets' });
 const createLogger = createChildLogger({ route: 'POST /api/assets' });
-
-// Schema validation for creating assets
-const createAssetSchema = z.object({
-  name: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  isPublic: z.boolean().optional()
-});
+const deleteLogger = createChildLogger({ route: 'DELETE /api/assets' });
 
 // Create repository instance
 const assetRepository = new AssetRepository();
@@ -63,21 +59,61 @@ export async function POST(req: NextRequest) {
       return unauthorized('Authentication required', createLogger);
     }
     
-    // Parse request body
-    const body = await req.json();
-    
-    // Validate using zod schema
-    const validation = validateSchema(createAssetSchema, body, createLogger);
-    
-    if (!validation.success) {
-      return validation.error;
+    // Parse and validate request body
+    let validatedData;
+    try {
+      const body = await req.json();
+      validatedData = AssetUpsert.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return badRequest(`Invalid asset data: ${error.message}`, createLogger);
+      }
+      throw error;
     }
     
     // Create asset
-    const asset = await assetRepository.createAsset(user.id, validation.data);
+    const asset = await assetRepository.createAsset(user.id, validatedData);
     
     return NextResponse.json(asset, { status: 201 });
   } catch (error) {
     return serverError(error instanceof Error ? error : new Error('Unknown error'), createLogger);
   }
+}
+
+// Handler for DELETE /api/assets?id=[assetId]
+export async function DELETE(req: NextRequest) {
+  // Get asset ID from query parameter
+  const assetId = req.nextUrl.searchParams.get('id');
+  if (!assetId) {
+    return NextResponse.json({ message: 'Asset ID is required' }, { status: 400 });
+  }
+  
+  // Validate asset ID format and existence
+  const idValidation = await validateCuid(
+    assetId,
+    assetRepository.assetExists.bind(assetRepository),
+    'Asset',
+    deleteLogger
+  );
+  
+  if (!idValidation.valid) {
+    return idValidation.error;
+  }
+  
+  // Use the ensureOwner helper to handle authorization
+  return ensureOwner(req, assetId, async () => {
+    try {
+      // Delete asset
+      const user = await currentUser();
+      const success = await assetRepository.deleteAsset(assetId, user!.id);
+      
+      if (!success) {
+        return serverError(new Error('Failed to delete asset'), deleteLogger);
+      }
+      
+      return new NextResponse(null, { status: 204 });
+    } catch (error) {
+      return serverError(error instanceof Error ? error : new Error('Unknown error'), deleteLogger);
+    }
+  });
 }

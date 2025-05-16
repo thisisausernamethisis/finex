@@ -61,6 +61,57 @@ Seed the database with test data:
 make db:seed
 ```
 
+## 2025-05-13 Domain migration & ivfflat index
+
+This migration adds a Domain enum column to the Chunk model to enable content categorization and filtered searches.
+
+### What changed
+
+1. Added `Domain` enum type with values: `ASSET`, `SUPPLY_CHAIN`, `GEOGRAPHY`, and `OTHER`
+2. Added `domain` column to `Chunk` table with a default of `OTHER`
+3. Created a specialized composite ivfflat index for optimized domain-filtered vector searches
+4. Implemented post-migration backfill script to categorize existing chunks
+
+### Migration steps
+
+The migration script:
+
+```sql
+-- Create Domain enum type
+CREATE TYPE "Domain" AS ENUM ('ASSET', 'SUPPLY_CHAIN', 'GEOGRAPHY', 'OTHER');
+
+-- Add domain column to Chunk table with NOT NULL and default
+ALTER TABLE "Chunk" ADD COLUMN "domain" "Domain" NOT NULL DEFAULT 'OTHER';
+
+-- Create composite ivfflat index optimized for domain filtering
+CREATE INDEX "chunk_vec_domain_idx" ON "Chunk" USING ivfflat (embedding vector_cosine_ops) 
+  WITH (lists = 100) WHERE domain <> 'OTHER';
+```
+
+### Backfill process
+
+After applying the migration, a post-deploy hook automatically runs the backfill script which:
+
+1. Processes chunks in batches to avoid memory issues
+2. Applies a three-rule heuristic to categorize content:
+   - ASSET: Financial content, company information
+   - SUPPLY_CHAIN: Logistics, inventory, manufacturing
+   - GEOGRAPHY: Locations, regions, international markets
+3. Updates the domain column for each chunk
+4. Logs statistics showing categorization distribution
+
+### Search improvements
+
+Vector searches can now include a domain filter:
+
+```sql
+SELECT ch.card_id, 1 - (ch.embedding <=> ${query_vector}::vector) as similarity
+FROM "Chunk" ch
+WHERE ch.embedding IS NOT NULL AND ch.domain = 'ASSET'
+ORDER BY similarity DESC
+LIMIT 20;
+```
+
 ## pgvector Usage
 
 ### Creating Vectors

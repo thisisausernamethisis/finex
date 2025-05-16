@@ -1,39 +1,23 @@
 import { vi } from 'vitest';
+import '@/tests/setup/vitestJestShim';      // global jest helpers
 
-// central alias mocks (hoisted before imports)
-vi.mock('lib/repositories');
-vi.mock('lib/repositories/themeTemplateRepository');
+/* centralised alias mocks */
 vi.mock('@/lib/repositories');
 vi.mock('@/lib/repositories/themeTemplateRepository');
+vi.mock('lib/repositories');
+vi.mock('lib/repositories/themeTemplateRepository');
 vi.mock('@clerk/nextjs/server');
 
-// rate-limit mock – single canonical path
-vi.mock('lib/rateLimit', async () => (await vi.importActual('lib/rateLimit')));
+/* canonical single path for rate-limit util */
+vi.mock('@/lib/rateLimit', async () => (await vi.importActual('@/lib/rateLimit')));
 
-// Reset mocks before each test for isolation
+/* reset between tests */
 beforeEach(async () => {
   try {
-    // Directly import rateLimit to reset counter with both import paths
-    // @ts-ignore - Path resolved at runtime
-    const rateLimit = await import('@/lib/rateLimit');
-    if (rateLimit && typeof rateLimit.__resetRateLimit === 'function') {
-      rateLimit.__resetRateLimit();
-    }
-    
-    // Also try with the non-prefixed path
-    try {
-      // @ts-ignore - Path resolved at runtime
-      const rateLimitDirect = await import('lib/rateLimit');
-      if (rateLimitDirect && typeof rateLimitDirect.__resetRateLimit === 'function') {
-        rateLimitDirect.__resetRateLimit();
-      }
-    } catch (e) {
-      // Ignore this error - one of the two imports should work
-    }
-  } catch (e) {
-    console.warn('Failed to reset rate limit:', e);
+    const { __resetRateLimit } = await import('@/lib/rateLimit');
+    __resetRateLimit?.();
+  } catch (_) {
+    /* ignore */
   }
-  
-  // Restore all mocks after each test
   vi.restoreAllMocks();
 });

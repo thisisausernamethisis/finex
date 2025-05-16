@@ -1,10 +1,13 @@
 import { Worker, Job, QueueEvents } from 'bullmq';
 import { prisma } from '../lib/db';
 import { logger } from '../lib/logger';
+import { applyCalibration } from '../lib/utils/calibration';
+import { computeConfidence } from '../lib/utils/confidence';
 import { assembleMatrixContext } from '../lib/services/contextAssemblyService';
 import { jobsProcessed, jobsFailed, jobsActive } from '../lib/metrics';
 import { emitJobEvent } from '../lib/events/eventEmitter';
 import { MatrixResultUpdateSchema } from '../lib/validators/matrix';
+import { ImpactExplainSchema, PublicImpactSchema } from '../lib/validators/matrix';
 import OpenAI from 'openai';
 
 // Logger for this worker
@@ -137,8 +140,8 @@ export async function processMatrixJob(job: Job) {
     // 2. Call the LLM for analysis
     const result = await analyzeAssetScenarioImpact(context, assetId, scenarioId);
     
-    // 3. Save the result
-    await saveMatrixResult(assetId, scenarioId, result);
+    // 3. Save the result with calibration and confidence computation
+    await saveMatrixResult(assetId, scenarioId, result, job);
     
     // Emit job completed event with result
     emitJobEvent({
@@ -177,8 +180,8 @@ export async function processMatrixJob(job: Job) {
   }
 }
 
-// Call OpenAI to analyze the impact
-async function analyzeAssetScenarioImpact(
+// Call OpenAI to analyze the impact with chain-of-thought reasoning
+export async function analyzeAssetScenarioImpact(
   context: string,
   assetId: string,
   scenarioId: string
@@ -187,98 +190,94 @@ async function analyzeAssetScenarioImpact(
   summary: string;
   confidence: number;
   evidenceIds: string;
+  reasoning_steps?: Array<{
+    id: string;
+    premise: string;
+    inference: string;
+    confidence: number;
+    evidence: string[];
+  }>;
 }> {
   workerLogger.debug('Calling LLM for impact analysis', { assetId, scenarioId });
   
   const prompt = `
-    You are a financial analysis AI.
+    You are an analytical AI assessing the financial impact of a scenario on an asset.
     
-    Your task is to analyze the impact of a scenario on an asset.
-    
-    Use the following context to determine the impact score, where:
-    - Negative impact ranges from -5 (severe negative impact) to -1 (slight negative impact)
-    - 0 represents no significant impact
-    - Positive impact ranges from +1 (slight positive impact) to +5 (substantial positive impact)
+    TASK:
+    Analyze the impact using a step-by-step reasoning approach (Chain of Thought).
     
     CONTEXT:
     ${context}
     
-    Based on this information, provide:
-    1. An impact score between -5 and +5 as an integer
-    2. A concise summary (2-3 sentences) explaining the reasoning
-    3. A confidence score between 0 and 1, where:
-       - 0.9-1.0: Very high confidence in the assessment (strong evidence, clear impact)
-       - 0.7-0.9: High confidence (good evidence, clear direction of impact)
-       - 0.5-0.7: Moderate confidence (mixed evidence, reasonable assessment)
-       - 0.3-0.5: Low confidence (limited evidence, uncertain impact)
-       - 0.0-0.3: Very low confidence (insufficient evidence, highly speculative)
-    4. A comma-separated list of the most relevant evidence IDs from the provided cards/chunks
+    INSTRUCTIONS:
+    1. Break down your analysis into 3-5 logical reasoning steps.
+    2. Each step should include:
+       - A premise based on evidence from the context
+       - A logical inference drawn from that premise
+       - Confidence in that specific step (0-1)
+       - Reference to specific evidence IDs
+    3. After completing your reasoning steps, conclude with:
+       - An overall impact score between -5 and +5 as an integer:
+         * -5 to -3: Severe negative impact
+         * -2 to -1: Moderate negative impact
+         * 0: No significant impact
+         * +1 to +2: Moderate positive impact
+         * +3 to +5: Substantial positive impact
+       - A concise summary (2-3 sentences)
+       - An overall confidence score (0-1)
+       - A list of the most relevant evidence IDs
     
-    Format your response as valid JSON with the following structure:
-    {
-      "impact": number,
-      "summary": "string",
-      "confidence": number,
-      "evidenceIds": "string" // comma-separated IDs
-    }
+    You must respond using the provided function, with your explicit reasoning steps.
+    This helps maintain transparency and explainability in your analysis.
   `;
   
   try {
-  const { choices } = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: 'You are an analytical assistant.' },
-      { role: 'user',   content: prompt },
-    ],
-    functions: [{
-      name: 'set_matrix_summary',
-      parameters: {
-        type: 'object',
-        properties: {
-          impact: { 
-            type: 'integer',
-            description: 'Impact score from -5 (severe negative) to +5 (strong positive)'
-          },
-          summary: { 
-            type: 'string',
-            description: 'A concise 2-3 sentence summary explaining the reasoning'
-          },
-          confidence: { 
-            type: 'number', 
-            minimum: 0, 
-            maximum: 1,
-            description: 'Confidence score between 0 and 1'
-          },
-          evidenceIds: {
-            type: 'string',
-            description: 'Comma-separated list of the most relevant evidence IDs'
-          }
-        },
-        required: ['impact', 'summary', 'confidence', 'evidenceIds']
-      }
-    }],
-    function_call: { name: 'set_matrix_summary' }
-  });
+    const { choices } = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'You are an analytical assistant.' },
+        { role: 'user',   content: prompt },
+      ],
+      functions: [{
+        name: 'set_impact_analysis',
+        parameters: ImpactExplainSchema.shape
+      }],
+      function_call: { name: 'set_impact_analysis' }
+    });
 
-  if (!choices[0]?.message?.function_call?.arguments) {
-    throw new Error('No function call result in OpenAI response');
-  }
-  
-  // Parse the arguments from the function call
-  const parsedResponse = JSON.parse(choices[0].message.function_call.arguments);
-  
-  // Validate impact score is in range
-  const impact = Math.max(-5, Math.min(5, Math.round(parsedResponse.impact)));
-  
-  // Validate confidence score is in range
-  const confidence = Math.max(0, Math.min(1, parsedResponse.confidence));
-  
-  return {
-    impact,
-    summary: parsedResponse.summary,
-    confidence,
-    evidenceIds: parsedResponse.evidenceIds
-  };
+    if (!choices[0]?.message?.function_call?.arguments) {
+      throw new Error('No function call result in OpenAI response');
+    }
+    
+    // Parse the arguments from the function call
+    const {
+      summary,
+      confidence: llmConfidence = 0.6,   // fallback if not provided
+      impact
+    } = JSON.parse(choices[0].message.function_call.arguments);
+    
+    // ─── Phase 7.2-e: impact calibration ───────────────────────────────
+    const calibratedImpact = applyCalibration(Number(impact ?? 0));
+    
+    // Extract and validate other fields
+    const validationObj = {
+      impact: calibratedImpact, // Use calibrated impact value
+      summary,
+      confidence: llmConfidence, // Will be replaced by composite confidence
+      evidenceIds: "",  // Will be populated from job data chunks
+    };
+    
+    // Parse full response for reasoning steps
+    const fullResponse = JSON.parse(choices[0].message.function_call.arguments);
+    
+    // Build and return result specifying the calibrated impact
+    return {
+      impact: calibratedImpact,
+      summary,
+      confidence: llmConfidence, // Original LLM confidence (will be replaced by composite)
+      evidenceIds: fullResponse.evidenceIds || "",
+      reasoning_steps: fullResponse.reasoning_steps
+    };
   } catch (error) {
     workerLogger.error('Error calling OpenAI API', { 
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -330,9 +329,46 @@ async function saveMatrixResult(
     summary: string;
     confidence: number;
     evidenceIds: string;
-  }
+    reasoning_steps?: Array<{
+      id: string;
+      premise: string;
+      inference: string;
+      confidence: number;
+      evidence: string[];
+    }>;
+  },
+  job: Job
 ) {
   try {
+    // ─── Phase 7.2-f: composite confidence  ────────────────────────────
+    // retrieval variance & rank-corr computed upstream & passed via job data
+    const compositeConfidence = computeConfidence({
+      llm: result.confidence,
+      // Add fallbacks to legacy property names
+      // TODO: After next minor release, remove legacy "retrievalVar" support
+      retrievalVariance: job.data.retrievalVariance ?? job.data.retrievalVar ?? 0.5,
+      // TODO: After next minor release, remove legacy "rankCorr" support
+      rankCorrelation: job.data.rankCorrelation ?? job.data.rankCorr ?? 0.5,
+    });
+    
+    // Extract the chunk IDs if they exist
+    const evidenceIds = (job.data.chunks || [])
+      .map((chunk: any) => chunk.id || '')
+      .filter(Boolean)
+      .join(',');
+    
+    // Create the data to save
+    const dataToSave = {
+      impact: result.impact,
+      summary: result.summary,
+      confidence: compositeConfidence,
+      evidenceIds: evidenceIds || result.evidenceIds,
+      status: 'completed',
+      completedAt: new Date(),
+      error: null
+    };
+    
+    // Update the database
     await prisma.matrixAnalysisResult.update({
       where: {
         assetId_scenarioId: {
@@ -340,22 +376,15 @@ async function saveMatrixResult(
           scenarioId
         }
       },
-      data: MatrixResultUpdateSchema.parse({
-        impact: result.impact,
-        summary: result.summary,
-        confidence: result.confidence,
-        evidenceIds: result.evidenceIds,
-        status: 'completed',
-        completedAt: new Date(),
-        error: null
-      })
+      data: MatrixResultUpdateSchema.parse(dataToSave)
     });
     
-    workerLogger.info('Matrix analysis result saved', {
+    workerLogger.info('Matrix analysis result saved with calibrated impact and composite confidence', {
       assetId,
       scenarioId,
       impact: result.impact,
-      confidence: result.confidence
+      confidence: compositeConfidence,
+      calibrated: true
     });
   } catch (error) {
     workerLogger.error('Failed to save matrix result', {

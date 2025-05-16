@@ -1,0 +1,79 @@
+title: "ingestion_domain_fallback → Auto-fill domain post-301a"
+description: |
+  Enhance the ingestService.createChunks method to automatically set domain='generic' 
+  when the domain column exists in the database but the input mapping is unknown. This 
+  ensures all new chunks created between T-301a and T-301b migrations have a valid domain 
+  value rather than NULL, improving data consistency and query performance.
+
+branch: "phase7.1/ingestion_domain_fallback"
+effort: "XS"
+owner: "@data"
+
+acceptance_tests:
+  - "Unit test creating a new doc between 301a & 301b ⇒ chunk.domain === 'generic'"
+  - "Existing createChunks functionality remains unchanged for known domain mappings"
+  - "No schema changes required"
+
+depends_on:
+  - "T-301a"
+
+notes: |
+  This is a simple but important improvement to handle the transition period between 
+  adding the domain column (T-301a) and the full re-chunking with domain assignment (T-301b).
+  
+  Implementation approach:
+  1. Update the ingestService.createChunks method to include domain fallback:
+     ```typescript
+     async createChunks(documentContent: string, metaData: {
+       sourceId: string;
+       sourceType: string;
+       // New optional domain parameter
+       domain?: ChunkDomain;
+     }) {
+       // Default to 'generic' if no domain is provided
+       const domain = metaData.domain || 'generic';
+       
+       // Create chunks with embeddings as before
+       const chunks = this.chunker.chunk(documentContent);
+       const chunkData = await Promise.all(chunks.map(async chunk => ({
+         content: chunk,
+         embedding: await this.embeddingService.generateEmbedding(chunk),
+         sourceId: metaData.sourceId,
+         sourceType: metaData.sourceType,
+         // Always include domain
+         domain
+       })));
+       
+       // Create all chunks in a transaction
+       return this.prisma.$transaction(
+         chunkData.map(data => this.prisma.chunk.create({ data }))
+       );
+     }
+     ```
+  
+  2. Add unit test to verify fallback behavior:
+     ```typescript
+     test('should default to generic domain when not specified', async () => {
+       // Create a test document
+       const content = "This is a test document";
+       const sourceId = "test-123";
+       const sourceType = "test";
+       
+       // Call createChunks without specifying domain
+       const chunks = await ingestService.createChunks(content, {
+         sourceId,
+         sourceType
+       });
+       
+       // Verify all chunks have domain set to 'generic'
+       expect(chunks.length).toBeGreaterThan(0);
+       chunks.forEach(chunk => {
+         expect(chunk.domain).toBe('generic');
+       });
+     });
+     ```
+  
+  Expected impact:
+  - All newly created chunks will have a valid domain
+  - No NULL values in the domain column during the transition period
+  - Better data consistency for filtering operations

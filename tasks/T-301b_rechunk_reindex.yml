@@ -1,0 +1,107 @@
+title: "rechunk_reindex → Re-chunk corpus to 256 ± 15% tokens, regenerate embeddings"
+description: |
+  Create a script to re-chunk the entire corpus with a target size of 256 ± 15% tokens per chunk,
+  regenerate embeddings for all chunks, and properly assign domain values (asset, scenario, theme, 
+  or generic) to each chunk. This task is the second part of T-301 and will be executed after the 
+  domain column has been added to the Chunk model and parallel search has been implemented.
+
+branch: "phase7.1/rechunk_reindex"
+effort: "M"
+owner: "@data"
+
+acceptance_tests:
+  - "Unit test verifying chunk count ↓ 50%"
+  - "All domains properly assigned in rechunked corpus"
+  - "RAGAS metrics show improvement over previous version"
+  - "Script handles all document types (assets, scenarios, themes)"
+  - "No chunks exceed the 256 ± 15% token limit"
+
+related_tasks:
+  - "T-301a"
+  - "T-305"
+
+depends_on:
+  - "T-301a"
+  - "T-305"
+
+notes: |
+  This script will be run once after all other retrieval logic improvements have been merged
+  and stabilized. It benefits from the parallel search implementation in T-305 for more
+  efficient embedding generation.
+  
+  Implementation approach:
+  1. Create `scripts/rag/rechunk.ts` with the following functionality:
+     - Read all source documents from the database
+     - Process each document with new chunk size parameters (256 ± 15% tokens)
+     - Determine appropriate domain for each chunk based on source
+     - Generate embeddings in parallel for improved performance
+     - Use batched transactions for database operations
+  
+  2. Chunk processing logic:
+     ```typescript
+     async function processDocuments() {
+       // Delete existing chunks (or archive them if needed for comparison)
+       await prisma.chunk.deleteMany({});
+       
+       // Process each document type with appropriate domain
+       const assets = await prisma.asset.findMany();
+       for (const asset of assets) {
+         const chunks = chunkDocument(asset.content, { 
+           targetTokens: 256,
+           tolerance: 0.15
+         });
+         
+         await createChunksWithEmbeddings(chunks, {
+           sourceId: asset.id,
+           sourceType: 'asset',
+           domain: 'asset'
+         });
+       }
+       
+       // Process scenarios with domain='scenario'
+       // Process theme documents with domain='theme'
+       // Process any other document types with domain='generic'
+     }
+     ```
+  
+  3. Embedding generation using parallel search:
+     ```typescript
+     async function createChunksWithEmbeddings(chunks, metadata) {
+       // Use transaction batching for performance
+       const batchSize = 50;
+       for (let i = 0; i < chunks.length; i += batchSize) {
+         const batch = chunks.slice(i, i + batchSize);
+         
+         // Generate embeddings in parallel
+         const embeddings = await Promise.all(
+           batch.map(chunk => generateEmbedding(chunk.content))
+         );
+         
+         // Create chunks in a transaction
+         await prisma.$transaction(
+           batch.map((chunk, idx) => 
+             prisma.chunk.create({
+               data: {
+                 content: chunk.content,
+                 embedding: embeddings[idx],
+                 domain: metadata.domain,
+                 sourceId: metadata.sourceId,
+                 sourceType: metadata.sourceType,
+               }
+             })
+           )
+         );
+       }
+     }
+     ```
+  
+  4. Verification logic:
+     - Count chunks before and after processing
+     - Verify ~50% reduction
+     - Run RAGAS evaluation on the re-chunked corpus
+  
+  Expected impact:
+  - More concise and focused chunks (target 256 tokens vs current larger chunks)
+  - Reduced total chunk count by approximately 50%
+  - Better retrieval quality due to more precise chunks
+  - Proper domain assignment for improved filtering

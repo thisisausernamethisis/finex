@@ -2,6 +2,35 @@
 # These rules define alerting conditions for monitoring the application
 
 groups:
+  - name: finex-dlq
+    rules:
+      - alert: HighDLQDepth
+        expr: finex_dlq_size > 10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High DLQ depth detected"
+          description: "Dead Letter Queue {{ $labels.queue_name }} has {{ $value }} messages pending processing"
+
+      - alert: CriticalDLQDepth
+        expr: finex_dlq_size > 50
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical DLQ depth detected"
+          description: "Dead Letter Queue {{ $labels.queue_name }} has reached critical depth with {{ $value }} messages"
+
+      - alert: IncreasedDLQMessages
+        expr: rate(finex_dlq_processed_total{outcome="failed"}[15m]) > 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Increasing DLQ failures"
+          description: "Queue {{ $labels.queue_name }} is experiencing increased failed message rate"
+
   - name: worker_alerts
     rules:
       - alert: HighFailureRate

@@ -1,6 +1,37 @@
-import { prisma } from '../db';
 import type { PrismaClient, Prisma, Card, Chunk } from '@prisma/client';
+import { Container, TOKEN_PRISMA } from '../container';
 import { logger } from '../logger';
+
+// Module-level cache for domain column existence
+let hasDomainColumn: boolean | null = null;
+
+/**
+ * Check if the 'domain' column exists in the Chunk table
+ * Result is cached after first query to avoid repetitive schema checks
+ */
+async function checkDomainColumnExists(prisma: PrismaClient): Promise<boolean> {
+  // Return cached result if available
+  if (hasDomainColumn !== null) return hasDomainColumn;
+  
+  try {
+    // Query information_schema to check if the column exists
+    const result = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'chunk'
+        AND column_name = 'domain'
+      ) as exists
+    `;
+    
+    // Cache the result
+    hasDomainColumn = !!(result as any)[0]?.exists;
+    return hasDomainColumn;
+  } catch (error) {
+    logger.error('Failed to check domain column existence', { error });
+    return false;
+  }
+}
 
 // Maximum page size allowed, can be overridden by environment variable
 const MAX_PAGE_SIZE = parseInt(process.env.MAX_PAGE_SIZE || '50', 10);
@@ -23,7 +54,7 @@ export interface PaginatedCards {
  * Repository for Card operations
  */
 export class CardRepository {
-  constructor(private readonly db: PrismaClient = prisma) {}
+  constructor(private readonly prisma: PrismaClient = Container.get<PrismaClient>(TOKEN_PRISMA)) {}
 
   /**
    * Retrieves a list of cards with pagination
@@ -77,10 +108,10 @@ export class CardRepository {
     }
     
     // Get the total count
-    const total = await this.db.card.count({ where });
+    const total = await this.prisma.card.count({ where });
     
     // Define card with chunks select
-    const cards = await this.db.card.findMany({
+    const cards = await this.prisma.card.findMany({
       where,
       select: {
         id: true,
@@ -124,7 +155,7 @@ export class CardRepository {
   public async getCardById(cardId: string): Promise<CardWithChunks | null> {
     repoLogger.debug('Getting card by ID', { cardId });
     
-    const card = await this.db.card.findUnique({
+    const card = await this.prisma.card.findUnique({
       where: { id: cardId },
       select: {
         id: true,
@@ -155,6 +186,7 @@ export class CardRepository {
    * Creates a new card with optional chunks
    * 
    * @param data The card data
+   * @param domain Optional domain to assign to chunks
    * @returns The newly created card
    */
   public async createCard(
@@ -163,15 +195,16 @@ export class CardRepository {
         content: string;
         order: number;
       }>;
+      domain?: string;
     }
   ): Promise<CardWithChunks> {
     repoLogger.debug('Creating card', { data });
     
-    // Extract chunks to create separately if provided
-    const { chunks, ...cardData } = data;
+    // Extract chunks and domain to handle separately
+    const { chunks, domain, ...cardData } = data;
     
-    // Create the card
-    const card = await this.db.card.create({
+    // Create the card first without chunks
+    const card = await this.prisma.card.create({
       data: cardData,
       select: {
         id: true,
@@ -180,32 +213,32 @@ export class CardRepository {
         importance: true,
         source: true,
         themeId: true,
-        chunks: {
-          select: {
-            id: true,
-            content: true,
-            order: true
-          },
-          orderBy: {
-            order: 'asc'
-          }
-        },
         createdAt: true,
         updatedAt: true
       }
     });
     
-        // If chunks were provided, create them separately
+    // If chunks were provided, add them separately
     if (chunks && chunks.length > 0) {
+      // Check if domain column exists
+      const hasDomainColumn = await checkDomainColumnExists(this.prisma);
+      
+      // We'll handle this directly here to avoid an unnecessary round-trip
       for (const chunk of chunks) {
-        // @ts-expect-error – stubbed in test mocks; not present in generated client
-        await this.db.chunk.create({
-          data: {
-            content: chunk.content,
-            order: chunk.order,
-            cardId: card.id
-          }
-        });
+        if (hasDomainColumn) {
+          // Include domain with fallback to 'generic' if domain column exists
+          const chunkDomain = domain ?? 'generic';
+          await this.prisma.$executeRaw`
+            INSERT INTO "Chunk" ("content", "order", "cardId", "domain")
+            VALUES (${chunk.content}, ${chunk.order}, ${card.id}, ${chunkDomain})
+          `;
+        } else {
+          // Original schema without domain
+          await this.prisma.$executeRaw`
+            INSERT INTO "Chunk" ("content", "order", "cardId")
+            VALUES (${chunk.content}, ${chunk.order}, ${card.id})
+          `;
+        }
       }
     }
     
@@ -228,7 +261,7 @@ export class CardRepository {
     repoLogger.debug('Updating card', { cardId, data });
     
     try {
-      const card = await this.db.card.update({
+      const card = await this.prisma.card.update({
         where: { id: cardId },
         data,
         select: {
@@ -270,7 +303,7 @@ export class CardRepository {
     repoLogger.debug('Deleting card', { cardId });
     
     try {
-      await this.db.card.delete({
+      await this.prisma.card.delete({
         where: { id: cardId }
       });
       return true;
@@ -287,7 +320,7 @@ export class CardRepository {
    * @returns True if the card exists, false otherwise
    */
   public async cardExists(cardId: string): Promise<boolean> {
-    const count = await this.db.card.count({
+    const count = await this.prisma.card.count({
       where: { id: cardId }
     });
     return count > 0;
@@ -299,6 +332,7 @@ export class CardRepository {
    * 
    * @param cardId The ID of the card to add chunks to
    * @param chunks Array of chunks to create
+   * @param domain Optional domain to assign to chunks (for post-301a compatibility)
    * @returns The created chunks
    */
   public async createChunks(
@@ -307,30 +341,66 @@ export class CardRepository {
       content: string;
       order: number;
       embedding?: Buffer | null;
-    }>
+    }>,
+    domain?: string
   ): Promise<Chunk[]> {
     repoLogger.debug('Creating chunks for card', { cardId, chunkCount: chunks.length });
     
     // First clear any existing chunks
-    await this.db.chunk.deleteMany({
+    await this.prisma.chunk.deleteMany({
       where: { cardId }
     });
     
-    // Create new chunks individually
-    const createdChunks = await Promise.all(
-      chunks.map(chunk => 
-        // @ts-expect-error – stubbed in test mocks; not present in generated client
-        this.db.chunk.create({
-          data: {
-            content: chunk.content,
-            order: chunk.order,
-            embedding: chunk.embedding,
-            cardId
-          }
-        })
-      )
-    );
+    // Check if the domain column exists in the schema (for T-309)
+    const hasDomainColumn = await checkDomainColumnExists(this.prisma);
+    
+    // Create new chunks using a loop to avoid type issues
+    for (const chunk of chunks) {
+      if (hasDomainColumn) {
+        // After T-301a migration: include domain with fallback to 'generic'
+        const chunkDomain = domain || 'generic';
+        await this.prisma.$executeRaw`
+          INSERT INTO "Chunk" ("content", "order", "embedding", "cardId", "domain")
+          VALUES (${chunk.content}, ${chunk.order}, ${chunk.embedding}, ${cardId}, ${chunkDomain})
+        `;
+      } else {
+        // Before T-301a migration: original schema without domain
+        await this.prisma.$executeRaw`
+          INSERT INTO "Chunk" ("content", "order", "embedding", "cardId")
+          VALUES (${chunk.content}, ${chunk.order}, ${chunk.embedding}, ${cardId})
+        `;
+      }
+    }
+    
+    // Fetch all created chunks at once
+    const createdChunks = await this.prisma.chunk.findMany({
+      where: { cardId },
+      orderBy: { order: 'asc' }
+    });
     
     return createdChunks;
+  }
+  
+  /**
+   * Check if a column exists in a table using information_schema
+   * Used to handle schema transitions during migrations
+   * 
+   * @param tableName The table to check
+   * @param columnName The column to check for
+   * @returns True if the column exists, false otherwise
+   */
+  private async checkIfColumnExists(tableName: string, columnName: string): Promise<boolean> {
+    // Query information_schema to check if the column exists
+    const result = await this.prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = ${tableName.toLowerCase()}
+        AND column_name = ${columnName.toLowerCase()}
+      ) as exists
+    `;
+    
+    // The result is an array with a single object with an "exists" property
+    return (result as any)[0]?.exists || false;
   }
 }

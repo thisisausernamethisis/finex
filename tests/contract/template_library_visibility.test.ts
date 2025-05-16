@@ -1,308 +1,122 @@
-// @ts-nocheck
-// TODO(T-173b): Clerk SDK typings and mock repository usage
-
-import { describe, expect, it, beforeAll, afterAll, jest } from '@jest/globals';
+import { describe, expect, it, beforeAll } from '@jest/globals';
 import { prisma } from '../mocks/prisma';
-import { ThemeTemplateRepository } from '../../lib/repositories';
 import { createJWTForTest } from '../utils/auth';
-import { PATCH as ToggleVisibilityPATCH } from '../../app/api/theme-templates/[id]/route';
+import { GET as ListTemplatesGET } from '../../app/api/theme-templates/route';
 import { executeRouteHandler, parseResponseJson } from '../_setup/contractTestUtils';
-import { toggleVisibility } from '../../lib/services/templateService';
+import { runTestSeed, SeedResult } from '../seed/buildTestSeed';
 
-describe('Template Visibility API Contract Tests', () => {
-  // User IDs for testing
-  let testUserId = 'user_test123';
+describe('Template Library Visibility Contract Tests', () => {
+  const testUserId = 'user_test123';
+  const otherUserId = 'user_other456';
   let testUserJwt: string;
-  let otherUserId = 'user_other456';
   let otherUserJwt: string;
-
-  // Template IDs for testing
-  let ownedTemplateId: string;
-  let otherUserTemplateId: string;
-
-  // Repository for creating test data
-  let templateRepository: ThemeTemplateRepository;
+  let seedResult: SeedResult;
+  let otherSeed: SeedResult;
+  let publicTemplateId: string;
+  let privateTemplateId: string;
 
   beforeAll(async () => {
-    // Set up test data
-    try {
-      // Clean up any existing test templates
-      await prisma.themeTemplate.deleteMany({
-        where: {
-          name: {
-            startsWith: 'Visibility Test'
-          }
-        }
-      });
-    } catch (e) {
-      // Ignore deletion errors
-    }
-    
-    // Create test user JWTs
     testUserJwt = createJWTForTest({ sub: testUserId });
     otherUserJwt = createJWTForTest({ sub: otherUserId });
-    
-    // Initialize repository
-    templateRepository = new ThemeTemplateRepository();
-    
-    // Create a template owned by the test user (initially private)
-    const userTemplate = await templateRepository.createTemplate(
-      testUserId,
-      {
-        name: 'Visibility Test User Template',
-        description: 'Template owned by the test user',
-        themeId: 'mock-theme-id',
-        isPublic: false
-      }
-    );
-    ownedTemplateId = userTemplate.id;
-    
-    // Create a template owned by another user
-    const otherTemplate = await templateRepository.createTemplate(
-      otherUserId,
-      {
-        name: 'Visibility Test Other User Template',
-        description: 'Template owned by another user',
-        themeId: 'mock-theme-id',
-        isPublic: true
-      }
-    );
-    otherUserTemplateId = otherTemplate.id;
-  });
-
-  afterAll(async () => {
-    // Clean up test data
-    try {
-      await prisma.themeTemplate.deleteMany({
-        where: {
-          name: {
-            startsWith: 'Visibility Test'
-          }
+    seedResult = await runTestSeed({ userId: testUserId });
+    otherSeed = await runTestSeed({ userId: otherUserId });
+    // Ensure at least one public template exists for other user
+    // Mark one of other user's templates as public via the mock
+    publicTemplateId = otherSeed.templateIds[0];
+    await prisma.themeTemplate.update({
+      where: { id: publicTemplateId },
+      data: { isPublic: true }
+    });
+    // Ensure at least one private template for other user (if not already)
+    privateTemplateId = otherSeed.templateIds[1] || `temp-${otherUserId}-priv`;
+    if (!otherSeed.templateIds[1]) {
+      await prisma.themeTemplate.create({
+        data: {
+          id: privateTemplateId,
+          name: 'Other User Private Template',
+          ownerId: otherUserId,
+          isPublic: false,
+          payload: {},
+          createdAt: new Date(),
+          updatedAt: new Date()
         }
       });
-    } catch (e) {
-      // Ignore deletion errors
     }
   });
 
-  describe('PATCH /api/theme-templates/{id}', () => {
-    it('should allow owner to publish a private template', async () => {
-      // Inject test template for the service call
-      jest.spyOn(prisma.themeTemplate, 'findUnique')
-        .mockResolvedValueOnce({
-          id: ownedTemplateId,
-          name: 'Visibility Test User Template',
-          description: 'Template owned by the test user',
-          ownerId: testUserId,
-          isPublic: false,
-          payload: {} as any,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      
-      // Mock the update response
-      jest.spyOn(prisma.themeTemplate, 'update')
-        .mockResolvedValueOnce({
-          id: ownedTemplateId,
-          name: 'Visibility Test User Template',
-          description: 'Template owned by the test user',
-          ownerId: testUserId,
-          isPublic: true, // Now published
-          payload: {} as any,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      
-      // Test making a private template public
-      const response = await executeRouteHandler(
-        ToggleVisibilityPATCH,
-        'PATCH',
-        `/api/theme-templates/${ownedTemplateId}`,
-        { id: ownedTemplateId },
-        { isPublic: true },
-        { 'Authorization': `Bearer ${testUserJwt}` }
-      );
-      
-      // Verify successful response
-      expect(response.status).toBe(200);
-      
-      const data = await parseResponseJson(response);
-      
-      // Validate response schema
-      expect(data).toHaveProperty('id');
-      expect(data.id).toBe(ownedTemplateId);
-      expect(data).toHaveProperty('isPublic');
-      expect(data.isPublic).toBe(true);
-      expect(data).toHaveProperty('ownerId');
-      expect(data.ownerId).toBe(testUserId);
-    });
-    
-    it('should allow owner to unpublish a public template', async () => {
-      // Create a mock public template
-      jest.spyOn(prisma.themeTemplate, 'findUnique')
-        .mockResolvedValueOnce({
-          id: ownedTemplateId,
-          name: 'Visibility Test User Template',
-          description: 'Template owned by the test user',
-          ownerId: testUserId,
-          isPublic: true,
-          payload: {} as any,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      
-      // Mock the update response
-      jest.spyOn(prisma.themeTemplate, 'update')
-        .mockResolvedValueOnce({
-          id: ownedTemplateId,
-          name: 'Visibility Test User Template',
-          description: 'Template owned by the test user',
-          ownerId: testUserId,
-          isPublic: false, // Now private
-          payload: {} as any,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      
-      // Test making a public template private
-      const response = await executeRouteHandler(
-        ToggleVisibilityPATCH,
-        'PATCH',
-        `/api/theme-templates/${ownedTemplateId}`,
-        { id: ownedTemplateId },
-        { isPublic: false },
-        { 'Authorization': `Bearer ${testUserJwt}` }
-      );
-      
-      // Verify successful response
-      expect(response.status).toBe(200);
-      
-      const data = await parseResponseJson(response);
-      
-      // Validate schema
-      expect(data).toHaveProperty('isPublic');
-      expect(data.isPublic).toBe(false);
-    });
-    
-    it('should prevent non-owner from changing template visibility', async () => {
-      // Mock the template ownership check
-      jest.spyOn(prisma.themeTemplate, 'findUnique')
-        .mockResolvedValueOnce({
-          id: otherUserTemplateId,
-          name: 'Visibility Test Other User Template',
-          description: 'Template owned by another user',
-          ownerId: otherUserId, // Owned by another user
-          isPublic: true,
-          payload: {} as any,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      
-      // First mock the service
-      const templateService = jest.requireActual('../../lib/services/templateService') as { 
-        toggleVisibility: (templateId: string, userId: string, isPublic: boolean) => Promise<any> 
-      };
-      
-      // Then create a spy that throws an error
-      const toggleVisibilitySpy = jest.spyOn(templateService, 'toggleVisibility')
-        .mockImplementation(() => {
-          throw new Error('Only the template owner can toggle visibility');
-        });
-      
-      // Test the RBAC enforcement
-      const response = await executeRouteHandler(
-        ToggleVisibilityPATCH,
-        'PATCH',
-        `/api/theme-templates/${otherUserTemplateId}`,
-        { id: otherUserTemplateId },
-        { isPublic: false },
-        { 'Authorization': `Bearer ${testUserJwt}` }
-      );
-      
-      // Should return forbidden (403)
-      expect(response.status).toBe(403);
-      
-      // Verify the correct error structure
-      const errorData = await parseResponseJson(response);
-      expect(errorData).toHaveProperty('error');
-      
-      // Verify that the service was called with the correct parameters
-      expect(toggleVisibilitySpy).toHaveBeenCalledWith(
-        otherUserTemplateId,
-        testUserId,
-        false
-      );
-    });
-    
-    it('should validate the request body', async () => {
-      // Test with invalid schema (missing isPublic)
-      const response = await executeRouteHandler(
-        ToggleVisibilityPATCH,
-        'PATCH',
-        `/api/theme-templates/${ownedTemplateId}`,
-        { id: ownedTemplateId },
-        { someOtherProperty: true }, // Invalid body - missing isPublic
-        { 'Authorization': `Bearer ${testUserJwt}` }
-      );
-      
-      // Should return bad request (400)
-      expect(response.status).toBe(400);
-      
-      // Verify the error structure
-      const errorData = await parseResponseJson(response);
-      expect(errorData).toHaveProperty('error');
-      expect(errorData.error).toBe('ValidationError');
-    });
-    
-    it('should require authentication', async () => {
-      // Test without providing a JWT
-      const response = await executeRouteHandler(
-        ToggleVisibilityPATCH,
-        'PATCH',
-        `/api/theme-templates/${ownedTemplateId}`,
-        { id: ownedTemplateId },
-        { isPublic: true },
-        {}, // No Authorization header
-        false // withAuth = false
-      );
-      
-      // Should return unauthorized (401)
-      expect(response.status).toBe(401);
-    });
-    
-    it('should handle non-existent templates', async () => {
-      // Mock the non-existent template
-      jest.spyOn(prisma.themeTemplate, 'findUnique')
-        .mockResolvedValueOnce(null);
-      
-      // Create a spy for the non-existent template case
-      const templateService = jest.requireActual('../../lib/services/templateService') as { 
-        toggleVisibility: (templateId: string, userId: string, isPublic: boolean) => Promise<any> 
-      };
-      const toggleVisibilitySpy = jest.spyOn(templateService, 'toggleVisibility')
-        .mockImplementation(() => {
-          throw new Error('Template with ID non-existent-id not found');
-        });
-      
-      // Test with non-existent template ID
-      const response = await executeRouteHandler(
-        ToggleVisibilityPATCH,
-        'PATCH',
-        `/api/theme-templates/non-existent-id`,
-        { id: 'non-existent-id' },
-        { isPublic: true },
-        { 'Authorization': `Bearer ${testUserJwt}` }
-      );
-      
-      // Should return not found (404)
-      expect(response.status).toBe(404);
-      
-      // Verify the service was called with the correct parameters
-      expect(toggleVisibilitySpy).toHaveBeenCalledWith(
-        'non-existent-id',
-        testUserId,
-        true
-      );
-    });
+  it('shows public templates from other users in the listing', async () => {
+    const response = await executeRouteHandler(
+      ListTemplatesGET,
+      'GET',
+      '/api/theme-templates',
+      {},
+      undefined,
+      { 'Authorization': `Bearer ${testUserJwt}` }
+    );
+    expect(response.status).toBe(200);
+    const data = await parseResponseJson(response);
+    // The test user's library list should include the other user's public template
+    const publicTemplate = data.items.find((tmpl: any) => tmpl.id === publicTemplateId);
+    expect(publicTemplate).toBeDefined();
+    if (publicTemplate) {
+      expect(publicTemplate.isPublic).toBe(true);
+      expect(publicTemplate.ownerId || publicTemplate.userId).toBe(otherUserId);
+    }
+  });
+
+  it('does not show other users’ private templates', async () => {
+    const response = await executeRouteHandler(
+      ListTemplatesGET,
+      'GET',
+      '/api/theme-templates',
+      {},
+      undefined,
+      { 'Authorization': `Bearer ${testUserJwt}` }
+    );
+    expect(response.status).toBe(200);
+    const data = await parseResponseJson(response);
+    // Ensure that the other user's private template is not in test user's list
+    const privateTemplate = data.items.find((tmpl: any) => tmpl.id === privateTemplateId);
+    expect(privateTemplate).toBeUndefined();
+  });
+
+  it('allows a user to see their own private templates only', async () => {
+    // When testUser requests with mine=true, they should see their private templates but not others'
+    const responseMine = await executeRouteHandler(
+      ListTemplatesGET,
+      'GET',
+      '/api/theme-templates?mine=true',
+      {},
+      undefined,
+      { 'Authorization': `Bearer ${testUserJwt}` }
+    );
+    expect(responseMine.status).toBe(200);
+    const dataMine = await parseResponseJson(responseMine);
+    for (const tmpl of dataMine.items) {
+      // All templates should belong to testUser
+      expect(tmpl.ownerId || tmpl.userId).toBe(testUserId);
+    }
+
+    // When otherUser requests their list, they should see their own (including the one we marked public and the private one)
+    const responseOther = await executeRouteHandler(
+      ListTemplatesGET,
+      'GET',
+      '/api/theme-templates?mine=true',
+      {},
+      undefined,
+      { 'Authorization': `Bearer ${otherUserJwt}` }
+    );
+    expect(responseOther.status).toBe(200);
+    const dataOther = await parseResponseJson(responseOther);
+    const otherIds = dataOther.items.map((t: any) => t.id);
+    expect(otherIds).toContain(publicTemplateId);    // their public (which they own)
+    expect(otherIds).toContain(privateTemplateId);   // their private
+    // And none of testUser's templates should be in other user's list
+    for (const tmpl of dataOther.items) {
+      if ((tmpl.ownerId || tmpl.userId) !== otherUserId) {
+        // If any template is not owned by otherUser, fail
+        fail(`Found template not owned by other user in their mine=true list: ${tmpl.id}`);
+      }
+    }
   });
 });

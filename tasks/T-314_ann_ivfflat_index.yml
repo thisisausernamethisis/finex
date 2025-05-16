@@ -1,0 +1,33 @@
+id: T-314
+title: "ann_ivfflat_index → Add pgvector IVFFlat index for faster vector search"
+branch: "phase7.2/ann-index"
+effort: "M"
+depends_on: []
+related_tasks:
+  - "T-301b"
+acceptance_tests:
+  - "Median vector query latency ≤ 15 ms on Neon dev DB"
+  - "Vector recall ≥ 0.90 versus brute-force baseline"
+  - "Migration successfully creates IVFFlat index"
+  - "Service toggle works with DISABLE_ANN environment variable"
+notes: |
+  Implementation approach:
+  1. Create database migration:
+     ```sql
+     CREATE INDEX chunks_embedding_ann ON "Chunk" USING ivfflat (embedding) WITH (lists=100);
+     ```
+     - Skip on SQLite (if !pgvector)
+     - Include safety checks for PostgreSQL version and pgvector availability
+  
+  2. Modify lib/services/searchService.ts:
+     - Add useAnn flag when building vector queries
+     - Respect DISABLE_ANN environment toggle
+     - Ensure backward compatibility with non-PostgreSQL environments
+  
+  Technical implementation:
+  - IVFFlat requires lists parameter (100 is appropriate for our data scale)
+  - This index should be created before T-301b re-chunking to ensure new chunks are indexed
+  - Must merge before T-301b; no formal depends_on but label as blocks: [T-301b]
+  - Performance benchmarking with scripts/bench/vector_latency.ts
+  - Recall testing using 30 random queries compared to exact nearest neighbor search
+  - ANN can be disabled via environment variable for troubleshooting

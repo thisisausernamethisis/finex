@@ -1,0 +1,98 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: finex-neon-backup
+  labels:
+    app: finex
+    component: neon-backup
+spec:
+  schedule: "0 2 * * *"  # Run at 2 AM every day
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: finex
+            component: neon-backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: neon-backup
+              image: neondb/neon:latest
+              env:
+                - name: NEON_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: neon-credentials
+                      key: api-key
+                - name: NEON_PROJECT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: neon-credentials
+                      key: project-id
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: s3-credentials
+                      key: access-key
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: s3-credentials
+                      key: secret-key
+                - name: S3_BUCKET
+                  value: "finex-backups"
+                - name: S3_PREFIX
+                  value: "neon/"
+              command:
+                - "/bin/sh"
+                - "-c"
+                - |
+                  # Create backup
+                  BACKUP_ID=$(neon-cli project branch create-backup \
+                    --project-id $NEON_PROJECT_ID \
+                    --branch-id main \
+                    --format json | jq -r '.id')
+                  
+                  # Wait for backup to complete
+                  while true; do
+                    STATUS=$(neon-cli project branch get-backup \
+                      --project-id $NEON_PROJECT_ID \
+                      --branch-id main \
+                      --backup-id $BACKUP_ID \
+                      --format json | jq -r '.status')
+                    
+                    if [ "$STATUS" = "completed" ]; then
+                      break
+                    elif [ "$STATUS" = "failed" ]; then
+                      echo "Backup failed"
+                      exit 1
+                    fi
+                    
+                    echo "Backup in progress, status: $STATUS"
+                    sleep 10
+                  done
+                  
+                  # Download backup
+                  BACKUP_FILE="neon-backup-$(date +%Y%m%d).tar.gz"
+                  neon-cli project branch download-backup \
+                    --project-id $NEON_PROJECT_ID \
+                    --branch-id main \
+                    --backup-id $BACKUP_ID \
+                    --output $BACKUP_FILE
+                  
+                  # Upload to S3
+                  aws s3 cp $BACKUP_FILE s3://$S3_BUCKET/$S3_PREFIX$BACKUP_FILE
+                  
+                  # Cleanup
+                  rm $BACKUP_FILE
+                  
+                  echo "Backup completed and uploaded to S3"
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi

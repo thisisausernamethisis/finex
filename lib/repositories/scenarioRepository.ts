@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { Container, TOKEN_PRISMA } from '../container';
 import { logger } from '../logger';
 import type { PrismaClient, Scenario, Prisma, ThemeType } from '@prisma/client';
 
@@ -21,7 +21,7 @@ export interface PaginatedScenarios {
  * Repository for Scenario operations
  */
 export class ScenarioRepository {
-  constructor(private readonly db: PrismaClient = prisma) {}
+  constructor(private readonly prisma: PrismaClient = Container.get<PrismaClient>(TOKEN_PRISMA)) {}
   /**
    * Retrieves a list of scenarios with pagination
    * 
@@ -55,10 +55,10 @@ export class ScenarioRepository {
     }
     
     // Get the total count
-    const total = await this.db.scenario.count({ where });
+    const total = await this.prisma.scenario.count({ where });
     
     // Get the scenarios for this page
-    const scenarios = await this.db.scenario.findMany({
+    const scenarios = await this.prisma.scenario.findMany({
       where,
       select: {
         id: true,
@@ -88,7 +88,7 @@ export class ScenarioRepository {
   public async getScenarioById(scenarioId: string): Promise<Scenario | null> {
     repoLogger.debug('Getting scenario by ID', { scenarioId });
     
-    return this.db.scenario.findUnique({
+    return this.prisma.scenario.findUnique({
       where: { id: scenarioId },
       select: {
         id: true,
@@ -110,7 +110,7 @@ export class ScenarioRepository {
   ): Promise<Scenario> {
     repoLogger.debug('Creating scenario', { data });
     
-    return this.db.scenario.create({
+    return this.prisma.scenario.create({
       data: {
         ...data,
         themes: {
@@ -152,7 +152,7 @@ export class ScenarioRepository {
       // Check if probability is being updated
       if (data.probability !== undefined) {
         // Also update the probability theme
-        const probabilityTheme = await this.db.theme.findFirst({
+        const probabilityTheme = await this.prisma.theme.findFirst({
         where: {
           scenarioId,
           themeType: 'PROBABILITY' as ThemeType
@@ -160,7 +160,7 @@ export class ScenarioRepository {
       });
       
         if (probabilityTheme) {
-          await this.db.theme.update({
+          await this.prisma.theme.update({
           where: { id: probabilityTheme.id },
           data: { 
             manualValue: data.probability,
@@ -171,7 +171,7 @@ export class ScenarioRepository {
     }
     
     try {
-      return this.db.scenario.update({
+      return this.prisma.scenario.update({
         where: { id: scenarioId },
         data,
         select: {
@@ -197,7 +197,7 @@ export class ScenarioRepository {
     repoLogger.debug('Deleting scenario', { scenarioId });
     
     try {
-      await this.db.scenario.delete({
+      await this.prisma.scenario.delete({
         where: { id: scenarioId }
       });
       return true;
@@ -214,7 +214,7 @@ export class ScenarioRepository {
    * @returns True if the scenario exists, false otherwise
    */
   public async scenarioExists(scenarioId: string): Promise<boolean> {
-    const count = await this.db.scenario.count({
+    const count = await this.prisma.scenario.count({
       where: { id: scenarioId }
     });
     return count > 0;

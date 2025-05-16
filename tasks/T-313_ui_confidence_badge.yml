@@ -1,0 +1,28 @@
+id: T-313
+title: "ui_confidence_badge → Create React confidence badge component"
+branch: "phase7.2/ui-badge"
+effort: "S"
+depends_on:
+  - "T-312"
+acceptance_tests:
+  - "Storybook snapshot shows confidence badge"
+  - "Lighthouse performance unchanged"
+  - "Badge shows confidence percentage with tooltip"
+notes: |
+  Implementation approach:
+  1. Create React component in frontend/components/ConfidenceBadge.tsx:
+     - Grey pill design with percentage display
+     - Tooltip showing more detailed confidence information
+     - Various visual states based on confidence level
+  
+  2. Integrate with API response:
+     - Pull confidence data from API response
+     - Handle missing confidence values gracefully
+     - Format percentage display appropriately
+  
+  Technical implementation:
+  - Minimal component design for performance
+  - Consistent with existing UI design language
+  - Tooltip will provide additional context on confidence meaning
+  - Component will gracefully handle undefined confidence values
+  - Performance testing will ensure no regressions

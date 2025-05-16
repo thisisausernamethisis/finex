@@ -1,0 +1,34 @@
+id: T-312
+title: "schema_confidence_api → Add confidence to schema and API"
+branch: "phase7.2/conf-schema"
+effort: "M"
+depends_on:
+  - "T-311"
+acceptance_tests:
+  - "Contract tests re-recorded → green"
+  - "OpenAPI spec bumped to 0.9.0 and CI diff allow-list passes"
+  - "Prisma migration adds confidence Float? to MatrixAnalysisResult"
+  - "Updated OpenAPI schema includes confidence field"
+  - "Extended matrix/:id route returns confidence values"
+notes: |
+  Implementation approach:
+  1. Create Prisma migration:
+     - Add confidence Float? (nullable) to MatrixAnalysisResult model in prisma/schema.prisma
+     - Generate updated Prisma client
+     - Ensure migration script handles existing records properly
+  
+  2. Update OpenAPI schema:
+     - Tag as version 0.9.0
+     - Add confidence field to appropriate response schemas
+     - Update Zod validation schemas to match
+  
+  3. Extend API routes:
+     - Update /matrix/:id route to include confidence data
+     - Update swagger documentation
+     - Ensure backward compatibility for clients not expecting confidence
+  
+  Technical implementation:
+  - Confidence will be a Float between 0-1 representing calibrated confidence
+  - Field is nullable to support backward compatibility
+  - Contract tests will need to be re-recorded with new field
+  - API changes will be documented through swagger updates

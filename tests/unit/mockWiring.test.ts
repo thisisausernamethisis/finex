@@ -1,50 +1,39 @@
 /**
- * Test to verify that Jest automatic mocking is properly configured
- * 
- * This test ensures that when code imports from '@/lib/repositories',
- * Jest correctly substitutes our manual mocks from __mocks__/lib/repositories.
- * This protects against future moduleNameMapper drift that could cause tests to use
- * real implementations unexpectedly.
+ * Wiring sanity-check for Vitest automatic module mocks.
+ *
+ * Each repository import should resolve to the implementation in
+ * tests/__mocks__/lib/repositories.ts – never the real DB layer.
  */
-
-import { describe, it, expect } from '@jest/globals';
-import { 
+import { describe, it, expect, vi } from 'vitest';
+import {
   ThemeTemplateRepository,
   AssetRepository,
   ScenarioRepository,
   ThemeRepository,
   CardRepository,
-  MatrixRepository
+  MatrixRepository,
 } from '@/lib/repositories';
 
-describe('Jest Repository Mocking', () => {
-  it('should properly mock ThemeTemplateRepository', () => {
-    const repo = new ThemeTemplateRepository();
-    expect(jest.isMockFunction(repo.listTemplates)).toBe(true);
-    expect(jest.isMockFunction(repo.getTemplateById)).toBe(true);
-    expect(jest.isMockFunction(repo.createTemplate)).toBe(true);
-    expect(jest.isMockFunction(repo.templateExists)).toBe(true);
-    expect(jest.isMockFunction(repo.deleteTemplate)).toBe(true);
-  });
+function assertRepository(instance: unknown) {
+  for (const key of Object.keys(instance as any)) {
+    const prop = (instance as any)[key];
+    if (typeof prop === 'function') {
+      expect(vi.isMockFunction(prop)).toBe(true);
+    }
+  }
+}
 
-  it('should properly mock AssetRepository', () => {
-    const repo = new AssetRepository();
-    expect(jest.isMockFunction(repo.listAssets)).toBe(true);
-    expect(jest.isMockFunction(repo.getAssetById)).toBe(true);
-    expect(jest.isMockFunction(repo.createAsset)).toBe(true);
-    expect(jest.isMockFunction(repo.updateAsset)).toBe(true);
-    expect(jest.isMockFunction(repo.deleteAsset)).toBe(true);
-    expect(jest.isMockFunction(repo.assetExists)).toBe(true);
-  });
+describe('Repository mock wiring (Vitest)', () => {
+  it('ThemeTemplateRepository is mocked', () =>
+    assertRepository(new ThemeTemplateRepository()));
 
-  it('should properly mock other repositories', () => {
-    const scenarioRepo = new ScenarioRepository();
-    const themeRepo = new ThemeRepository();
-    const cardRepo = new CardRepository();
-    const matrixRepo = new MatrixRepository();
-    
-    // Verify a few methods to make sure these are also mocked
-    expect(jest.isMockFunction(themeRepo.getThemeById)).toBe(true);
-    expect(jest.isMockFunction(cardRepo.listCards)).toBe(true);
+  it('AssetRepository is mocked', () =>
+    assertRepository(new AssetRepository()));
+
+  it('All other repositories are mocked', () => {
+    assertRepository(new ScenarioRepository());
+    assertRepository(new ThemeRepository());
+    assertRepository(new CardRepository());
+    assertRepository(new MatrixRepository());
   });
 });

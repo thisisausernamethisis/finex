@@ -12,19 +12,28 @@ export default defineConfig({
 test: {
     globals: true,
     setupFiles: [
-      './tests/setup/vitestJestShim.ts',
+      './tests/vitestJestShim.ts',  // load shim first
       './tests/setup/clerk-mock.ts',
+      './tests/helpers/mockBullmq.ts',   // unified BullMQ mock
+      './tests/helpers/auth.ts',        // make __TEST_USER__ global before jest.setup
       './tests/jest.setup.ts',
     ],
+    globalSetup: './tests/setup/globalSetup.ts', // run DB prep after shim
     exclude: [
       ...configDefaults.exclude,
       'tests/e2e/**'
     ],
     deps: {
       moduleDirectories: ['node_modules', '__mocks__']
+    },
+    coverage: {
+      reportsDirectory: './coverage',
+      thresholds: {
+        lines: 80,
+        branches: 70,
+        functions: 70,
+        statements: 80
+      }
     }
-  },
-  coverage: {
-    reportsDirectory: './coverage'
   }
 });

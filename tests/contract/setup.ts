@@ -1,20 +1,20 @@
 import { NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { prisma } from '../mocks/prisma';
 import { createJWTForTest } from '../utils/auth';
+import { TEST_USER_ID } from './constants';
+
+// Create mock Prisma instance
+const prisma = new PrismaClient();
 
 // Mock Next.js authentication
 jest.mock('@clerk/nextjs/server', () => ({
-  auth: jest.fn(() => ({ userId: 'test-user-id' })),
+  auth: jest.fn(() => ({ userId: TEST_USER_ID })),
   clerkClient: {
     users: {
-      getUser: jest.fn(() => ({ id: 'test-user-id' }))
+      getUser: jest.fn(() => ({ id: TEST_USER_ID }))
     }
   }
 }));
-
-// Default test user ID
-export const TEST_USER_ID = 'test-user-id';
 
 // Create a test JWT token
 export const TEST_JWT = createJWTForTest({ 

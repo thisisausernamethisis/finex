@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
-import { prisma } from '../db';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { Container, TOKEN_PRISMA } from '../container';
 import { hasAssetAccess } from '../services/accessControlService';
 import { logger } from '../logger';
 
@@ -13,6 +13,7 @@ const repoLogger = logger.child({ component: 'AssetRepository' });
  * Repository for Asset operations
  */
 export class AssetRepository {
+  constructor(private readonly db: PrismaClient = Container.get<PrismaClient>(TOKEN_PRISMA)) {}
   /**
    * Retrieves a list of assets with pagination
    * 
@@ -66,10 +67,10 @@ export class AssetRepository {
     }
     
     // Get the total count
-    const total = await prisma.asset.count({ where });
+    const total = await this.db.asset.count({ where });
     
     // Get the assets for this page
-    const assets = await prisma.asset.findMany({
+    const assets = await this.db.asset.findMany({
       where,
       select: {
         id: true,
@@ -110,7 +111,7 @@ export class AssetRepository {
     
     // Retrieve the asset - not checking access here as that should be done in the API layer
     // This allows for more granular error handling (e.g., 403 vs 404)
-    return prisma.asset.findUnique({
+    return this.db.asset.findUnique({
       where: { id: assetId },
       select: {
         id: true,
@@ -138,7 +139,7 @@ export class AssetRepository {
   ): Promise<any> {
     repoLogger.debug('Creating asset', { userId, data });
     
-    return prisma.asset.create({
+    return this.db.asset.create({
       data: {
         ...data,
         userId,
@@ -185,7 +186,7 @@ export class AssetRepository {
     repoLogger.debug('Updating asset', { assetId, userId, data });
     
     // We don't check access here as that should be done in the API layer
-    return prisma.asset.update({
+    return this.db.asset.update({
       where: { id: assetId },
       data,
       select: {
@@ -213,7 +214,7 @@ export class AssetRepository {
     
     // We don't check permissions here as that should be done in the API layer
     try {
-      await prisma.asset.delete({
+      await this.db.asset.delete({
         where: { id: assetId }
       });
       return true;
@@ -230,7 +231,7 @@ export class AssetRepository {
    * @returns True if the asset exists, false otherwise
    */
   public async assetExists(assetId: string): Promise<boolean> {
-    const count = await prisma.asset.count({
+    const count = await this.db.asset.count({
       where: { id: assetId }
     });
     return count > 0;

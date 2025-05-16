@@ -1,0 +1,91 @@
+title: "cot_function_prompt → Replace worker prompt with CoT + OpenAI function call"
+description: |
+  Replace the current matrix worker prompt with a Chain-of-Thought (CoT) reasoning approach and
+  implement OpenAI function calling format. This upgrade maintains the current schema intact while
+  improving reasoning quality and result consistency. The implementation will include a hidden
+  "reasoning_steps" key that is stripped before persisting the MatrixAnalysisResult.
+
+branch: "phase7.1/cot_function_prompt"
+effort: "M"
+owner: "@ai-core"
+
+acceptance_tests:
+  - "Contract tests green with updated prompt"
+  - "Unit test: prompt template returns valid JSON with reasoning trimmed"
+  - "RAGAS faithfulness metric remains stable or improves"
+  - "No changes to public API or database schema for MatrixAnalysisResult"
+  - "Response format maintains backward compatibility"
+
+related_tasks:
+  - "T-302"
+  - "T-303"
+
+depends_on:
+  - "T-302"
+  - "T-303"
+
+notes: |
+  This task modernizes our interaction with the LLM by implementing best practices for 
+  structured output generation. The Chain-of-Thought approach improves reasoning quality
+  by guiding the model through explicit steps, while function calling ensures
+  consistent output format.
+  
+  Implementation approach:
+  1. Update the matrix worker prompt to include explicit reasoning steps:
+     ```typescript
+     const prompt = `
+       Analyze the following financial scenario carefully:
+       
+       ${scenario}
+       
+       Think through this step by step:
+       1. First, identify the key factors that would impact the asset
+       2. For each factor, analyze how it would affect the asset value and stability
+       3. Consider both direct and indirect effects
+       4. Quantify the likely impact on a scale from -5 (severe negative) to +5 (strong positive)
+       
+       After your analysis, provide your conclusions in a structured format.
+     `;
+     ```
+  
+  2. Implement OpenAI function calling format:
+     ```typescript
+     const functions = [
+       {
+         name: "submitMatrixAnalysis",
+         description: "Submit a structured analysis of the financial scenario impact",
+         parameters: {
+           type: "object",
+           properties: {
+             reasoning_steps: {
+               type: "string",
+               description: "Your step-by-step reasoning process (this will be removed before storage)"
+             },
+             impact_score: {
+               type: "number",
+               description: "Overall impact score from -5 to +5"
+             },
+             // ...remaining properties from existing schema
+           },
+           required: ["reasoning_steps", "impact_score", "confidence", "summary"]
+         }
+       }
+     ];
+     ```
+  
+  3. Strip reasoning before persisting to database:
+     ```typescript
+     // After receiving the model response
+     const { reasoning_steps, ...resultToStore } = functionCallResult;
+     await this.matrixRepository.createMatrixAnalysisResult(resultToStore);
+     ```
+  
+  Expected impact:
+  - Improved reasoning quality and consistency
+  - Better handling of complex financial scenarios
+  - Maintained backward compatibility with existing consumers
+  - Foundation for more structured and reliable AI outputs
+  
+  Feature flag considerations:
+  - No feature flag needed as this change is transparent to API consumers
+  - All changes are internal to the worker implementation

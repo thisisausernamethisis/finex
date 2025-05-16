@@ -2,15 +2,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../db';
 import { logger } from '../logger';
 
-// Manual Domain enum definition (to match schema.prisma)
-// Can be removed after regenerating Prisma client
-enum Domain {
-  ASSET = 'ASSET',
-  SUPPLY_CHAIN = 'SUPPLY_CHAIN',
-  GEOGRAPHY = 'GEOGRAPHY',
-  OTHER = 'OTHER'
-}
-
 const vectorLogger = logger.child({ component: 'VectorClient' });
 
 /**
@@ -18,25 +9,27 @@ const vectorLogger = logger.child({ component: 'VectorClient' });
  * 
  * @param q The query to search for
  * @param k The number of results to return
- * @param domain Optional domain filter to restrict results by category
+ * @param domain Optional domain filter array to restrict results by category
  * @returns A promise resolving to an array of results with similarity scores
  */
 export async function similaritySearch(
   q: string, 
   k: number = 20, 
-  domain?: Domain
+  domain?: string[]
 ): Promise<Array<{ id: string; similarity: number }>> {
   try {
     // For a real implementation, this would call OpenAI or similar
     // to generate a proper embedding vector
-    const queryEmbedding = await generateEmbedding(q);
+    const queryEmbedding = await generateDocEmbedding(q);
     
     if (!queryEmbedding) {
       return [];
     }
     
-    // Build the domain filter clause if a domain is specified
-    const domainFilter = domain ? Prisma.sql`AND ch.domain = ${domain}` : Prisma.empty;
+    // Build the domain filter clause if domains are specified
+    const domainFilter = domain?.length 
+      ? Prisma.sql`AND ch.domain = ANY(${Prisma.join(domain)})` 
+      : Prisma.empty;
     
     // The vector search query with optional domain filter
     const results = await prisma.$queryRaw<Array<{ id: string; similarity: number }>>(
@@ -60,14 +53,15 @@ export async function similaritySearch(
 }
 
 /**
- * Generates an embedding for the given text
+ * Generates an embedding for the given document text
  * In a real implementation, this would call an external API
+ * 
+ * @param text The document text to generate an embedding for
+ * @returns A 1536-dimensional vector embedding
  */
-async function generateEmbedding(text: string): Promise<number[]> {
+export async function generateDocEmbedding(text: string): Promise<number[]> {
+  // TODO(OpenAI-embeddings): Replace mock implementation with actual OpenAI embeddings API call
   // Placeholder - in a real implementation, this would call OpenAI or similar
   // to generate a proper embedding vector
   return Array(1536).fill(0).map(() => Math.random() - 0.5);
 }
-
-// Export as getQueryEmbedding for use in searchService
-export const getQueryEmbedding = generateEmbedding;

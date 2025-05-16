@@ -1,0 +1,95 @@
+title: "dynamic_alpha → Add heuristic scorer + optional GPT-3.5 advisor to set α"
+description: |
+  Create a heuristic query analyzer that automatically determines the optimal alpha (α) weight 
+  between BM25 and vector search based on query characteristics. Implement both a regex-based 
+  heuristic approach and an optional GPT-3.5 advisor (behind a feature flag) to dynamically 
+  adjust α for different query types, improving search relevance.
+
+branch: "phase7.1/dynamic_alpha"
+effort: "M"
+owner: "@ai-core"
+
+acceptance_tests:
+  - "Mocked unit test verifying α changes with query type"
+  - "Feature flag DYNAMIC_ALPHA_GPT works as expected"
+  - "Heuristic fallback works when GPT feature flag is disabled"
+  - "Regex detection correctly identifies proper nouns and numeric patterns"
+  - "Alpha values: 0.75 for queries with proper nouns/numbers, 0.5 otherwise"
+
+related_tasks:
+  - "T-302"
+
+depends_on:
+  - "T-302"
+
+notes: |
+  This task builds on T-302 by automatically determining the optimal alpha value
+  rather than requiring it to be manually specified. The implementation uses two approaches:
+  
+  1. **Heuristic Approach** (always active):
+     - Use regex to detect proper nouns ([A-Z][a-z]+) and numeric content
+     - Set α_BM25 = 0.75 for queries with proper nouns/numbers, else 0.5
+     - This approach prioritizes exact keyword matches for factual queries
+  
+  2. **GPT-3.5 Advisor** (behind feature flag):
+     - Feature flag: DYNAMIC_ALPHA_GPT=true
+     - Query GPT-3.5 with the user question to determine query type
+     - Return suggested alpha value based on analysis
+     - Fall back to heuristic approach if GPT call fails or flag is disabled
+  
+  Implementation approach:
+  1. Create a new queryAnalysisService:
+     ```typescript
+     export class QueryAnalysisService {
+       private readonly useGpt: boolean;
+       
+       constructor(
+         @inject(ConfigToken) private config: Config,
+         @inject(OpenAIClientToken) private openai?: OpenAIApi,
+       ) {
+         this.useGpt = config.DYNAMIC_ALPHA_GPT === 'true';
+       }
+       
+       async determineOptimalAlpha(query: string): Promise<number> {
+         // Use GPT if enabled, fall back to heuristic
+         if (this.useGpt && this.openai) {
+           try {
+             return await this.getGptRecommendedAlpha(query);
+           } catch (error) {
+             logger.warn(`GPT alpha recommendation failed, using heuristic fallback: ${error}`);
+           }
+         }
+         
+         return this.getHeuristicAlpha(query);
+       }
+       
+       private getHeuristicAlpha(query: string): number {
+         // Regex for proper nouns and numbers
+         const properNounRegex = /[A-Z][a-z]+/;
+         const numberRegex = /\d+/;
+         
+         if (properNounRegex.test(query) || numberRegex.test(query)) {
+           return 0.75; // Higher weight to BM25 for factual queries
+         }
+         
+         return 0.5; // Balanced for conceptual queries
+       }
+       
+       private async getGptRecommendedAlpha(query: string): Promise<number> {
+         // Implementation of GPT-3.5 call
+       }
+     }
+     ```
+  
+  2. Update the searchService to use the queryAnalysisService:
+     ```typescript
+     const alpha = await this.queryAnalysisService.determineOptimalAlpha(query);
+     return this.hybridSearch(query, { domain, alpha });
+     ```
+  
+  3. Create a mock implementation for testing without requiring API calls
+  
+  Expected impact:
+  - Improved search relevance with automatic parameter tuning
+  - Better handling of different query types (factual vs. conceptual)
+  - Foundation for future enhancements to query understanding

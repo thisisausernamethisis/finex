@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "api:generate": "node ./scripts/run-api-gen.js",
     "test:contract": "vitest run tests/contract",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run tests/unit",
     "test": "npm run test:unit && npm run test:contract",
     "test:e2e": "playwright test --config=playwright.config.ts",
     "pretest:contract": "npm run api:generate || echo 'Warning: API type generation failed, continuing with tests'",
@@ -30,16 +30,29 @@
     "esm:check": "powershell -ExecutionPolicy Bypass -File ./scripts/check-esm-compatibility.ps1 || bash scripts/check-esm-compatibility.sh && exit 0",
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed:ci": "cross-env SEED_UID=ci ts-node prisma/seed.ts",
-    "verify": "bash ./run_verify.sh"
+    "verify": "bash ./run_verify.sh",
+    "diff:api": "ts-node scripts/ci_check_api_diff.ts",
+    "rag:eval": "ts-node scripts/rag/eval.ts",
+    "validate-yaml": "ts-node scripts/ci/validate_yaml.ts",
+    "calibrate:impact": "node scripts/calibrate/impact.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@opentelemetry/api": "^1.6.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.43.0",
+    "@opentelemetry/resources": "^1.17.0",
+    "@opentelemetry/sdk-node": "^0.43.0",
+    "@opentelemetry/sdk-trace-base": "^1.17.0",
+    "@opentelemetry/semantic-conventions": "^1.17.0",
+    "@prisma/instrumentation": "^5.4.2",
+    "@actions/core": "^1.10.0",
     "@clerk/nextjs": "^6.18.5",
     "@openapitools/openapi-generator-cli": "^2.20.0",
     "@prisma/client": "^5.15.1",
     "bullmq": "^5.52.1",
+    "csv-parse": "^5.5.5",
     "dayjs": "^1.11.13",
     "dotenv": "^16.5.0",
     "eslint": "8.57.0",
@@ -48,6 +61,7 @@
     "lucide-react": "^0.507.0",
     "nanoid": "^5.1.5",
     "next": "^14.2.28",
+    "openai": "^4.98.0",
     "prom-client": "^15.1.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -61,11 +75,14 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^29.5.14",
+    "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.15.3",
     "@types/node-fetch": "^2.6.12",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.3",
+    "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^3.1.3",
     "@vitest/ui": "^3.1.3",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
@@ -85,5 +102,9 @@
     "global": {
       "lines": 70
     }
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "postdeploy": "ts-node scripts/post_migrate.ts"
   }
 }

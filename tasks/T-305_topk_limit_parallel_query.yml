@@ -1,0 +1,41 @@
+title: "topk_limit_parallel_query → Run BM25 & vector queries in Promise.all, expose k param"
+description: |
+  Optimize the searchService by running BM25 and vector search operations in parallel using Promise.all,
+  and expose a configurable 'k' parameter (with default value of 3) to control the number of results
+  returned from each search method. This will improve retrieval latency and provide more control
+  over result sets.
+
+branch: "phase7.1/topk_limit_parallel_query"
+effort: "S"
+owner: "@perf"
+
+acceptance_tests:
+  - "Perf test: median retrieval latency ≤ 50 ms (local)"
+  - "Contract tests remain green with parallelized search"
+  - "k parameter works correctly with default value of 3"
+  - "Performance metrics show improvement from sequential to parallel execution"
+
+related_tasks:
+  - "T-301b"
+  - "T-302"
+
+notes: |
+  This optimization is a prerequisite for the re-chunking process (T-301b) as it 
+  improves performance for the embedding generation phase.
+  
+  Implementation approach:
+  1. Refactor searchService.hybridSearch to run BM25 and vector searches in parallel:
+     ```typescript
+     const [bm25Results, vectorResults] = await Promise.all([
+       this.bm25Search(query, { limit: k || 3 }),
+       this.vectorSearch(query, { limit: k || 3 })
+     ]);
+     ```
+  2. Add 'k' parameter to both search methods with a default value of 3
+  3. Optimize result merging logic for improved performance
+  4. Create performance test to verify latency improvements
+  
+  Expected performance impact:
+  - Reduced latency by eliminating sequential wait time
+  - More efficient result processing with controlled result set sizes
+  - Support for the performance requirements of Phase 7.1
