@@ -1,147 +1,147 @@
-# Finex Retrieval System Runbook
+# Finex Retrieval Runbook
 
-This runbook provides operational guidelines for managing Finex's retrieval system (v0.20+).
+This document provides operational procedures for managing the Finex retrieval system.
 
-## Architecture Overview
+## Table of Contents
 
-The retrieval system consists of these main components:
+- [Indexes and Chunks](#indexes-and-chunks)
+- [Re-chunk batch](#re-chunk-batch)
+- [Troubleshooting](#troubleshooting)
 
-1. **Chunking Pipeline**: Breaks documents into ~256 token chunks
-2. **Embedding Generation**: Creates vector embeddings for each chunk
-3. **Hybrid Search**: Combines BM25 (keyword) + Vector (semantic) search
-4. **Dynamic α Parameter**: Auto-adjusts the weight between BM25 and vector search
-5. **Domain Filtering**: Narrows search to specific knowledge domains
+## Indexes and Chunks
 
-## Components
+### Overview
 
-### 1. Chunking System
+The retrieval system uses vector embeddings to find relevant information in asset content. The system has two types of chunks:
 
-The system splits document content into chunks targeting ~256 tokens, maintaining document coherence and context.
+1. **Legacy Chunks** (`Chunk` model): Original implementation with basic metadata
+2. **ChunkV2** (`ChunkV2` model): Enhanced implementation with domain awareness and improved embeddings
 
-- **Location**: `scripts/rechunk/rechunk.ts`
-- **Cron Job**: `ops/cron/rechunk.yml` (runs weekly)
-- **Target Size**: 256 tokens ±15%
-- **Domain Preservation**: Each chunk inherits the domain of its parent document
+### Monitoring Index Health
 
-### 2. Vector Search
+1. Check index statistics:
 
-- **Location**: `lib/clients/vectorClient.ts`
-- **Index Type**: IVFFlat (Inverted File with Flat compression)
-- **Vector Size**: 1536 dimensions
-- **Query Command**: `prisma.$queryRaw` with cosine similarity
+```sql
+SELECT count(*) FROM chunk;
+SELECT count(*) FROM "chunkV2";
+```
 
-### 3. Hybrid Search
+2. Validate embedding distribution:
 
-- **Location**: `lib/services/searchService.ts`
-- **Method**: Reciprocal Rank Fusion (RRF)
-- **Parameters**:
-  - `alpha`: Weight between BM25 (α) and vector (1-α)
-  - `domain`: Optional array of domain filters
-  - `limit`: Maximum number of results (default: 20)
+```sql
+SELECT 
+  count(*) as total_chunks,
+  count(*) filter (where embedding is not null) as with_embedding,
+  count(*) filter (where embedding is null) as without_embedding
+FROM "chunkV2";
+```
 
-### 4. Dynamic α Parameter
+3. Check domain distribution:
 
-- **Location**: `lib/utils/alphaScorer.ts`
-- **Heuristic Factors**:
-  - Query length
-  - Presence of domain-specific terminology
-  - Number of exact matches in document corpus
-- **Override Flag**: `DYNAMIC_ALPHA_GPT` env var enables GPT-based scoring
+```sql
+SELECT domain, count(*) 
+FROM "chunkV2" 
+GROUP BY domain 
+ORDER BY count(*) DESC;
+```
 
-## Operations
+## Re-chunk batch
 
-### Reindexing Process
+The system includes tools to migrate from legacy chunks to ChunkV2, with improved embeddings and domain categorization.
 
-To manually trigger a reindexing of the corpus:
+### Running the rechunker tool
+
+To run the re-chunk process:
 
 ```bash
-# Trigger rechunking
-npm run rechunk
+# Dry run to see what will be processed (no changes made)
+pnpm ts-node scripts/rechunk/start.ts --dry-run
 
-# Check progress
-npm run queue:stats -- --queue=chunk-reindex
+# Limit to first 100 chunks for testing
+pnpm ts-node scripts/rechunk/start.ts --dry-run --limit 100
+
+# Process all chunks
+pnpm ts-node scripts/rechunk/start.ts
 ```
 
-### Monitoring
+### Enabling automatic re-chunking
 
-Monitor retrieval system health with these metrics:
+To enable automatic re-chunking when new content is added:
 
-1. **Latency**: P95 should remain under 50ms for combined search
-2. **Cache Hit Rate**: Should exceed 80% for common queries
-3. **RAGAS Score**: Should exceed 0.85 composite score
-4. **CPU/Memory**: Vector operations can be resource-intensive
-
-### Troubleshooting
-
-#### High Latency
-
-1. Check database connection pool
-2. Verify index health: `ANALYZE "Chunk";`
-3. Check caching effectiveness
-4. Consider scaling up database resources
-
-#### Poor Relevance
-
-1. Verify embedding quality
-2. Check α parameter settings
-3. Run `npm run rag:eval` to evaluate relevance metrics
-4. Consider tuning the chunk size
-
-#### Missing Results
-
-1. Check domain filter configuration
-2. Verify all documents are properly chunked and embedded
-3. Check for database schema mismatches
-4. Examine logs for indexing failures
-
-## Maintenance Tasks
-
-### Regular Maintenance
-
-1. **Weekly**: Review retrieval latency metrics
-2. **Monthly**: Run full RAG evaluation
-3. **Quarterly**: Consider complete reindexing with latest embedding model
-
-### Emergency Procedures
-
-1. **Degraded Results**: Temporarily disable dynamic α (set `SEARCH_ALPHA=0.5`)
-2. **Catastrophic Failure**: Fall back to BM25-only mode (`SEARCH_ALPHA=1.0`)
-
-## Configuration
-
-Key environment variables:
+1. Set environment variable:
 
 ```
-# Search parameters
-SEARCH_ALPHA=0.3                # Default α weight (0-1)
-DYNAMIC_ALPHA=true              # Enable dynamic α scoring
-DYNAMIC_ALPHA_GPT=false         # Enable GPT-based α advisor
-SEARCH_CACHE_TTL=3600           # Search cache TTL in seconds
-SEARCH_DOMAIN_FILTER=true       # Enable domain filtering
-
-# Alpha Mode Configuration
-FINEX_ALPHA_MODE=heuristic      # Options: 'heuristic' (default) or 'gpt'
-ENABLE_OTEL=false               # Enable OpenTelemetry tracing
+RECHUNK_ON_WRITE=1
 ```
 
-## Privacy Considerations
+2. Ensure the rechunk worker is running:
 
-The system includes several privacy-focused design elements:
+```bash
+pnpm ts-node workers/rechunkWorker.ts
+```
 
-1. **Reasoning Steps**: The chain-of-thought reasoning steps (reasoning_steps) used in impact analysis are never persisted to the database or exposed through APIs. They are used for internal processing only and discarded after the analysis is complete.
+### Monitoring progress
 
-2. **User Queries**: Search queries are logged but anonymized after 30 days.
+1. Check re-chunking status:
 
-3. **Embedding Storage**: Embeddings are stored without the original text that generated them, making it difficult to reverse-engineer the content.
+```sql
+SELECT 
+  count(*) as total_legacy_chunks,
+  (SELECT count(*) FROM "chunkV2") as total_v2_chunks,
+  count(*) - (SELECT count(*) FROM "chunkV2") as remaining  
+FROM chunk;
+```
 
-4. **Domain Separation**: Domain filtering ensures users only search within authorized domains.
+2. Check worker logs:
 
-## Upgrading
+```
+tail -f logs/rechunk-worker.log
+```
 
-When upgrading the retrieval system:
+## Troubleshooting
 
-1. Back up the Chunk table
-2. Apply schema migrations
-3. Run rechunking process first
-4. Monitor embedding progress
-5. Evaluate search quality after completion
+### Missing Embeddings
+
+If chunks are missing embeddings:
+
+1. Check embedding service health
+2. Run the re-chunk process with focus on chunks without embeddings:
+
+```sql
+-- Find chunks without embeddings
+SELECT id FROM "chunkV2" WHERE embedding IS NULL;
+```
+
+### Slow Vector Searches
+
+If vector searches are slow:
+
+1. Check index status:
+
+```sql
+SELECT * FROM pg_indexes WHERE tablename = 'chunkV2';
+```
+
+2. Consider rebuilding the index:
+
+```sql
+-- Example: rebuild IVFFlat index with improved parameters
+-- Consult DBA before running this in production
+REINDEX INDEX chunkv2_embedding_idx;
+```
+
+### Dead Letter Queue
+
+If chunks fail during processing:
+
+1. Check the dead letter queue:
+
+```bash
+pnpm ts-node workers/utils/dlqDrain.ts --list rechunk-dlq
+```
+
+2. Retry failed jobs:
+
+```bash
+pnpm ts-node workers/utils/dlqDrain.ts --retry rechunk-dlq
+```

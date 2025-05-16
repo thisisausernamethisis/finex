@@ -1,0 +1,233 @@
+[
+  {
+    "question": "What is the impact of rising interest rates on financial assets?",
+    "context": [
+      "Rising interest rates typically cause bond prices to fall as new bonds issued with higher rates become more attractive.",
+      "When central banks raise interest rates, existing fixed-income securities become less valuable relative to new issues.",
+      "Stocks, especially growth stocks with future earnings, may see valuations decline as higher rates increase discount rates in valuation models.",
+      "High-yield sectors like utilities and real estate often underperform in rising rate environments."
+    ],
+    "reference_answer": "Rising interest rates generally cause bond prices to fall due to the inverse relationship between rates and bond values. Stocks, particularly growth stocks and high-yield sectors like utilities and real estate, often see valuations decline as higher rates increase discount rates in valuation models and raise borrowing costs.",
+    "generated_answer": "Rising interest rates have a negative impact on financial assets. Bond prices fall as new bonds with higher yields become more attractive. Stock valuations, especially for growth companies, typically decline as higher discount rates are applied to future earnings and borrowing costs increase. High-yield sectors such as utilities and real estate often underperform in rising rate environments."
+  },
+  {
+    "question": "How do supply chain disruptions affect manufacturing?",
+    "context": [
+      "Supply chain disruptions lead to production delays as critical components become unavailable.",
+      "Manufacturing costs increase due to expedited shipping and premium prices for scarce materials.",
+      "Companies often need to source alternative suppliers, which may affect product quality or specifications.",
+      "Just-in-time inventory systems are particularly vulnerable to supply chain shocks."
+    ],
+    "reference_answer": "Supply chain disruptions cause manufacturing delays and increased costs. Production lines may halt without critical components, and companies face higher expenses from expedited shipping and premium prices for scarce materials. Firms often must quickly source alternative suppliers, potentially compromising product quality, and just-in-time inventory systems are especially vulnerable to these shocks.",
+    "generated_answer": "Supply chain disruptions severely impact manufacturing operations by causing production delays when critical components are unavailable. Manufacturing costs rise significantly due to expedited shipping fees and premium prices paid for scarce materials. Companies typically need to rapidly source alternative suppliers, which can affect product quality or specifications. Just-in-time inventory systems, which minimize warehouse stocks, are particularly vulnerable to supply chain shocks."
+  },
+  {
+    "question": "What are the benefits of ESG investing?",
+    "context": [
+      "ESG investing considers environmental, social, and governance factors alongside financial returns.",
+      "Studies suggest ESG-focused portfolios may offer lower volatility and better risk-adjusted returns over time.",
+      "ESG investments can help mitigate exposure to regulatory and reputational risks.",
+      "Companies with strong ESG profiles often exhibit operational efficiency and better long-term financial performance."
+    ],
+    "reference_answer": "ESG investing offers potential benefits including lower portfolio volatility, better risk-adjusted returns, and reduced exposure to regulatory and reputational risks. Companies with strong ESG profiles typically demonstrate operational efficiency and improved long-term financial performance, while investors also gain the satisfaction of supporting sustainable business practices.",
+    "generated_answer": "ESG investing provides multiple benefits by considering environmental, social, and governance factors alongside financial metrics. Research indicates ESG-focused portfolios may deliver lower volatility and improved risk-adjusted returns over time. These investments typically reduce exposure to regulatory and reputational risks. Companies with robust ESG profiles often demonstrate greater operational efficiency and stronger long-term financial performance, making them potentially more resilient investments."
+  },
+  {
+    "question": "How does inflation impact consumer spending?",
+    "context": [
+      "Inflation erodes purchasing power, causing consumers to get less for their money.",
+      "Consumers often prioritize essential purchases and delay discretionary spending during inflationary periods.",
+      "Wages typically lag behind inflation, further constraining household budgets.",
+      "When inflation expectations rise, consumers may accelerate major purchases to avoid higher prices later."
+    ],
+    "reference_answer": "Inflation erodes purchasing power, forcing consumers to get less for their money and prioritize essential purchases while delaying discretionary spending. Since wages typically lag behind inflation, household budgets become increasingly constrained. However, when inflation expectations rise, consumers sometimes accelerate major purchases to avoid paying higher prices in the future.",
+    "generated_answer": "Inflation negatively impacts consumer spending by eroding purchasing power, effectively reducing what consumers can buy with the same amount of money. During inflationary periods, households typically prioritize essential purchases and postpone discretionary spending. The effect is compounded because wages generally lag behind inflation rates, further constraining budgets. Interestingly, anticipated inflation can occasionally trigger accelerated major purchases as consumers try to avoid future price increases."
+  },
+  {
+    "question": "What strategies help businesses manage foreign exchange risk?",
+    "context": [
+      "Forward contracts allow companies to lock in exchange rates for future transactions.",
+      "Currency options provide the right but not obligation to exchange at a predetermined rate.",
+      "Natural hedging involves matching revenues and expenses in the same currency.",
+      "Diversifying operations across currency zones can reduce overall exposure to any single currency."
+    ],
+    "reference_answer": "Businesses manage foreign exchange risk through several strategies: forward contracts lock in future exchange rates, currency options provide flexibility with predetermined rates, natural hedging matches revenues and expenses in the same currency, and operational diversification across currency zones reduces exposure to any single currency fluctuation.",
+    "generated_answer": "Businesses employ multiple strategies to manage foreign exchange risk. Forward contracts enable companies to secure fixed exchange rates for future transactions, providing certainty in budgeting. Currency options offer flexibility by giving the right, but not obligation, to exchange at predetermined rates. Natural hedging involves deliberately aligning revenues and expenses in the same currency to minimize conversion needs. Additionally, geographic diversification of operations across different currency zones reduces overall exposure to individual currency fluctuations."
+  },
+  {
+    "question": "How do carbon markets work?",
+    "context": [
+      "Carbon markets establish a price on carbon dioxide emissions through tradable permits or credits.",
+      "In cap-and-trade systems, regulators set emissions limits and distribute allowances that companies can buy or sell.",
+      "Offset markets allow businesses to invest in emissions-reducing projects elsewhere to compensate for their own emissions.",
+      "The price of carbon credits fluctuates based on supply, demand, and regulatory changes."
+    ],
+    "reference_answer": "Carbon markets establish prices for carbon emissions through tradable permits or credits. In cap-and-trade systems, regulators set emissions limits and distribute allowances that companies can trade based on their needs. Offset markets enable businesses to invest in emissions-reducing projects elsewhere to compensate for their own carbon footprint. Prices for these instruments fluctuate with supply, demand, and regulatory developments.",
+    "generated_answer": "Carbon markets function by placing a monetary value on carbon dioxide emissions through tradable permits or credits. In cap-and-trade systems, regulatory bodies establish emissions limits and allocate allowances that businesses can purchase or sell based on their emissions levels. Companies can also participate in offset markets by investing in external emissions-reducing projects to compensate for their own carbon footprint. The pricing of carbon credits is dynamic, fluctuating based on market supply and demand factors as well as changes in regulatory frameworks."
+  },
+  {
+    "question": "What are the economic implications of an aging population?",
+    "context": [
+      "Aging populations increase healthcare costs and pension obligations, straining public finances.",
+      "A shrinking workforce relative to retirees reduces the tax base and may slow economic growth.",
+      "Consumer spending patterns shift toward healthcare, leisure, and age-appropriate housing.",
+      "Labor shortages in certain sectors can drive wage inflation and automation adoption."
+    ],
+    "reference_answer": "An aging population creates significant economic challenges, including increased healthcare costs and pension obligations that strain public finances. The shrinking ratio of workers to retirees reduces the tax base and potentially slows economic growth. Consumer markets shift toward healthcare, leisure, and senior housing, while labor shortages in various sectors can accelerate wage inflation and automation adoption.",
+    "generated_answer": "An aging population has profound economic implications. Healthcare expenditures and pension obligations increase substantially, creating pressure on public finances. The workforce-to-retiree ratio decreases, reducing the tax base and potentially constraining economic growth. Consumer spending patterns undergo significant shifts toward healthcare services, leisure activities, and age-appropriate housing options. Additionally, labor shortages emerge in various sectors, which can simultaneously drive wage inflation and accelerate the adoption of automation technologies to maintain productivity levels."
+  },
+  {
+    "question": "How do central banks use quantitative easing?",
+    "context": [
+      "Quantitative easing involves central banks purchasing government bonds and other securities to inject money into the economy.",
+      "This policy aims to lower long-term interest rates when conventional monetary policy tools are ineffective.",
+      "By increasing the money supply, QE encourages lending, investment, and consumer spending.",
+      "Central banks typically implement QE during financial crises or periods of deflationary pressure."
+    ],
+    "reference_answer": "Central banks implement quantitative easing by purchasing government bonds and other securities to inject money into the economy. This unconventional monetary policy aims to lower long-term interest rates when traditional tools become ineffective. By expanding the money supply, QE encourages lending, investment, and consumption, and is typically deployed during financial crises or deflationary periods.",
+    "generated_answer": "Central banks employ quantitative easing (QE) as an unconventional monetary policy tool by purchasing government bonds and other financial securities on the open market, effectively injecting money directly into the economy. This approach aims to reduce long-term interest rates when conventional monetary policy tools have reached their limits. The expansion of the money supply through QE is designed to stimulate lending, boost investment, and encourage consumer spending. Central banks typically deploy QE during severe financial crises or when facing persistent deflationary pressures that threaten economic stability."
+  },
+  {
+    "question": "What factors influence commodity prices?",
+    "context": [
+      "Supply and demand fundamentals are the primary drivers of commodity price movements.",
+      "Weather patterns, geopolitical events, and production disruptions affect the supply side.",
+      "Economic growth, industrial activity, and consumer behavior shape demand dynamics.",
+      "Financial speculation and currency exchange rates can amplify price volatility."
+    ],
+    "reference_answer": "Commodity prices are primarily influenced by supply and demand fundamentals. Supply-side factors include weather patterns, geopolitical events, and production disruptions, while demand is shaped by economic growth rates, industrial activity, and consumer behavior. Financial speculation and currency fluctuations can further amplify price movements and volatility in commodity markets.",
+    "generated_answer": "Commodity prices are influenced by multiple interconnected factors. Supply and demand fundamentals serve as the primary price drivers, with supply affected by weather conditions, geopolitical developments, and production disruptions. On the demand side, economic growth rates, industrial activity levels, and changing consumer preferences play crucial roles. Additionally, financial speculation in commodity futures markets and fluctuations in currency exchange rates can significantly amplify price volatility, sometimes creating price movements that temporarily diverge from physical market conditions."
+  },
+  {
+    "question": "How does blockchain technology impact financial transactions?",
+    "context": [
+      "Blockchain enables peer-to-peer transactions without intermediaries, potentially reducing costs and settlement times.",
+      "The technology provides immutable transaction records, enhancing transparency and reducing fraud risk.",
+      "Smart contracts can automate complex financial agreements with self-executing terms.",
+      "Regulatory uncertainties and scalability issues currently limit widespread adoption in mainstream finance."
+    ],
+    "reference_answer": "Blockchain technology transforms financial transactions by enabling peer-to-peer transfers without intermediaries, potentially reducing costs and settlement times. It creates immutable transaction records that enhance transparency and reduce fraud risk. Smart contracts can automate complex financial agreements through self-executing terms. However, regulatory uncertainties and scalability challenges currently limit mainstream financial adoption.",
+    "generated_answer": "Blockchain technology profoundly impacts financial transactions in several ways. It enables direct peer-to-peer transactions without traditional intermediaries, potentially reducing transaction costs and settlement times from days to minutes. The immutable ledger structure provides permanent, tamper-resistant transaction records, significantly enhancing transparency and reducing fraud risk. Smart contracts built on blockchain platforms can automate complex financial agreements with self-executing terms based on predefined conditions. Despite these advantages, regulatory uncertainties surrounding blockchain applications and ongoing scalability limitations currently restrict its widespread adoption in mainstream financial systems."
+  },
+  {
+    "question": "What are the economic benefits of international trade?",
+    "context": [
+      "International trade allows countries to specialize in producing goods where they have comparative advantage.",
+      "Expanded market access increases competition, driving innovation and efficiency improvements.",
+      "Consumers benefit from greater product variety and potentially lower prices.",
+      "Knowledge transfer and foreign direct investment stimulate economic development."
+    ],
+    "reference_answer": "International trade delivers economic benefits by allowing countries to specialize based on comparative advantages, increasing market access and competition that drives innovation and efficiency. Consumers gain access to greater product variety and often lower prices, while knowledge transfer and foreign direct investment stimulate broader economic development and growth.",
+    "generated_answer": "International trade generates substantial economic benefits through multiple channels. It enables countries to specialize in producing goods and services where they possess comparative advantage, optimizing resource allocation and productivity. The expanded market access intensifies competition, which drives innovation and efficiency improvements across industries. Consumers benefit directly through access to a wider variety of products and often lower prices due to competitive pressures. Additionally, international trade facilitates knowledge transfer and attracts foreign direct investment, both of which contribute significantly to economic development and technological advancement in participating economies."
+  },
+  {
+    "question": "How do corporate mergers affect market competition?",
+    "context": [
+      "Horizontal mergers between competitors can increase market concentration and potentially reduce competition.",
+      "Vertical mergers involving supply chain integration may create efficiencies but also raise barriers to entry.",
+      "Conglomerate mergers between unrelated businesses generally have limited direct effects on competition.",
+      "Regulatory authorities evaluate merger impacts on consumer prices, product quality, and innovation."
+    ],
+    "reference_answer": "Corporate mergers can significantly affect market competition, with horizontal mergers between competitors potentially increasing market concentration and reducing competition. Vertical mergers integrating supply chains may create efficiencies but also raise entry barriers. Conglomerate mergers between unrelated businesses typically have limited direct competitive impact. Regulatory authorities carefully evaluate all merger types for their effects on consumer prices, product quality, and innovation.",
+    "generated_answer": "Corporate mergers affect market competition in varying ways depending on their structure. Horizontal mergers between direct competitors often increase market concentration, potentially reducing competition and giving the merged entity greater pricing power. Vertical mergers that integrate different stages of the supply chain can create operational efficiencies but may also raise barriers to entry for new competitors by restricting access to essential inputs or distribution channels. Conglomerate mergers between unrelated businesses generally have minimal direct impact on market competition. Regulatory authorities thoroughly assess merger proposals by evaluating their potential effects on consumer prices, product quality, innovation incentives, and overall market dynamism before approval."
+  },
+  {
+    "question": "What causes currency devaluation?",
+    "context": [
+      "Governments may deliberately devalue currency to boost export competitiveness.",
+      "High inflation relative to trading partners erodes currency value over time.",
+      "Large current account deficits can pressure currencies downward as more foreign currency leaves than enters.",
+      "Political instability and diminishing investor confidence often trigger capital flight and currency depreciation."
+    ],
+    "reference_answer": "Currency devaluation can result from deliberate government policy to boost export competitiveness, or occur naturally due to high relative inflation, large current account deficits that create imbalances between currency inflows and outflows, or political instability and declining investor confidence that trigger capital flight and depreciation pressures.",
+    "generated_answer": "Currency devaluation stems from several factors, both deliberate and market-driven. Governments sometimes intentionally devalue their currency to enhance export competitiveness by making domestic goods cheaper for foreign buyers. Persistent high inflation relative to trading partners gradually erodes a currency's purchasing power and exchange value. Structural current account deficits, where more foreign currency leaves than enters the economy, create downward pressure on the domestic currency. Additionally, political instability and deteriorating investor confidence can trigger significant capital outflows as investors seek safer assets, resulting in currency depreciation."
+  },
+  {
+    "question": "How does monetary policy affect economic growth?",
+    "context": [
+      "Central banks adjust interest rates to influence borrowing costs, spending, and investment throughout the economy.",
+      "Lower rates typically stimulate economic activity by reducing borrowing costs for businesses and consumers.",
+      "Higher rates help control inflation but can slow growth by increasing the cost of capital.",
+      "The transmission of monetary policy occurs through various channels including credit availability, asset prices, and exchange rates."
+    ],
+    "reference_answer": "Monetary policy affects economic growth by influencing interest rates, which impact borrowing costs, spending, and investment throughout the economy. Lower rates generally stimulate economic activity by reducing borrowing costs, while higher rates help control inflation but can slow growth by increasing capital costs. Policy transmission works through various channels including credit availability, asset prices, and currency exchange rates.",
+    "generated_answer": "Monetary policy influences economic growth through multiple mechanisms. Central banks primarily adjust interest rates to manage borrowing costs throughout the economy, affecting both business investment and consumer spending decisions. Lower interest rates typically stimulate economic activity by reducing borrowing expenses, encouraging capital investment, and increasing consumer spending on durable goods. Conversely, higher interest rates help control inflation but can constrain growth by increasing the cost of capital. Monetary policy transmits through several channels, including credit availability, asset valuations, wealth effects, and exchange rates, with each channel affecting different economic sectors with varying time lags and intensities."
+  },
+  {
+    "question": "What are the benefits and risks of leveraged buyouts?",
+    "context": [
+      "Leveraged buyouts use significant debt financing to acquire companies, amplifying potential returns on equity.",
+      "LBOs can improve operational efficiency through cost-cutting, management changes, and strategic repositioning.",
+      "High debt levels increase financial risk and vulnerability to economic downturns or interest rate increases.",
+      "Target companies may face asset sales, workforce reductions, or reduced R&D to service debt obligations."
+    ],
+    "reference_answer": "Leveraged buyouts offer benefits including amplified equity returns through significant debt financing and potential operational improvements through management changes and strategic repositioning. However, they carry substantial risks: high debt levels increase vulnerability to economic downturns and interest rate rises, while target companies often face asset sales, workforce reductions, and R&D cuts to service debt obligations.",
+    "generated_answer": "Leveraged buyouts (LBOs) present both significant benefits and risks. On the positive side, they amplify potential equity returns by using substantial debt financing to acquire target companies with relatively small equity contributions. LBOs often drive operational efficiency improvements through rigorous cost management, leadership changes, and strategic realignment to maximize cash flow. However, these transactions entail considerable risks, primarily from high debt burdens that increase financial vulnerability during economic downturns or periods of rising interest rates. Target companies frequently experience asset divestitures, workforce reductions, and diminished R&D investments as management prioritizes debt servicing over long-term investments, potentially affecting competitive positioning and innovation capacity."
+  },
+  {
+    "question": "How do tariffs affect international trade?",
+    "context": [
+      "Tariffs increase the cost of imported goods, potentially protecting domestic industries from foreign competition.",
+      "They generate government revenue but generally reduce overall economic efficiency and total trade volume.",
+      "Protected industries may become less competitive over time without foreign competition pressure.",
+      "Trading partners often implement retaliatory tariffs, escalating into broader trade conflicts."
+    ],
+    "reference_answer": "Tariffs affect international trade by increasing imported goods' costs, potentially protecting domestic industries from foreign competition. While generating government revenue, they typically reduce economic efficiency and overall trade volume. Protected industries may become less competitive over time without pressure from foreign rivals. Additionally, trading partners frequently implement retaliatory tariffs, which can escalate into broader trade conflicts.",
+    "generated_answer": "Tariffs have multifaceted effects on international trade. By increasing the cost of imported goods, they can shield domestic industries from foreign competition, particularly in sectors considered strategically important or those employing significant numbers of workers. Tariffs generate government revenue but typically reduce overall economic efficiency and diminish total trade volume. Industries protected by tariffs often become less competitive over time as they face reduced pressure to innovate and improve productivity. Perhaps most significantly, trading partners frequently respond with retaliatory tariffs on exports, potentially triggering escalating trade conflicts that can damage previously beneficial trading relationships and global supply chains."
+  },
+  {
+    "question": "What factors drive housing market cycles?",
+    "context": [
+      "Interest rates strongly influence housing affordability and mortgage demand.",
+      "Demographics such as household formation rates and migration patterns affect long-term housing demand.",
+      "Supply constraints including construction costs, land availability, and zoning regulations impact price dynamics.",
+      "Economic conditions, employment growth, and income levels drive household purchasing power."
+    ],
+    "reference_answer": "Housing market cycles are driven by several key factors: interest rates strongly influence affordability and mortgage demand; demographics like household formation and migration patterns affect long-term demand; supply constraints including construction costs, land availability, and zoning regulations impact pricing; and broader economic conditions, employment growth, and income levels determine household purchasing power.",
+    "generated_answer": "Housing market cycles are driven by interconnected macroeconomic, demographic, and policy factors. Interest rates play a fundamental role by directly affecting mortgage affordability and consequently housing demand. Demographic trends, including household formation rates, population growth, and migration patterns, shape long-term housing demand trajectories. On the supply side, constraints such as construction material costs, skilled labor availability, developable land scarcity, and restrictive zoning regulations influence how quickly housing supply can adjust to demand changes. Broader economic conditions, particularly employment growth and household income levels, determine consumer purchasing power in the housing market. These factors interact dynamically, creating the characteristic boom-bust cycles observed in residential real estate markets."
+  },
+  {
+    "question": "How do sovereign wealth funds impact global financial markets?",
+    "context": [
+      "Sovereign wealth funds manage national savings and resource wealth for long-term investment returns.",
+      "Their large asset holdings can influence prices when entering or exiting positions in stocks, bonds, or real estate.",
+      "SWFs often pursue strategic investments in technology, infrastructure, and natural resources.",
+      "Their investment decisions may reflect both financial and geopolitical considerations."
+    ],
+    "reference_answer": "Sovereign wealth funds impact global financial markets through their management of massive national savings and resource wealth for long-term returns. Their large holdings can significantly influence asset prices when they adjust positions in stocks, bonds, or real estate. SWFs frequently target strategic investments in technology, infrastructure, and natural resources, with decisions reflecting both financial objectives and broader geopolitical considerations.",
+    "generated_answer": "Sovereign wealth funds (SWFs) significantly impact global financial markets through multiple channels. As managers of enormous pools of national savings and resource wealth, their investment decisions can move markets due to their sheer size. When SWFs enter or exit positions in equities, fixed income, or real estate markets, their substantial capital flows can influence asset prices and liquidity conditions. These funds increasingly pursue strategic investments in technology companies, infrastructure assets, and natural resource projects, gaining influence in key economic sectors globally. Importantly, SWF investment decisions often reflect a complex blend of financial return objectives and broader geopolitical or strategic national interests, making their market impact different from purely commercial investors."
+  },
+  {
+    "question": "What drives consumer confidence in the economy?",
+    "context": [
+      "Employment conditions and job security directly affect household financial security perceptions.",
+      "Wage growth relative to inflation influences purchasing power and spending willingness.",
+      "Asset prices, particularly housing and stock markets, impact household wealth sentiment.",
+      "Media coverage of economic conditions shapes public perception regardless of actual data."
+    ],
+    "reference_answer": "Consumer confidence is driven primarily by employment conditions and job security, which directly affect perceptions of household financial stability. Wage growth relative to inflation determines purchasing power and willingness to spend. Asset prices, especially in housing and stock markets, significantly impact household wealth sentiment. Additionally, media coverage of economic conditions heavily influences public perception, sometimes independently of actual economic data.",
+    "generated_answer": "Consumer confidence in the economy is shaped by several key drivers. Employment conditions and job security serve as fundamental factors, as they directly impact households' sense of financial stability and future income prospects. Wage growth relative to inflation determines real purchasing power, affecting consumers' willingness to spend versus save. Asset price movements, particularly in housing and equity markets, influence household wealth perceptions and corresponding spending behavior. Notably, media coverage and public discourse around economic conditions significantly shape consumer sentiment, sometimes diverging from underlying economic indicators. This psychological component explains why consumer confidence can occasionally appear disconnected from objective economic metrics."
+  },
+  {
+    "question": "How does fractional reserve banking create money supply?",
+    "context": [
+      "Banks are required to keep only a fraction of deposits as reserves while lending out the remainder.",
+      "When banks issue loans, they create new deposit money that didn't previously exist in the economy.",
+      "This deposit multiplier effect allows the banking system to expand the money supply beyond central bank-issued currency.",
+      "The money multiplier equals the reciprocal of the reserve requirement (e.g., 10% requirement creates a 10x multiplier)."
+    ],
+    "reference_answer": "Fractional reserve banking creates money supply because banks keep only a portion of deposits as reserves while lending the rest. When banks issue loans, they create new deposit money that didn't previously exist. This deposit multiplier effect enables the banking system to expand money supply beyond central bank currency. The money multiplier equals the reciprocal of the reserve requirement—a 10% requirement creates a potential 10x multiplier.",
+    "generated_answer": "Fractional reserve banking creates money supply through a systematic process of deposit-taking and lending. Banks are legally required to maintain only a fraction of customer deposits as reserves, while lending out the remainder. When a bank issues a loan, it creates new deposit money in the borrower's account that didn't previously exist in the economy, effectively expanding the money supply. This process initiates the deposit multiplier effect, where these newly created deposits can be re-deposited and partially re-loaned throughout the banking system, multiplying the initial deposit's impact on money supply. Theoretically, the maximum money multiplier equals the reciprocal of the reserve requirement—for example, a 10% reserve requirement could create a 10x multiplier, though actual multiplication is typically lower due to cash leakage and excess reserves."
+  },
+  {
+    "question": "What is the relationship between governmental fiscal policy and inflation?",
+    "context": [
+      "Expansionary fiscal policy through increased spending or tax cuts can stimulate aggregate demand.",
+      "When aggregate demand exceeds productive capacity, inflationary pressures typically increase.",
+      "Government borrowing to finance deficits may crowd out private investment or increase money supply if monetized.",
+      "The inflationary impact depends on economic conditions, including unemployment levels and capacity utilization."
+    ],
+    "reference_answer": "Governmental fiscal policy influences inflation through multiple channels. Expansionary policies involving increased spending or tax cuts stimulate aggregate demand, potentially creating inflationary pressures when demand exceeds productive capacity. Government borrowing to finance deficits may crowd out private investment or increase the money supply if monetized. The actual inflationary impact depends heavily on prevailing economic conditions, particularly unemployment levels and capacity utilization.",
+    "generated_answer": "The relationship between governmental fiscal policy and inflation is complex and context-dependent. Expansionary fiscal policy, characterized by increased government spending or reduced taxation, typically stimulates aggregate demand in the economy. When this additional demand exceeds the economy's productive capacity, inflationary pressures emerge as too much money chases too few goods and services. Government borrowing to finance budget deficits can potentially crowd out private investment by increasing interest rates, or if central banks purchase government debt (monetization), it can expand the money supply and further fuel inflation. However, the inflationary impact of fiscal expansion varies significantly depending on prevailing economic conditions—during periods of high unemployment and economic slack, fiscal stimulus may primarily increase output rather than prices, while the same policies during near-full employment would more likely generate inflation."
+  }
+]

@@ -150,7 +150,7 @@ describe('Search Service with Domain Filtering', () => {
     
     it('passes domain as a single string value', async () => {
       const testQuery = 'test query';
-      const testDomain = 'FINANCE';
+      const testDomain = Domain.FINANCE;
       
       await hybridSearch({
         query: testQuery,
@@ -214,7 +214,7 @@ describe('Search Service with Domain Filtering', () => {
   
   describe('vectorSearch with domain filter', () => {
     it('adds domain filter when domain string is provided', async () => {
-      await vectorSearch('test query', 10, 'FINANCE');
+      await vectorSearch('test query', 10, Domain.FINANCE);
       
       // Check SQL query contains domain filter
       const calls = vi.mocked(prisma.$queryRaw).mock.calls;
@@ -245,7 +245,7 @@ describe('Search Service with Domain Filtering', () => {
   describe('integration with caching', () => {
     it('properly caches results with domain filter', async () => {
       const testQuery = 'test cache query';
-      const testDomain = 'FINANCE';
+      const testDomain = Domain.FINANCE;
       
       // First call - should miss cache
       await hybridSearch({
@@ -298,13 +298,13 @@ describe('Search Service with Domain Filtering', () => {
       // Call with first domain
       await hybridSearch({
         query: testQuery,
-        domain: 'FINANCE'
+        domain: Domain.FINANCE
       });
       
       // Call with different domain
       await hybridSearch({
         query: testQuery,
-        domain: 'ASSET'
+        domain: Domain.ASSET
       });
       
       // Call with no domain
@@ -322,7 +322,7 @@ describe('Search Service with Domain Filtering', () => {
     it('attaches diagnostic metrics to search results', async () => {
       const results = await hybridSearch({
         query: 'diagnostic test',
-        domain: 'FINANCE'
+        domain: Domain.FINANCE
       });
       
       // Non-enumerable properties should exist

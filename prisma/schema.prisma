@@ -154,12 +154,14 @@ model MatrixAnalysisResult {
 }
 
 model ChunkV2 {
-  id         String   @id @default(cuid())
-  assetId    String
-  scenarioId String
-  domain     Domain?  @default(OTHER)
-  content    String   @db.Text
-  embedding  Unsupported("vector(1536)")?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(cuid())
+  assetId       String
+  scenarioId    String
+  domain        Domain?  @default(OTHER)
+  content       String   @db.Text
+  embedding     Unsupported("vector(1536)")?
+  legacyChunkId String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

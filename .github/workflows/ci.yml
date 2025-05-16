@@ -7,9 +7,9 @@ on:
     branches: [main, dev]
 
 jobs:
-  # Split tests into three parallel jobs
   tests-unit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       NODE_ENV: test
       CLERK_SECRET_KEY: test_clerk_secret_key
@@ -18,18 +18,38 @@ jobs:
       DYNAMIC_ALPHA_GPT: 'true'
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test:unit
+          node-version: 18
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm prisma migrate deploy --skip-generate
+      - run: pnpm test:unit:db
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v3
         with:
           name: coverage-unit
           path: coverage/
           retention-days: 7
+  
+  ragas-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [tests-unit]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: node --require ts-node/register scripts/ragas/smoke.ts
   
   tests-contract:
     runs-on: ubuntu-latest
@@ -119,7 +139,7 @@ jobs:
         run: npm run validate:api
   
   ragas-eval:
-    needs: [tests-unit]
+    needs: [tests-unit, ragas-smoke]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

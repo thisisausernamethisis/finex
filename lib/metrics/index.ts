@@ -102,6 +102,18 @@ export const dbQueryDuration = new Gauge({
   registers: [register]
 });
 
+// Helper object with factory methods to create metrics
+export const metrics = {
+  buildCounter: (options: any) => new Counter({
+    ...options,
+    registers: [register]
+  }),
+  buildGauge: (options: any) => new Gauge({
+    ...options,
+    registers: [register]
+  })
+};
+
 export {
   alphaCacheSize,
   alphaCacheHits,

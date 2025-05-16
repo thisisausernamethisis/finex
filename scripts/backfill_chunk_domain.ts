@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { Domain } from '../lib/types/domain';
 const prisma = new PrismaClient();
 
 export default async function backfillChunkDomain() {
@@ -6,7 +7,7 @@ export default async function backfillChunkDomain() {
 
   await prisma.$executeRawUnsafe(`
     UPDATE "Chunk" c
-    SET    "domain" = 'ASSET'
+    SET    "domain" = '${Domain.ASSET}'
     FROM   "Card" cr
     JOIN   "Theme" t ON t.id = cr."themeId"
     WHERE  c."cardId" = cr.id
@@ -16,7 +17,7 @@ export default async function backfillChunkDomain() {
 
   await prisma.$executeRawUnsafe(`
     UPDATE "Chunk" c
-    SET    "domain" = 'GEOGRAPHY'
+    SET    "domain" = '${Domain.GEOGRAPHY}'
     FROM   "Card" cr
     JOIN   "Theme" t ON t.id = cr."themeId"
     WHERE  c."cardId" = cr.id
@@ -26,14 +27,14 @@ export default async function backfillChunkDomain() {
 
   await prisma.$executeRawUnsafe(`
     UPDATE "Chunk"
-    SET    "domain" = 'SUPPLY_CHAIN'
-    WHERE  "domain" = 'OTHER'
+    SET    "domain" = '${Domain.SUPPLY_CHAIN}'
+    WHERE  "domain" = '${Domain.OTHER}'
       AND  content ILIKE ANY (ARRAY['%supply chain%','%logistics%','%inventory%'])
   `);
 
   // Use raw SQL for count since Prisma client might not be updated yet with the new domain field
   const countResult = await prisma.$queryRaw<[{count: number}]>`
-    SELECT COUNT(*) as count FROM "Chunk" WHERE "domain" = 'OTHER'
+    SELECT COUNT(*) as count FROM "Chunk" WHERE "domain" = '${Domain.OTHER}'
   `;
   const remaining = countResult[0].count;
   console.log(`✓ Back-fill done; OTHER left: ${remaining}`);

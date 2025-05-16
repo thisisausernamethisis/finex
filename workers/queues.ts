@@ -61,3 +61,26 @@ export const reindexQueue = new Queue('reindex-chunks', {
     removeOnFail: 100
   }
 });
+
+// Create queue for rechunking
+export const rechunkQueue = new Queue('rechunk', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000
+    },
+    removeOnComplete: true,
+    removeOnFail: 100
+  }
+});
+
+// Queue name constants for access across files
+export const QUEUES = {
+  matrix: 'matrix-analysis',
+  probability: 'probability-analysis',
+  growth: 'growth-analysis',
+  reindex: 'reindex-chunks',
+  rechunk: 'rechunk'
+};

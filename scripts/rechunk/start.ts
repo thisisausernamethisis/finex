@@ -1,317 +1,167 @@
 /**
- * Rechunk CLI
+ * Re-chunk runner CLI (T-301b)
  * 
- * This script initiates the rechunking process to create new optimized chunks for the RAG system.
- * It processes documents into ~256 token chunks with overlapping boundaries for improved retrieval.
+ * This script processes legacy chunks and creates ChunkV2 records with embeddings.
+ * It can run in dry-run mode to validate the process before making changes.
  * 
- * Features:
- * - Dry-run protection to prevent accidental execution
- * - Batch processing to avoid memory issues
- * - Progress tracking and logging
- * - Domain classification for chunks
- * - Embedding generation with caching
+ * Usage:
+ *   pnpm ts-node scripts/rechunk/start.ts           # Process all chunks
+ *   pnpm ts-node scripts/rechunk/start.ts --dry-run # Show what would be processed without making changes
+ *   pnpm ts-node scripts/rechunk/start.ts --limit 100 # Only process 100 chunks
  */
 
-import { prisma } from '../../lib/db';
+import { PrismaClient } from '@prisma/client';
+import { Queue } from 'bullmq';
 import { logger } from '../../lib/logger';
-import { generateDocEmbedding } from '../../lib/clients';
-import * as path from 'path';
-import * as readline from 'readline';
+import { QUEUES } from '../../workers/queues';
+import { program } from 'commander';
+import { Domain } from '../../lib/types/domain';
 
 // Configure logger
-const rechunkLogger = logger.child({ component: 'RechunkCLI' });
+const log = logger.child({ component: 'RECHUNK_RUNNER' });
 
-// Configuration
-const CONFIG = {
-  // Chunk size (aim for ~256 tokens)
-  targetChunkSize: 1000, // Characters, roughly 250 tokens
-  chunkOverlap: 150, // Characters of overlap, ~32 tokens
-  
-  // Process batches to avoid memory issues
-  batchSize: 50,
-  
-  // API rate limiting
-  concurrency: 5,
-  delayMs: 200,
-  
-  // Domain classification - default if not specified
-  defaultDomain: 'GENERAL',
+// Parse command line options
+program
+  .option('--dry-run', 'Show what would be processed without making changes')
+  .option('--limit <number>', 'Maximum number of chunks to process', parseInt)
+  .parse(process.argv);
+
+const options = program.opts();
+const DRY_RUN = options.dryRun || false;
+const LIMIT = options.limit || undefined;
+
+// Queue configuration
+const connection = {
+  host: process.env.REDIS_HOST || 'localhost', 
+  port: parseInt(process.env.REDIS_PORT || '6379'),
 };
 
-/**
- * Check if script is being run in dry-run mode
- */
-function isDryRun(): boolean {
-  return !process.argv.includes('--execute');
-}
+// Database client
+const prisma = new PrismaClient();
+
+// Processing batch size
+const BATCH_SIZE = 200;
 
 /**
- * Main function to start the rechunking process
+ * Main function to start the re-chunking process
  */
-async function startRechunk() {
-  // Safety check for dry-run mode - protection against accidental execution
-  if (isDryRun()) {
-    console.log('\n========== DRY RUN MODE ==========');
-    console.log('This is a simulation only. No changes will be made to the database.');
-    console.log('To execute for real, add the --execute flag.');
-    console.log('===================================\n');
-  }
-  
+async function main() {
   try {
-    // 1. Count total work to be done
-    const cardCount = await prisma.card.count();
-    console.log(`Found ${cardCount} cards to process`);
+    log.info('Starting re-chunk process', { dryRun: DRY_RUN, limit: LIMIT });
     
-    // 2. Get user confirmation for non-dry-run
-    if (!isDryRun()) {
-      const confirmed = await confirmExecution(cardCount);
-      if (!confirmed) {
-        console.log('Operation cancelled by user');
-        process.exit(0);
-      }
+    // Count legacy chunks that need processing
+    const totalChunks = await prisma.chunk.count({
+      where: {
+        // Include any filters if needed
+      },
+    });
+    
+    // Apply limit if specified
+    const chunksToProcess = LIMIT ? Math.min(totalChunks, LIMIT) : totalChunks;
+    
+    log.info(`Found ${totalChunks} legacy chunks, will process ${chunksToProcess} chunks`);
+    
+    if (chunksToProcess === 0) {
+      log.info('No chunks to process, exiting');
+      return;
     }
     
-    // 3. Initialize counters
-    let processedCards = 0;
-    let createdChunks = 0;
-    let failedCards = 0;
+    // Initialize queue if not in dry-run mode
+    let queue;
+    if (!DRY_RUN) {
+      queue = new Queue(QUEUES.rechunk, { connection });
+      log.info('Connected to re-chunk queue');
+    }
     
-    // 4. Process in batches
-    let hasMore = true;
-    let lastId: string | undefined = undefined;
+    // Process chunks in batches
+    let processed = 0;
+    let totalQueued = 0;
     
-    console.log('\nStarting rechunking process...\n');
-    
-    while (hasMore) {
-      // Fetch next batch of cards
-      const cards = await fetchCardBatch(lastId, CONFIG.batchSize);
+    while (processed < chunksToProcess) {
+      const batchSize = Math.min(BATCH_SIZE, chunksToProcess - processed);
       
-      if (cards.length === 0) {
-        hasMore = false;
-        continue;
-      }
+      log.info(`Processing batch of ${batchSize} chunks (${processed + 1}-${processed + batchSize} of ${chunksToProcess})`);
       
-      lastId = cards[cards.length - 1].id;
+      // Get batch of chunks to process
+      const chunks = await prisma.chunk.findMany({
+        select: {
+          id: true,
+          content: true,
+          card: {
+            select: {
+              theme: {
+                select: {
+                  assetId: true
+                }
+              }
+            }
+          },
+          domain: true
+        },
+        take: batchSize,
+        skip: processed,
+      });
       
-      // Process each card in this batch
-      for (const card of cards) {
-        try {
-          const chunkCount = await processCard(card, isDryRun());
-          createdChunks += chunkCount;
-          processedCards++;
-          
-          // Show progress
-          if (processedCards % 10 === 0 || processedCards === cardCount) {
-            const percent = Math.round((processedCards / cardCount) * 100);
-            console.log(`Progress: ${percent}% (${processedCards}/${cardCount} cards, ${createdChunks} chunks created)`);
-          }
-        } catch (error) {
-          failedCards++;
-          rechunkLogger.error('Failed to process card', { 
-            cardId: card.id,
-            error: error instanceof Error ? error.message : String(error) 
+      // Enqueue or simulate enqueueing each chunk
+      for (const chunk of chunks) {
+        // Extract assetId from the nested relationship
+        const assetId = chunk.card?.theme?.assetId || 'unknown';
+        
+        if (DRY_RUN) {
+          log.info(`[DRY RUN] Would enqueue chunk ${chunk.id}`, {
+            assetId,
+            domain: chunk.domain || Domain.FINANCE, // Default to FINANCE if not set
+            contentLength: chunk.content.length,
           });
+        } else {
+          // Add job to the queue
+          await queue!.add(`rechunk-${chunk.id}`, {
+            chunkId: chunk.id,
+            content: chunk.content,
+            assetId,
+            domain: chunk.domain || Domain.FINANCE, // Default to FINANCE if not set
+          });
+          
+          totalQueued++;
         }
       }
+      
+      processed += chunks.length;
+      log.info(`Progress: ${processed}/${chunksToProcess} chunks (${Math.round(processed / chunksToProcess * 100)}%)`);
+      
+      // Simulate processing delay in dry-run mode
+      if (DRY_RUN) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
     }
     
-    console.log('\nRechunking complete!');
-    console.log(`Processed ${processedCards}/${cardCount} cards`);
-    console.log(`Created ${createdChunks} new chunks`);
-    
-    if (failedCards > 0) {
-      console.log(`Failed to process ${failedCards} cards. Check logs for details.`);
+    // Close the queue connection
+    if (!DRY_RUN && queue) {
+      await queue.close();
     }
     
-    if (isDryRun()) {
-      console.log('\nThis was a dry run. No changes were made to the database.');
-      console.log('To execute for real, add the --execute flag.');
-    } else {
-      console.log('\nAll chunks have been created in the ChunkV2 table.');
-      console.log('You will need to run the ANN indexing script to create optimal vector indexes.');
-    }
+    log.info(`Re-chunk process completed. ${DRY_RUN ? 'Would have queued' : 'Queued'} ${totalQueued} chunks for processing`);
+    
   } catch (error) {
-    rechunkLogger.error('Fatal error in rechunking process', { 
-      error: error instanceof Error ? error.message : String(error) 
+    log.error('Error in re-chunk process', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    console.error('Rechunking failed:', error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-/**
- * Get user confirmation before proceeding with actual execution
- */
-async function confirmExecution(cardCount: number): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
+// Run the script
+main()
+  .then(() => {
+    log.info('Re-chunk script completed successfully');
+    process.exit(0);
+  })
+  .catch(err => {
+    log.error('Fatal error in re-chunk script', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    process.exit(1);
   });
-  
-  return new Promise((resolve) => {
-    rl.question(
-      `WARNING: You are about to rechunk ${cardCount} cards in PRODUCTION mode.\n` +
-      `This will create new chunks in the ChunkV2 table.\n` +
-      `Are you sure you want to continue? (yes/no): `,
-      (answer) => {
-        rl.close();
-        resolve(answer.toLowerCase() === 'yes');
-      }
-    );
-  });
-}
-
-/**
- * Fetch a batch of cards for processing
- */
-async function fetchCardBatch(lastId: string | undefined, limit: number) {
-  return prisma.card.findMany({
-    where: lastId ? { id: { gt: lastId } } : {},
-    include: {
-      theme: {
-        include: {
-          asset: true,
-          scenario: true
-        }
-      }
-    },
-    orderBy: { id: 'asc' },
-    take: limit
-  });
-}
-
-/**
- * Process a single card and create chunks from its content
- */
-async function processCard(card: any, dryRun: boolean): Promise<number> {
-  const { content, id: cardId, theme } = card;
-  const assetId = theme?.asset?.id;
-  const scenarioId = theme?.scenario?.id;
-  
-  if (!content || !assetId || !scenarioId) {
-    rechunkLogger.warn('Skipping card with missing data', { cardId });
-    return 0;
-  }
-  
-  // Determine the domain based on asset/theme metadata
-  // This is a simplistic implementation - in production, use proper NLP classification
-  const domain = determineDomain(card);
-  
-  // Split the content into chunks with overlapping boundaries
-  const chunks = createOverlappingChunks(content, CONFIG.targetChunkSize, CONFIG.chunkOverlap);
-  
-  // Log info
-  rechunkLogger.debug('Processing card', {
-    cardId,
-    assetId,
-    scenarioId,
-    domain,
-    chunkCount: chunks.length
-  });
-  
-  // Skip actual DB operations in dry-run mode
-  if (dryRun) {
-    return chunks.length;
-  }
-  
-  // Create chunks in the database
-  for (const chunkContent of chunks) {
-    try {
-      // Generate embedding for the chunk
-      const embedding = await generateDocEmbedding(chunkContent);
-      
-      // Create chunk in database using direct SQL
-      // This approach works even if the Prisma schema hasn't been updated yet
-      await prisma.$executeRaw`
-        INSERT INTO "ChunkV2" ("id", "assetId", "scenarioId", "domain", "content", "embedding", "createdAt", "updatedAt")
-        VALUES (
-          ${`${cardId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`},
-          ${assetId},
-          ${scenarioId},
-          ${domain},
-          ${chunkContent},
-          ${embedding}::vector,
-          NOW(),
-          NOW()
-        )
-      `;
-    } catch (error) {
-      rechunkLogger.error('Failed to create chunk', {
-        cardId,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      // Continue with other chunks
-    }
-  }
-  
-  return chunks.length;
-}
-
-/**
- * Split text into chunks with overlapping boundaries
- */
-function createOverlappingChunks(text: string, chunkSize: number, overlap: number): string[] {
-  if (!text) return [];
-  
-  const chunks: string[] = [];
-  let startIndex = 0;
-  
-  while (startIndex < text.length) {
-    // Calculate end index for this chunk
-    const endIndex = Math.min(startIndex + chunkSize, text.length);
-    
-    // Extract chunk
-    const chunk = text.substring(startIndex, endIndex);
-    chunks.push(chunk);
-    
-    // Move start index for next chunk, accounting for overlap
-    startIndex = endIndex - overlap;
-    
-    // Avoid creating tiny chunks at the end
-    if (text.length - startIndex < chunkSize / 3) {
-      break;
-    }
-  }
-  
-  return chunks;
-}
-
-/**
- * Determine the domain for a card based on its content and metadata
- * This is a placeholder implementation - in production, use NLP classification
- */
-function determineDomain(card: any): string {
-  const { content, theme } = card;
-  
-  // Check asset name and theme for keywords
-  const assetName = theme?.asset?.name?.toLowerCase() || '';
-  const themeName = theme?.name?.toLowerCase() || '';
-  
-  // Simple keyword-based classification
-  if (assetName.includes('financial') || themeName.includes('financial') || 
-      assetName.includes('finance') || themeName.includes('finance') ||
-      content.toLowerCase().includes('finance')) {
-    return 'FINANCE';
-  }
-  
-  if (assetName.includes('legal') || themeName.includes('legal') ||
-      assetName.includes('regulatory') || themeName.includes('regulatory')) {
-    return 'REGULATORY';
-  }
-  
-  if (assetName.includes('technical') || themeName.includes('technical') ||
-      content.toLowerCase().includes('technology') || content.toLowerCase().includes('software')) {
-    return 'TECHNICAL';
-  }
-  
-  // Default domain
-  return CONFIG.defaultDomain;
-}
-
-// Run the main function
-startRechunk().catch(error => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});

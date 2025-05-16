@@ -16,6 +16,7 @@ test: {
       './tests/setup/clerk-mock.ts',
       './tests/helpers/mockBullmq.ts',   // unified BullMQ mock
       './tests/helpers/auth.ts',        // make __TEST_USER__ global before jest.setup
+      './tests/helpers/testDb.ts',      // SQLite in-memory DB for unit tests
       './tests/jest.setup.ts',
     ],
     globalSetup: './tests/setup/globalSetup.ts', // run DB prep after shim

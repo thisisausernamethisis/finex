@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import 'dayjs/locale/en'
+import { Domain } from '../lib/types/domain'
 
 // Configure dayjs for deterministic timestamps
 dayjs.extend(utc)
@@ -178,13 +179,13 @@ async function main() {
               id: mkId(),
               content: 'NVIDIA reported a 220% increase in revenue year over year.',
               order: 1,
-              domain: 'ASSET', // Financial information about a company
+              domain: Domain.ASSET, // Financial information about a company
             },
             {
               id: mkId(),
               content: 'AI chip demand continues to outpace supply, with data center revenue quadrupling.',
               order: 2,
-              domain: 'ASSET', // Tech sector market information
+              domain: Domain.ASSET, // Tech sector market information
             }
           ]
         },
