@@ -1,34 +1,102 @@
 import { Prisma } from '@prisma/client';
+// Manual Domain enum definition to match schema.prisma
+// Can be removed after Prisma client regeneration
+enum Domain {
+  ASSET = 'ASSET',
+  SUPPLY_CHAIN = 'SUPPLY_CHAIN',
+  GEOGRAPHY = 'GEOGRAPHY',
+  OTHER = 'OTHER'
+}
+import { getQueryEmbedding } from '../clients/vectorClient';
 import { prisma } from '../db';
+import { performance } from 'node:perf_hooks';
+import { cacheGet, cacheSet, makeCacheKey } from './cacheService';
+import { logger } from '../logger';
+import { searchLatency, searchQueriesTotal } from '../metrics';
+import { scoreMerge } from '../utils/alphaScorer';
+
+// Logger for search operations
+const searchLogger = logger.child({ component: 'SearchService' });
 
 /**
  * Performs a hybrid search using both text-based and vector-based retrieval,
  * fusing the results with Reciprocal Rank Fusion (RRF)
  *
- * @param opts Options including the query, optional filters, and limit
+ * Uses Redis caching to improve performance for repeated queries
+ *
+ * @param opts Options including the query, optional filters, domain, and limit
  * @returns Promise resolving to an array of results with scores
  */
 export async function hybridSearch(opts: {
   query: string;
   assetId?: string;
   scenarioId?: string;
+  domain?: Domain;
   limit?: number;
 }): Promise<Array<{ id: string; score: number }>> {
-  const { query, assetId, scenarioId, limit = 20 } = opts;
+  const { query, assetId, scenarioId, domain, limit = 20 } = opts;
+  const startTime = performance.now();
   
-  // Define the RRF constant k
-  const k = 60;
-  
-  // 1. Text-based search using tsvector
-  const textResults = await textSearch(query, assetId, scenarioId, limit);
-  
-  // 2. Vector-based search using pgvector
-  const vectorResults = await vectorSearch(query, assetId, scenarioId, limit);
-  
-  // 3. Fuse results with RRF
-  const combined = fuseResults(textResults, vectorResults, k, limit);
-  
-  return combined;
+  try {
+    // Increment search query counter
+    searchQueriesTotal.inc({ type: 'hybrid' });
+    
+    // Create metadata object for cache key generation
+    const metadata = { assetId, scenarioId, domain, limit };
+    const cacheKey = makeCacheKey(query, metadata);
+    
+    // Check cache first
+    const cachedResults = await cacheGet<Array<{ id: string; score: number }>>(cacheKey);
+    if (cachedResults) {
+      searchLogger.debug('Cache hit for search query', { query, metadata });
+      
+      // Record search latency including cache retrieval
+      const latency = (performance.now() - startTime) / 1000;
+      searchLatency.set({ type: 'hybrid_cached' }, latency);
+      
+      return cachedResults;
+    }
+    
+    searchLogger.debug('Cache miss for search query', { query, metadata });
+    
+    // T-305: Run text-based and vector searches in parallel
+    const [textResults, vectorResults] = await Promise.all([
+      textSearch(query, assetId, scenarioId, domain, limit),
+      vectorSearch(query, limit, domain)
+    ]);
+    
+    // T-303: Use dynamic alpha scorer for merging results
+    const combined = await scoreMerge(
+      vectorResults.map(item => ({ id: item.id, score: item.similarity })),
+      textResults.map(item => ({ id: item.id, score: item.rank })),
+      { domain: domain as string | undefined }
+    );
+    
+    // Limit results to requested size
+    const finalResults = combined.slice(0, limit);
+    
+    // Store in cache (use 5 minutes TTL)
+    await cacheSet(cacheKey, combined, 300);
+    
+    // Record search latency for uncached search
+    const latency = (performance.now() - startTime) / 1000;
+    searchLatency.set({ type: 'hybrid_uncached' }, latency);
+    
+    return combined;
+  } catch (error) {
+    searchLogger.error('Search error', { 
+      query, 
+      assetId, 
+      scenarioId, 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+    
+    // Record failure latency
+    const latency = (performance.now() - startTime) / 1000;
+    searchLatency.set({ type: 'hybrid_error' }, latency);
+    
+    throw error;
+  }
 }
 
 /**
@@ -38,6 +106,7 @@ async function textSearch(
   query: string,
   assetId?: string,
   scenarioId?: string,
+  domain?: Domain,
   limit = 20
 ): Promise<Array<{ id: string; rank: number }>> {
   // Convert the query to a tsquery compatible format
@@ -51,26 +120,27 @@ async function textSearch(
     return [];
   }
   
-  // Build the where clause for filtering by asset or scenario
-  let whereClause = '';
-  const params: any[] = [tsQuery];
-  
+  // Build the where clauses for filtering
+  let assetScenarioClause = Prisma.empty;
   if (assetId) {
-    whereClause = 'AND t.asset_id = ?';
-    params.push(assetId);
+    assetScenarioClause = Prisma.sql`AND t.asset_id = ${assetId}`;
   } else if (scenarioId) {
-    whereClause = 'AND t.scenario_id = ?';
-    params.push(scenarioId);
+    assetScenarioClause = Prisma.sql`AND t.scenario_id = ${scenarioId}`;
   }
+  
+  // Add domain filter if specified
+  const domainFilter = domain ? Prisma.sql`AND ch.domain = ${domain}` : Prisma.empty;
   
   // Execute the full-text search with ranking
   const results = await prisma.$queryRaw<Array<{ id: string; rank: number }>>(
     Prisma.sql`
-      SELECT c.id, ts_rank(to_tsvector('english', c.content), to_tsquery('english', ${Prisma.sql`${tsQuery}`})) as rank
+      SELECT c.id, ts_rank(to_tsvector('english', c.content), to_tsquery('english', ${tsQuery})) as rank
       FROM "Card" c
       JOIN "Theme" t ON c.theme_id = t.id
-      WHERE to_tsvector('english', c.content) @@ to_tsquery('english', ${Prisma.sql`${tsQuery}`})
-      ${Prisma.sql`${whereClause}`}
+      LEFT JOIN "Chunk" ch ON ch.card_id = c.id
+      WHERE to_tsvector('english', c.content) @@ to_tsquery('english', ${tsQuery})
+      ${assetScenarioClause}
+      ${domainFilter}
       ORDER BY rank DESC
       LIMIT ${limit}
     `
@@ -79,53 +149,57 @@ async function textSearch(
   return results;
 }
 
+import { similaritySearch as vectorSimilaritySearch } from '../clients/vectorClient';
+
 /**
  * Performs vector-based search using pgvector
  */
-async function vectorSearch(
-  query: string,
-  assetId?: string,
-  scenarioId?: string,
-  limit = 20
-): Promise<Array<{ id: string; similarity: number }>> {
-  // For this implementation, assume we first need to generate an embedding for the query
-  // This would typically involve calling an external API (OpenAI, etc.)
-  // For the sake of this example, we'll simulate having the embedding
+export async function vectorSearch(query: string, k = 5, domain?: Domain): Promise<Array<{ id: string; similarity: number }>> {
+  const embedding = await getQueryEmbedding(query);
+  const filter = domain ? Prisma.sql`AND "domain" = ${domain}` : Prisma.empty;
+  const results = await prisma.$queryRaw<Array<{ id: string; score: number }>>`
+    SELECT id,
+           1 - (embedding <=> ${Prisma.join(embedding)}) AS score
+    FROM   "Chunk"
+    WHERE  embedding IS NOT NULL
+      ${filter}
+    ORDER  BY score DESC
+    LIMIT  ${k};
+  `;
   
-  // Mock embedding generation - in real implementation, call OpenAI or similar
-  const queryEmbedding = await generateEmbedding(query);
+  // Convert score to similarity for consistent naming
+  return results.map(item => ({
+    id: item.id,
+    similarity: item.score
+  }));
+}
+
+/**
+ * Helper function to filter card IDs by assetId or scenarioId
+ */
+async function getFilteredCardIds(
+  cardIds: string[], 
+  assetId?: string, 
+  scenarioId?: string
+): Promise<string[]> {
+  if (!cardIds.length) return [];
   
-  if (!queryEmbedding) {
-    return [];
-  }
-  
-  // Build the where clause for filtering by asset or scenario
-  let whereClause = '';
-  const params: any[] = [queryEmbedding];
+  const where: any = {
+    id: { in: cardIds }
+  };
   
   if (assetId) {
-    whereClause = 'AND t.asset_id = ?';
-    params.push(assetId);
+    where.theme = { asset: { id: assetId } };
   } else if (scenarioId) {
-    whereClause = 'AND t.scenario_id = ?';
-    params.push(scenarioId);
+    where.theme = { scenario: { id: scenarioId } };
   }
   
-  // Execute the vector search
-  const results = await prisma.$queryRaw<Array<{ id: string; similarity: number }>>(
-    Prisma.sql`
-      SELECT ch.card_id as id, 1 - (ch.embedding <=> ${queryEmbedding}::vector) as similarity
-      FROM "Chunk" ch
-      JOIN "Card" c ON ch.card_id = c.id
-      JOIN "Theme" t ON c.theme_id = t.id
-      WHERE ch.embedding IS NOT NULL
-      ${Prisma.sql`${whereClause}`}
-      ORDER BY similarity DESC
-      LIMIT ${limit}
-    `
-  );
+  const cards = await prisma.card.findMany({
+    where,
+    select: { id: true }
+  });
   
-  return results;
+  return cards.map(card => card.id);
 }
 
 /**

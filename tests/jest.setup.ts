@@ -4,6 +4,8 @@
  * Jest setup file to configure the test environment
  */
 
+// Add vitest imports to replace jest
+import { vi } from 'vitest';
 // Import helper for deterministic user setup
 import { setupDeterministicAuth, DEFAULT_ADMIN_USER } from './helpers/user';
 
@@ -20,18 +22,22 @@ setupDeterministicAuth(DEFAULT_ADMIN_USER);
 // Only mock Prisma when NODE_ENV is 'test'
 if (process.env.NODE_ENV === 'test') {
   // Mock PrismaClient to use our mock implementation
-  jest.mock('@prisma/client', () => {
-    const { PrismaClient } = jest.requireActual('@prisma/client');
-    const { prisma } = jest.requireActual('./mocks/prisma');
+  vi.mock('@prisma/client', async () => {
+    // Use type assertions to avoid type errors with PrismaClient
+    const importedPrisma = await vi.importActual('@prisma/client');
+    const { PrismaClient } = importedPrisma as any;
+    
+    const importedMockPrisma = await vi.importActual<typeof import('./mocks/prisma')>('./mocks/prisma');
+    const { prisma } = importedMockPrisma;
     
     return {
-      PrismaClient: jest.fn().mockImplementation(() => prisma),
+      PrismaClient: vi.fn().mockImplementation(() => prisma),
     };
   });
   
   // Mock Clerk authentication
-  jest.mock('@clerk/nextjs/server', () => {
-    const getUserFromRequest = (req: any) => {
+  vi.mock('@clerk/nextjs/server', async () => {
+    const getUserFromRequest = async (req: any) => {
       // Extract the token from the Authorization header
       const authHeader = req?.headers?.get('Authorization');
       if (!authHeader) {
@@ -41,7 +47,7 @@ if (process.env.NODE_ENV === 'test') {
       // Parse the JWT token to get the user ID from the sub claim
       try {
         const token = authHeader.replace('Bearer ', '');
-        const jwt = jest.requireActual('jsonwebtoken');
+        const jwt = await vi.importActual<typeof import('jsonwebtoken')>('jsonwebtoken');
         const decoded = jwt.decode(token);
         return decoded?.sub || 'user_test123';
       } catch (e) {
@@ -50,12 +56,12 @@ if (process.env.NODE_ENV === 'test') {
     };
     
     return {
-      auth: jest.fn((req: any) => {
-        const userId = getUserFromRequest(req);
+      auth: vi.fn(async (req: any) => {
+        const userId = await getUserFromRequest(req);
         return { userId };
       }),
-      currentUser: jest.fn((req: any) => {
-        const userId = getUserFromRequest(req);
+      currentUser: vi.fn(async (req: any) => {
+        const userId = await getUserFromRequest(req);
         return Promise.resolve({
           id: userId,
           username: userId === 'user_test123' ? 'testuser' : 'otheruser',
@@ -68,7 +74,7 @@ if (process.env.NODE_ENV === 'test') {
       }),
       clerkClient: {
         users: {
-          getUser: jest.fn((userId: string) => Promise.resolve({ id: userId }))
+          getUser: vi.fn((userId: string) => Promise.resolve({ id: userId }))
         }
       }
     };
@@ -77,10 +83,16 @@ if (process.env.NODE_ENV === 'test') {
 // We can't mock the repository class directly because it would cause circular dependencies
 
 // Mock the validateCuid function to handle specific test cases
-jest.mock('../lib/utils/api', () => {
-    const originalModule = jest.requireActual('../lib/utils/api');
-    const { badRequest, notFound } = jest.requireActual('../lib/utils/http');
-    const { logger } = jest.requireActual('../lib/logger');
+vi.mock('../lib/utils/api', async () => {
+    const originalModule = await vi.importActual<
+      typeof import('../lib/utils/api')
+    >('../lib/utils/api');
+    const { badRequest, notFound } = await vi.importActual<
+      typeof import('../lib/utils/http')
+    >('../lib/utils/http');
+    const { logger } = await vi.importActual<
+      typeof import('../lib/logger')
+    >('../lib/logger');
     
     return {
       ...originalModule,
@@ -88,7 +100,7 @@ jest.mock('../lib/utils/api', () => {
         // Create a map to track calls outside the function for state persistence
         const callsPerID = new Map();
         
-        const mockFn = jest.fn(async (id, existsCheck, resourceName) => {
+        const mockFn = vi.fn(async (id, existsCheck, resourceName) => {
           // For special case: asset-to-delete should return 404 on the second GET
           if (id === 'asset-to-delete' && existsCheck) {
             if (!callsPerID.has('delete-check')) {
@@ -121,7 +133,7 @@ jest.mock('../lib/utils/api', () => {
   });
   
   // Mock accessControlService with conditional RBAC checks
-  jest.mock('../lib/services/accessControlService', () => {
+  vi.mock('../lib/services/accessControlService', async () => {
     // Track calls to track delete state
     const calls = new Map();
     
@@ -131,7 +143,7 @@ jest.mock('../lib/utils/api', () => {
         EDITOR: 'EDITOR',
         ADMIN: 'ADMIN'
       },
-      hasAssetAccess: jest.fn(async (userId, assetId, role) => {
+      hasAssetAccess: vi.fn(async (userId, assetId, role) => {
         // Keep track of calls for each assetId
         const key = `${userId}-${assetId}-${role}`;
         const callCount = calls.get(key) || 0;

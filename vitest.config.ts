@@ -6,18 +6,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('.', import.meta.url)),
-      '@jest/globals': fileURLToPath(new URL('./tests/jestGlobals.cjs', import.meta.url))
-    }
+      '@jest/globals': fileURLToPath(new URL('./tests/jestGlobals.cjs', import.meta.url)),
+    },
   },
-  test: {
+test: {
     globals: true,
     setupFiles: [
+      './tests/setup/vitestJestShim.ts',
       './tests/setup/clerk-mock.ts',
-      './vitest.setup.ts',
-      './tests/setup/alias-shim.cjs',
-      './tests/setup/mock-aliases.ts',
-      './tests/setup/reset-rate-limit.ts',
-      './tests/setup/verbose.ts'
+      './tests/jest.setup.ts',
     ],
     exclude: [
       ...configDefaults.exclude,
@@ -26,5 +23,8 @@ export default defineConfig({
     deps: {
       moduleDirectories: ['node_modules', '__mocks__']
     }
+  },
+  coverage: {
+    reportsDirectory: './coverage'
   }
 });

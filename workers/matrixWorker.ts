@@ -4,6 +4,8 @@ import { logger } from '../lib/logger';
 import { assembleMatrixContext } from '../lib/services/contextAssemblyService';
 import { jobsProcessed, jobsFailed, jobsActive } from '../lib/metrics';
 import { emitJobEvent } from '../lib/events/eventEmitter';
+import { MatrixResultUpdateSchema } from '../lib/validators/matrix';
+import OpenAI from 'openai';
 
 // Logger for this worker
 const workerLogger = logger.child({ component: 'MatrixWorker', queue: 'matrix' });
@@ -17,6 +19,11 @@ const redisConnection = {
 // OpenAI API constants
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_MODEL = 'gpt-4o';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 // Queue name
 const QUEUE_NAME = 'matrix-analysis';
@@ -178,6 +185,7 @@ async function analyzeAssetScenarioImpact(
 ): Promise<{
   impact: number;
   summary: string;
+  confidence: number;
   evidenceIds: string;
 }> {
   workerLogger.debug('Calling LLM for impact analysis', { assetId, scenarioId });
@@ -198,67 +206,79 @@ async function analyzeAssetScenarioImpact(
     Based on this information, provide:
     1. An impact score between -5 and +5 as an integer
     2. A concise summary (2-3 sentences) explaining the reasoning
-    3. A comma-separated list of the most relevant evidence IDs from the provided cards/chunks
+    3. A confidence score between 0 and 1, where:
+       - 0.9-1.0: Very high confidence in the assessment (strong evidence, clear impact)
+       - 0.7-0.9: High confidence (good evidence, clear direction of impact)
+       - 0.5-0.7: Moderate confidence (mixed evidence, reasonable assessment)
+       - 0.3-0.5: Low confidence (limited evidence, uncertain impact)
+       - 0.0-0.3: Very low confidence (insufficient evidence, highly speculative)
+    4. A comma-separated list of the most relevant evidence IDs from the provided cards/chunks
     
     Format your response as valid JSON with the following structure:
     {
       "impact": number,
       "summary": "string",
+      "confidence": number,
       "evidenceIds": "string" // comma-separated IDs
     }
   `;
   
   try {
-    // Check if API key is set
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY is not set in environment variables');
-    }
-    
-    // Prepare the request payload
-    const payload = {
-      model: process.env.OPENAI_MODEL || DEFAULT_MODEL,
-      messages: [
-        { role: 'system', content: 'You are a financial analysis assistant that provides accurate impact assessments.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.3, // Lower temperature for more consistent results
-      response_format: { type: 'json_object' }
-    };
-    
-    // Make the API request
-    const response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`);
-    }
-    
-    const responseData = await response.json();
-    const responseContent = responseData.choices[0]?.message?.content || '';
-    
-    if (!responseContent) {
-      throw new Error('Empty response from OpenAI API');
-    }
-    
-    // Parse response
-    const parsedResponse = JSON.parse(responseContent);
-    
-    // Validate impact score is in range
-    const impact = Math.max(-5, Math.min(5, Math.round(parsedResponse.impact)));
-    
-    return {
-      impact,
-      summary: parsedResponse.summary,
-      evidenceIds: parsedResponse.evidenceIds
-    };
+  const { choices } = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: 'You are an analytical assistant.' },
+      { role: 'user',   content: prompt },
+    ],
+    functions: [{
+      name: 'set_matrix_summary',
+      parameters: {
+        type: 'object',
+        properties: {
+          impact: { 
+            type: 'integer',
+            description: 'Impact score from -5 (severe negative) to +5 (strong positive)'
+          },
+          summary: { 
+            type: 'string',
+            description: 'A concise 2-3 sentence summary explaining the reasoning'
+          },
+          confidence: { 
+            type: 'number', 
+            minimum: 0, 
+            maximum: 1,
+            description: 'Confidence score between 0 and 1'
+          },
+          evidenceIds: {
+            type: 'string',
+            description: 'Comma-separated list of the most relevant evidence IDs'
+          }
+        },
+        required: ['impact', 'summary', 'confidence', 'evidenceIds']
+      }
+    }],
+    function_call: { name: 'set_matrix_summary' }
+  });
+
+  if (!choices[0]?.message?.function_call?.arguments) {
+    throw new Error('No function call result in OpenAI response');
+  }
+  
+  // Parse the arguments from the function call
+  const parsedResponse = JSON.parse(choices[0].message.function_call.arguments);
+  
+  // Validate impact score is in range
+  const impact = Math.max(-5, Math.min(5, Math.round(parsedResponse.impact)));
+  
+  // Validate confidence score is in range
+  const confidence = Math.max(0, Math.min(1, parsedResponse.confidence));
+  
+  return {
+    impact,
+    summary: parsedResponse.summary,
+    confidence,
+    evidenceIds: parsedResponse.evidenceIds
+  };
   } catch (error) {
     workerLogger.error('Error calling OpenAI API', { 
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -308,6 +328,7 @@ async function saveMatrixResult(
   result: {
     impact: number;
     summary: string;
+    confidence: number;
     evidenceIds: string;
   }
 ) {
@@ -319,20 +340,22 @@ async function saveMatrixResult(
           scenarioId
         }
       },
-      data: {
+      data: MatrixResultUpdateSchema.parse({
         impact: result.impact,
         summary: result.summary,
+        confidence: result.confidence,
         evidenceIds: result.evidenceIds,
         status: 'completed',
         completedAt: new Date(),
         error: null
-      }
+      })
     });
     
     workerLogger.info('Matrix analysis result saved', {
       assetId,
       scenarioId,
-      impact: result.impact
+      impact: result.impact,
+      confidence: result.confidence
     });
   } catch (error) {
     workerLogger.error('Failed to save matrix result', {

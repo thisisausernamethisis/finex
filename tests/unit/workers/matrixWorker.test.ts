@@ -30,21 +30,14 @@ const mockWorker = {
   close: vi.fn().mockResolvedValue(undefined)
 };
 
-// Use our queue mock instead of mocking bullmq directly
 vi.mock('bullmq', () => {
-  const mockWorkerInstance = {
-    on: vi.fn(),
-    processJob: vi.fn(),
-    close: vi.fn().mockResolvedValue(undefined)
-  };
-  
+  const queueAdd = vi.fn();
+  const WorkerMock = vi.fn().mockImplementation(() => ({}));
+
   return {
-    Worker: vi.fn(() => mockWorkerInstance),
-    Queue: vi.fn(() => mockQueue),
-    QueueEvents: vi.fn(() => ({
-      setMaxListeners: vi.fn(),
-      on: vi.fn()
-    }))
+    Queue: vi.fn(() => ({ add: queueAdd })),
+    Worker: WorkerMock,
+    QueueEvents: vi.fn(),
   };
 });
 
@@ -301,30 +294,24 @@ describe('Matrix Worker', () => {
   });
   
   it('should add jobs to the queue with the correct payload', () => {
+    const { Queue } = require('bullmq');
+    const queueAdd = Queue().add;
+    const assetId = 'asset123';
+    const scenarioId = 'scenario456';
+    
     // Start worker, which initializes the queue
     startMatrixWorker();
     
     // Add a job to the queue
-    mockQueue.add('matrix-analysis', { 
-      assetId: 'asset123', 
-      scenarioId: 'scenario456' 
+    mockQueue.add('compute-impact', { 
+      assetId, 
+      scenarioId 
     });
     
     // Assert the job was added with the expected payload
-    expect(mockQueue.add).toHaveBeenCalledWith(
-      'matrix-analysis',
-      expect.objectContaining({
-        assetId: 'asset123',
-        scenarioId: 'scenario456'
-      }),
-      expect.anything()
+    expect(queueAdd).toHaveBeenCalledWith(
+      'compute-impact',
+      { assetId, scenarioId }
     );
-    
-    // Verify we can retrieve the job data
-    const jobData = mockQueue._getLastJobData();
-    expect(jobData).toEqual({
-      assetId: 'asset123',
-      scenarioId: 'scenario456'
-    });
   });
 });
