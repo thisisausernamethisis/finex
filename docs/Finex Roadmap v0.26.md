@@ -27,10 +27,10 @@ Snapshot tagging: latest tag = `roadmap-sync-2025-05-20`
 | T-269b | Vitest migration shim (completed) | 🟢 |
 | T-269c | SQLite in-memory fixture for migrations | 🟢 |
 | T-320f | CI Playwright install/cache tweak | ⏳ |
-| **T-320g** | Stray BOM in `docs/esm-gap-report.md` | 🔜 |
-| **T-320h** | Rate-limit bug (tokens not decremented) | 🔜 |
-| **T-320i** | SSE client doc status mismatch | 🔜 |
-| **T-320j** | Skipped matrix worker startup test | 🔜 |
+| **T-320g** | Stray BOM in `docs/esm-gap-report.md` | 🟢 |
+| **T-320h** | Rate-limit bug (tokens not decremented) | 🟢 |
+| **T-320i** | SSE client doc status mismatch | 🟢 |
+| **T-320j** | Skipped matrix worker startup test | 🟢 |
 
 ### 7.2 — Chunk & Quality
 
@@ -67,10 +67,10 @@ Snapshot tagging: latest tag = `roadmap-sync-2025-05-20`
 | T-311a | 7.3 | Cache pre-warm scheduler | — | ⚪ |
 | T-308e | 7.3 | Calibrator retrain CLI | — | ⚪ |
 | T-320f | 6.5 | CI Playwright install/cache tweak | — | ⏳ |
-| T-320g | 6.5 | Stray BOM in `docs/esm-gap-report.md` | — | 🔜 |
-| T-320h | 6.5 | Rate-limit bug (tokens not decremented) | — | 🔜 |
-| T-320i | 6.5 | SSE client doc status mismatch | — | 🔜 |
-| T-320j | 6.5 | Skipped matrix worker startup test | — | 🔜 |
+| T-320g | 6.5 | Stray BOM in `docs/esm-gap-report.md` | — | 🟢 |
+| T-320h | 6.5 | Rate-limit bug (tokens not decremented) | — | 🟢 |
+| T-320i | 6.5 | SSE client doc status mismatch | — | 🟢 |
+| T-320j | 6.5 | Skipped matrix worker startup test | — | 🟢 |
 
 ## 3 · Process guard-rails (active)
 

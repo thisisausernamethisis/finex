@@ -46,7 +46,15 @@ export function createRateLimiter(LIMIT = Number(process.env.RL_LIMIT ?? 50)) {
    * @returns Result with success flag and rate limit info
    */
   function check(key: string = 'GLOBAL'): RLResult {
-    const used = (calls.get(key) ?? 0) + 1;
+    if (!calls.has(key)) {
+    // New IP - initialize with one token already used
+    const tokens = LIMIT - 1;
+      calls.set(key, 1);
+      return { success: true, limit: LIMIT, remaining: tokens };
+    }
+    
+    // Existing IP - increment usage count
+    const used = calls.get(key)! + 1;
     calls.set(key, used);
     return { success: used <= LIMIT, limit: LIMIT, remaining: Math.max(0, LIMIT - used) };
   }

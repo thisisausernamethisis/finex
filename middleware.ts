@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 
 import { createRateLimiter } from 'lib/rateLimit';
 const rl = createRateLimiter();       // 50/min in prod
+export { rl as ratelimit };
 
 // Mock implementation of auth middleware until proper types are in place
 const mockAuthMiddleware = (config: any) => {

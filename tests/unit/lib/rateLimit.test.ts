@@ -24,4 +24,22 @@ describe('Rate Limiter', () => {
     expect(result.limit).toBeGreaterThan(0);
     expect(typeof result.remaining).toBe('number');
   });
+
+  it('decrements tokens on first hit for new IP', () => {
+    const LIMIT = 50;
+    const rl = createRateLimiter(LIMIT);
+    const result = rl.check('1.2.3.4');
+    
+    expect(result.success).toBe(true);
+    expect(result.limit).toBe(LIMIT);
+    expect(result.remaining).toBe(LIMIT - 1);
+  });
+
+  it('decrements on first hit', () => {
+    const LIMIT = 50;
+    const ratelimit = createRateLimiter(LIMIT);
+    const res = ratelimit.check('1.2.3.4');
+    expect(res.success).toBe(true);
+    expect(res.remaining).toBe(LIMIT - 1);
+  });
 });

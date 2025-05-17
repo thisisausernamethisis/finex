@@ -147,10 +147,10 @@ function handleMatrixEvent(event) {
   const { status, jobId, data } = event;
   
   switch (status) {
-    case 'pending':
+    case 'queued':
       showPendingStatus(jobId);
       break;
-    case 'processing':
+    case 'started':
       showProcessingStatus(jobId);
       break;
     case 'completed':
@@ -166,12 +166,12 @@ function handleMatrixEvent(event) {
 
 // Example UI update functions (implement these based on your UI framework)
 function showPendingStatus(jobId) {
-  console.log(`Job ${jobId} is pending`);
+  console.log(`Job ${jobId} is queued`);
   // Update UI to show pending status
 }
 
 function showProcessingStatus(jobId) {
-  console.log(`Job ${jobId} is processing`);
+  console.log(`Job ${jobId} is started`);
   // Update UI to show processing status (e.g., spinner)
 }
 

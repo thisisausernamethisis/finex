@@ -1,4 +1,7 @@
 import { vi, describe, it, beforeEach, afterEach, expect, afterAll } from 'vitest';
+
+// Use in-memory database to avoid migration issues
+process.env.DATABASE_URL = "file:memory";
 import { disconnectPrisma } from './tests/_setup/prismaTestEnv';
 import '@testing-library/jest-dom';
 

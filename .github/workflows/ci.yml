@@ -121,6 +121,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx prisma migrate deploy
+      - run: pnpm playwright install --with-deps --quiet
       - run: npm run test:e2e
   
   lint:

@@ -18,6 +18,13 @@ export type JobEventType = 'matrix' | 'growth' | 'probability';
 export interface JobEvent {
   type: JobEventType;
   jobId: string;
+  /**
+   * Job status as emitted by Matrix worker
+   * - 'queued': Job is waiting to be processed
+   * - 'started': Job processing has begun
+   * - 'completed': Job has finished successfully
+   * - 'failed': Job encountered an error
+   */
   status: 'queued' | 'started' | 'completed' | 'failed';
   timestamp: string;
   data?: Record<string, any>;
