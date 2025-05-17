@@ -2,6 +2,13 @@
 
 ## Version 0.21.0 - Developer Experience & Infrastructure (May 2025)
 
+### Added
+- **Confidence Badge Feature** 
+  - Added visual confidence badge to matrix search results ([T-313](tasks/T-313_ui_confidence_badge.yml))
+  - Implemented color-coded badges based on confidence thresholds
+  - Added E2E tests for confidence badge UI component
+  - Improved result transparency with LLM confidence metrics
+
 ### Major Changes
 - **Test Infrastructure Improvements**
   - Split CI pipeline into separate jobs for unit, contract, and E2E tests ([T-307](tasks/T-307_yaml_dep_graph.yml))

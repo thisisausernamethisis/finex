@@ -1,5 +1,6 @@
 import { vi, describe, it, beforeEach, afterEach, expect, afterAll } from 'vitest';
 import { disconnectPrisma } from './tests/_setup/prismaTestEnv';
+import '@testing-library/jest-dom';
 
 // Mock Prisma client with our unified mock
 vi.mock('@prisma/client', () => require('./__mocks__/@prisma/client'));

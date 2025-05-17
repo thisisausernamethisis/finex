@@ -44,6 +44,12 @@ export interface SearchResult {
      */
     score?: number;
     /**
+     * 
+     * @type {number}
+     * @memberof SearchResult
+     */
+    confidence?: number;
+    /**
      * Theme ID for cards, asset ID for themes
      * @type {string}
      * @memberof SearchResult
@@ -98,6 +104,7 @@ export function SearchResultFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'type': json['type'] == null ? undefined : json['type'],
         'content': json['content'] == null ? undefined : json['content'],
         'score': json['score'] == null ? undefined : json['score'],
+        'confidence': json['confidence'] == null ? undefined : json['confidence'],
         'parentId': json['parentId'] == null ? undefined : json['parentId'],
         'parentType': json['parentType'] == null ? undefined : json['parentType'],
     };
@@ -118,8 +125,8 @@ export function SearchResultToJSONTyped(value?: SearchResult | null, ignoreDiscr
         'type': value['type'],
         'content': value['content'],
         'score': value['score'],
+        'confidence': value['confidence'],
         'parentId': value['parentId'],
         'parentType': value['parentType'],
     };
 }
-

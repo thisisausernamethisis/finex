@@ -8,6 +8,7 @@
  * Usage:
  *   pnpm ts-node scripts/ragas/smoke.ts
  *   pnpm ts-node scripts/ragas/smoke.ts --debug
+ *   RAG_SEED=123 pnpm ts-node scripts/ragas/smoke.ts
  */
 
 import { logger } from '../../lib/logger';
@@ -26,6 +27,10 @@ program
 
 const options = program.opts();
 const DEBUG = options.debug || false;
+
+// Use deterministic seed if provided, otherwise use current timestamp
+const seed = Number(process.env.RAG_SEED) || Date.now();
+log.info(`Using seed: ${seed}`);
 
 // Threshold for acceptable RAGAS score (CI gate)
 const SCORE_THRESHOLD = 0.82;

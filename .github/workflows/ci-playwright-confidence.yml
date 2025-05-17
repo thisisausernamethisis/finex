@@ -1,0 +1,41 @@
+name: Playwright UI Tests for Confidence Badge
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'src/components/ConfidenceBadge.tsx'
+      - 'app/pages/MatrixResult.tsx'
+      - 'app/matrix/page.tsx'
+      - 'tests/e2e/confidenceBadge.spec.ts'
+
+jobs:
+  playwright-ui:
+    needs: []
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Install Playwright browsers
+        run: pnpm playwright install --with-deps --quiet chromium
+      - name: Run E2E tests for confidence badge
+        run: pnpm playwright test tests/e2e/confidenceBadge.spec.ts
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

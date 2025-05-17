@@ -44,7 +44,7 @@ Legend — 🟢 done  ·  🟡 active  ·  ⚪ planned  ·  🔴 blocked
 | 7.2‑a Re‑chunk Runner       | **T‑301b** *(Patch H‑1)* | 256±15 % tokens, 32‑tok overlap – **CLI + worker** | 🟡     |
 | 7.2‑b Fresh embeddings      | T‑307                    | Re‑embed corpus with Ada‑3                         | ⚪      |
 | 7.2‑c Similarity smoke gate | **T‑308** *(Patch H‑2)*  | 20‑pair RAGAS smoke in CI, fails < 0.82            | 🟡     |
-| 7.2‑d Confidence UI banner  | T‑308d                   | React badge < 50 %                                 | 🟡     |
+| 7.2‑d Confidence UI banner  | T‑313                   | React badge < 50 %                                 | 🟢     |
 | 7.2‑e ANN tuning spike      | T‑307a                   | IVF/HNSW lists + probes sweep                      | 🟡     |
 
 ### 7.3 — Drift & Tuning (⚪)
