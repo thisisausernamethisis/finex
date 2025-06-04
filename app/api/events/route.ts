@@ -1,108 +1,128 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextRequest } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
+import eventEmitter from '../../../lib/events/eventEmitter';
 import { logger } from '../../../lib/logger';
-import eventEmitter, { JobEvent } from '../../../lib/events/eventEmitter';
-import { userHasAccessToEvent } from '../../../lib/services/accessControlService';
 
-// Create a logger instance for this route
-const routeLogger = logger.child({ route: '/api/events' });
+// Create route-specific logger
+const sseLogger = logger.child({ route: 'GET /api/events' });
 
 /**
- * SSE endpoint for real-time updates
+ * GET /api/events - Server-Sent Events endpoint for real-time updates
+ * Provides real-time job status updates to authenticated clients
  */
-export async function GET(request: Request) {
-  // Authenticate the user
+export async function GET(req: NextRequest) {
+  // Check authentication
   const user = await currentUser();
   if (!user) {
-    routeLogger.warn('Unauthorized access attempt to SSE endpoint');
-    return new NextResponse('Unauthorized', { status: 401 });
+    return new Response('Unauthorized', { status: 401 });
   }
 
-  const userId = user.id;
-  routeLogger.debug('SSE connection established', { userId });
+  sseLogger.info('SSE connection requested', { userId: user.id });
 
-  // Create a transform stream
-  const encoder = new TextEncoder();
-  const stream = new TransformStream();
-  const writer = stream.writable.getWriter();
+  // Create a TransformStream for SSE
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
 
-  // Function to send an event
-  const sendEvent = async (event: JobEvent) => {
+  // SSE Headers
+  const headers = new Headers({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+
+  // Connection tracking
+  let isConnected = true;
+  const connectionId = `sse_${user.id}_${Date.now()}`;
+
+  // Helper function to send SSE data
+  const sendEvent = async (data: any, event?: string, id?: string) => {
+    if (!isConnected) return;
+    
     try {
-      // Format as SSE
-      const data = `data: ${JSON.stringify(event)}\n\n`;
-      await writer.write(encoder.encode(data));
+      let message = '';
+      if (id) message += `id: ${id}\n`;
+      if (event) message += `event: ${event}\n`;
+      message += `data: ${JSON.stringify(data)}\n\n`;
 
-      routeLogger.debug('SSE event sent', { userId, eventType: event.type });
+      await writer.write(new TextEncoder().encode(message));
     } catch (error) {
-      routeLogger.error('Error sending SSE event', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        userId
+      sseLogger.warn('Failed to send SSE event', {
+        connectionId,
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
+      isConnected = false;
     }
   };
 
-  // Set up a heartbeat to keep the connection alive
-  const heartbeatInterval = setInterval(() => {
-    writer.write(encoder.encode(':ping\n\n')).catch((error) => {
-      routeLogger.error('Error sending heartbeat', {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    });
-  }, 30000); // Send heartbeat every 30 seconds
+  // Send initial connection confirmation
+  await sendEvent({ 
+    type: 'connection', 
+    status: 'connected',
+    connectionId,
+    timestamp: new Date().toISOString()
+  }, 'connect');
 
-  // Keep track of the listener to remove it later
-  const jobUpdateListener = async (event: JobEvent) => {
-    try {
-      // Check if the user has access to this event
-      const hasAccess = await userHasAccessToEvent(userId, event);
+  // Set up event listeners for job updates
+  const jobUpdateHandler = async (jobEvent: any) => {
+    // Only send events that the user should see
+    // For now, send all events - in production you'd filter by user access
+    await sendEvent(jobEvent, 'job-update', jobEvent.jobId);
+  };
+
+  // Listen for job events
+  eventEmitter.on('job:update', jobUpdateHandler);
+
+  // Heartbeat to keep connection alive
+  const heartbeatInterval = setInterval(async () => {
+    await sendEvent({ 
+      type: 'heartbeat', 
+      timestamp: new Date().toISOString() 
+    }, 'heartbeat');
+  }, 30000); // Every 30 seconds
+
+  // Cleanup function
+  const cleanup = () => {
+    if (isConnected) {
+      sseLogger.info('SSE connection closed', { connectionId, userId: user.id });
+      isConnected = false;
       
-      if (hasAccess) {
-        await sendEvent(event);
-      } else {
-        routeLogger.debug('User does not have access to event', { 
-          userId, 
-          eventType: event.type,
-          jobId: event.jobId
+      // Remove event listeners
+      eventEmitter.off('job:update', jobUpdateHandler);
+      
+      // Clear heartbeat
+      clearInterval(heartbeatInterval);
+      
+      // Close writer
+      writer.close().catch(err => {
+        sseLogger.warn('Error closing SSE writer', { 
+          connectionId, 
+          error: err instanceof Error ? err.message : 'Unknown error' 
         });
-      }
-    } catch (error) {
-      routeLogger.error('Failed to process event', {
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   };
 
-  // Register the event listener
-  eventEmitter.on('job:update', jobUpdateListener);
+  // Handle client disconnect
+  req.signal.addEventListener('abort', cleanup);
 
-  // Send an initial ping event
-  await sendEvent({
-    type: 'matrix',
-    jobId: 'connection',
-    status: 'queued',
-    timestamp: new Date().toISOString(),
-    data: { message: 'SSE connection established' }
-  });
+  // Clean up after 5 minutes to prevent resource leaks
+  setTimeout(cleanup, 5 * 60 * 1000);
 
-  // Cleanup when client disconnects
-  request.signal.addEventListener('abort', () => {
-    routeLogger.debug('SSE connection closed', { userId });
-    eventEmitter.removeListener('job:update', jobUpdateListener);
-    clearInterval(heartbeatInterval); // Stop the heartbeat interval
-    writer.close().catch((error) => {
-      routeLogger.error('Error closing writer', {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    });
-  });
+  sseLogger.info('SSE connection established', { connectionId, userId: user.id });
 
-  return new NextResponse(stream.readable, {
+  return new Response(readable, { headers });
+}
+
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive'
-    }
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
   });
 }

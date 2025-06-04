@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { PaginationInfo } from './PaginationInfo';
+import {
+    PaginationInfoFromJSON,
+    PaginationInfoFromJSONTyped,
+    PaginationInfoToJSON,
+    PaginationInfoToJSONTyped,
+} from './PaginationInfo';
 import type { ThemeTemplate } from './ThemeTemplate';
 import {
     ThemeTemplateFromJSON,
@@ -32,25 +39,21 @@ export interface PaginatedThemeTemplates {
      * @type {Array<ThemeTemplate>}
      * @memberof PaginatedThemeTemplates
      */
-    items?: Array<ThemeTemplate>;
+    data: Array<ThemeTemplate>;
     /**
      * 
-     * @type {number}
+     * @type {PaginationInfo}
      * @memberof PaginatedThemeTemplates
      */
-    total?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof PaginatedThemeTemplates
-     */
-    hasMore?: boolean;
+    pagination: PaginationInfo;
 }
 
 /**
  * Check if a given object implements the PaginatedThemeTemplates interface.
  */
 export function instanceOfPaginatedThemeTemplates(value: object): value is PaginatedThemeTemplates {
+    if (!('data' in value) || value['data'] === undefined) return false;
+    if (!('pagination' in value) || value['pagination'] === undefined) return false;
     return true;
 }
 
@@ -64,9 +67,8 @@ export function PaginatedThemeTemplatesFromJSONTyped(json: any, ignoreDiscrimina
     }
     return {
         
-        'items': json['items'] == null ? undefined : ((json['items'] as Array<any>).map(ThemeTemplateFromJSON)),
-        'total': json['total'] == null ? undefined : json['total'],
-        'hasMore': json['hasMore'] == null ? undefined : json['hasMore'],
+        'data': ((json['data'] as Array<any>).map(ThemeTemplateFromJSON)),
+        'pagination': PaginationInfoFromJSON(json['pagination']),
     };
 }
 
@@ -81,9 +83,8 @@ export function PaginatedThemeTemplatesToJSONTyped(value?: PaginatedThemeTemplat
 
     return {
         
-        'items': value['items'] == null ? undefined : ((value['items'] as Array<any>).map(ThemeTemplateToJSON)),
-        'total': value['total'],
-        'hasMore': value['hasMore'],
+        'data': ((value['data'] as Array<any>).map(ThemeTemplateToJSON)),
+        'pagination': PaginationInfoToJSON(value['pagination']),
     };
 }
 

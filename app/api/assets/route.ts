@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { AssetRepository } from '../../../lib/repositories/assetRepository';
+import { TechnologyCategory } from '@prisma/client';
 import { z } from 'zod';
 import { createChildLogger } from '../../../lib/logger';
 import { serverError, unauthorized } from '../../../lib/utils/http';
@@ -14,7 +15,10 @@ const createLogger = createChildLogger({ route: 'POST /api/assets' });
 const createAssetSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
-  isPublic: z.boolean().optional()
+  isPublic: z.boolean().optional(),
+  category: z.nativeEnum(TechnologyCategory).optional(),
+  categoryConfidence: z.number().min(0).max(1).optional(),
+  categoryInsights: z.record(z.any()).optional()
 });
 
 // Create repository instance
@@ -33,10 +37,16 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const queryOptions = getQueryOptions(url);
     
-    // Use withPagination utility
+    // Get category filter from query params
+    const categoryParam = url.searchParams.get('category');
+    const category = categoryParam && Object.values(TechnologyCategory).includes(categoryParam as TechnologyCategory) 
+      ? categoryParam as TechnologyCategory 
+      : undefined;
+    
+    // Use withPagination utility with category filter
     const paginationResult = await withPagination(
       queryOptions,
-      (page, limit, search) => assetRepository.listAssets(user.id, page, limit, search),
+      (page, limit, search) => assetRepository.listAssets(user.id, page, limit, search, category),
       listLogger
     );
     

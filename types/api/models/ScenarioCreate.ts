@@ -33,10 +33,10 @@ export interface ScenarioCreate {
     description?: string;
     /**
      * 
-     * @type {number}
+     * @type {object}
      * @memberof ScenarioCreate
      */
-    probability?: number;
+    parameters?: object;
 }
 
 /**
@@ -59,7 +59,7 @@ export function ScenarioCreateFromJSONTyped(json: any, ignoreDiscriminator: bool
         
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'probability': json['probability'] == null ? undefined : json['probability'],
+        'parameters': json['parameters'] == null ? undefined : json['parameters'],
     };
 }
 
@@ -76,7 +76,7 @@ export function ScenarioCreateToJSONTyped(value?: ScenarioCreate | null, ignoreD
         
         'name': value['name'],
         'description': value['description'],
-        'probability': value['probability'],
+        'parameters': value['parameters'],
     };
 }
 

@@ -33,10 +33,10 @@ export interface ScenarioUpdate {
     description?: string;
     /**
      * 
-     * @type {number}
+     * @type {object}
      * @memberof ScenarioUpdate
      */
-    probability?: number;
+    parameters?: object;
 }
 
 /**
@@ -58,7 +58,7 @@ export function ScenarioUpdateFromJSONTyped(json: any, ignoreDiscriminator: bool
         
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'probability': json['probability'] == null ? undefined : json['probability'],
+        'parameters': json['parameters'] == null ? undefined : json['parameters'],
     };
 }
 
@@ -75,7 +75,7 @@ export function ScenarioUpdateToJSONTyped(value?: ScenarioUpdate | null, ignoreD
         
         'name': value['name'],
         'description': value['description'],
-        'probability': value['probability'],
+        'parameters': value['parameters'],
     };
 }
 

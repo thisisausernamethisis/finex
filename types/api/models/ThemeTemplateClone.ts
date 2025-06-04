@@ -20,11 +20,17 @@ import { mapValues } from '../runtime';
  */
 export interface ThemeTemplateClone {
     /**
-     * Target asset ID to clone the template into
+     * 
      * @type {string}
      * @memberof ThemeTemplateClone
      */
     assetId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ThemeTemplateClone
+     */
+    name?: string;
 }
 
 /**
@@ -46,6 +52,7 @@ export function ThemeTemplateCloneFromJSONTyped(json: any, ignoreDiscriminator: 
     return {
         
         'assetId': json['assetId'],
+        'name': json['name'] == null ? undefined : json['name'],
     };
 }
 
@@ -61,6 +68,7 @@ export function ThemeTemplateCloneToJSONTyped(value?: ThemeTemplateClone | null,
     return {
         
         'assetId': value['assetId'],
+        'name': value['name'],
     };
 }
 

@@ -1,0 +1,96 @@
+id: T-170
+title: "MetaMap Foundation - Technology Scenarios + Workflow Infrastructure"
+phase: 6a
+priority: CRITICAL
+status: COMPLETED
+acceptance:
+  - CI passes (all existing tests remain green)
+  - Database schema enhanced with ScenarioType + TechnologyCategory enums
+  - 6 technology-focused assets seeded with category classification
+  - 5 technology scenarios seeded using theme→card structure
+  - Technology scenarios API endpoint working (/api/scenarios/technology)
+  - Dashboard connects to real technology scenarios (no mock data)
+  - Contract test for technology scenarios endpoint
+  - Existing template library features remain functional
+
+files_modified:
+  # Database (already present, verified working)
+  - prisma/schema.prisma (ScenarioType + TechnologyCategory enums)
+  - prisma/seed.ts (technology scenarios + categorized assets)
+  
+  # API
+  - app/api/scenarios/technology/route.ts (new endpoint)
+  
+  # UI
+  - app/dashboard/page.tsx (real data integration)
+  
+  # Tests
+  - tests/contract/technology_scenarios.test.ts (new contract test)
+  
+  # Documentation
+  - tasks/T-170_metamap_foundation.yml (this file)
+
+database_changes_implemented:
+  - ✅ ScenarioType enum (TECHNOLOGY, ECONOMIC, GEOPOLITICAL, REGULATORY, MARKET)
+  - ✅ TechnologyCategory enum (AI_COMPUTE, ROBOTICS_PHYSICAL_AI, QUANTUM_COMPUTING, etc.)
+  - ✅ Asset.category field (TechnologyCategory?)
+  - ✅ Asset.categoryConfidence field (Float?)
+  - ✅ Asset.categoryInsights field (Json?)
+  - ✅ Scenario.type field (ScenarioType)
+  - ✅ Scenario.timeline field (String?)
+
+technology_scenarios_seeded:
+  1. ✅ "AI Compute Breakthrough" (TECHNOLOGY, 2-5 years, 40%)
+  2. ✅ "Physical AI Mass Adoption" (TECHNOLOGY, 3-7 years, 60%) 
+  3. ✅ "Quantum Computing Breakthrough" (TECHNOLOGY, 5-10 years, 30%)
+  4. ✅ "AI Regulation Tightening" (REGULATORY, 1-3 years, 70%)
+  5. ✅ "Semiconductor Supply Crisis" (GEOPOLITICAL, 1-2 years, 50%)
+
+technology_assets_seeded:
+  1. ✅ "NVIDIA Corporation" (AI_COMPUTE, 95% confidence)
+  2. ✅ "Tesla Inc" (ROBOTICS_PHYSICAL_AI, 88% confidence)
+  3. ✅ "Google (Alphabet)" (AI_COMPUTE, 82% confidence)
+  4. ✅ "Microsoft Corporation" (AI_COMPUTE, 79% confidence)
+  5. ✅ "IonQ Inc" (QUANTUM_COMPUTING, 93% confidence)
+  6. ✅ "Boston Dynamics" (ROBOTICS_PHYSICAL_AI, 91% confidence)
+
+api_endpoints_implemented:
+  - ✅ GET /api/scenarios/technology
+    - Filters: timeline, limit
+    - Returns: scenarios array, count, filters, metadata
+    - Authentication: Required
+    - Technology type filtering: Only TECHNOLOGY scenarios
+
+ui_enhancements:
+  - ✅ Dashboard fetches real technology scenarios
+  - ✅ MatrixGrid uses real scenario data instead of mock
+  - ✅ Loading states for data fetching
+  - ✅ Error handling with fallback to mock data
+
+preserve_existing:
+  - ✅ All current template library functionality intact
+  - ✅ All existing API routes functional
+  - ✅ All theme/card/chunk architecture preserved
+  - ✅ All worker functionality maintained
+  - ✅ All previous test suites pass
+
+next_steps:
+  - T-171: Asset auto-categorization service
+  - T-172: Portfolio insight generation
+  - T-173: Guided asset/scenario building workflows
+  - T-174: Enhanced matrix analysis with technology focus
+
+why_this_foundation:
+  - Enables MetaMap's technology-first vision
+  - Preserves all existing architectural investment
+  - Creates data foundation for auto-categorization
+  - Bridges roadmap gap with technology focus
+  - Sets stage for sophisticated AI-powered insights
+  - Maintains backward compatibility
+
+verification_steps:
+  1. ✅ npm run test:contract (includes new technology scenarios test)
+  2. ✅ Dashboard loads real technology scenarios
+  3. ✅ Database seed creates categorized assets
+  4. ✅ API endpoint returns proper technology scenario data
+  5. ✅ All existing functionality preserved 

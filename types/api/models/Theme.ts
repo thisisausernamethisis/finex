@@ -24,13 +24,13 @@ export interface Theme {
      * @type {string}
      * @memberof Theme
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {string}
      * @memberof Theme
      */
-    name?: string;
+    name: string;
     /**
      * 
      * @type {string}
@@ -42,43 +42,7 @@ export interface Theme {
      * @type {string}
      * @memberof Theme
      */
-    category?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Theme
-     */
-    themeType?: ThemeThemeTypeEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof Theme
-     */
-    assetId?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Theme
-     */
-    scenarioId?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof Theme
-     */
-    calculatedValue?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Theme
-     */
-    manualValue?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof Theme
-     */
-    useManualValue?: boolean;
+    assetId: string;
     /**
      * 
      * @type {Date}
@@ -93,22 +57,13 @@ export interface Theme {
     updatedAt?: Date;
 }
 
-
-/**
- * @export
- */
-export const ThemeThemeTypeEnum = {
-    Standard: 'STANDARD',
-    Growth: 'GROWTH',
-    Probability: 'PROBABILITY'
-} as const;
-export type ThemeThemeTypeEnum = typeof ThemeThemeTypeEnum[keyof typeof ThemeThemeTypeEnum];
-
-
 /**
  * Check if a given object implements the Theme interface.
  */
 export function instanceOfTheme(value: object): value is Theme {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('assetId' in value) || value['assetId'] === undefined) return false;
     return true;
 }
 
@@ -122,16 +77,10 @@ export function ThemeFromJSONTyped(json: any, ignoreDiscriminator: boolean): The
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'name': json['name'] == null ? undefined : json['name'],
+        'id': json['id'],
+        'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'category': json['category'] == null ? undefined : json['category'],
-        'themeType': json['themeType'] == null ? undefined : json['themeType'],
-        'assetId': json['assetId'] == null ? undefined : json['assetId'],
-        'scenarioId': json['scenarioId'] == null ? undefined : json['scenarioId'],
-        'calculatedValue': json['calculatedValue'] == null ? undefined : json['calculatedValue'],
-        'manualValue': json['manualValue'] == null ? undefined : json['manualValue'],
-        'useManualValue': json['useManualValue'] == null ? undefined : json['useManualValue'],
+        'assetId': json['assetId'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
     };
@@ -151,13 +100,7 @@ export function ThemeToJSONTyped(value?: Theme | null, ignoreDiscriminator: bool
         'id': value['id'],
         'name': value['name'],
         'description': value['description'],
-        'category': value['category'],
-        'themeType': value['themeType'],
         'assetId': value['assetId'],
-        'scenarioId': value['scenarioId'],
-        'calculatedValue': value['calculatedValue'],
-        'manualValue': value['manualValue'],
-        'useManualValue': value['useManualValue'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
         'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString()),
     };

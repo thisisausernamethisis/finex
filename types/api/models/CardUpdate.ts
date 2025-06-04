@@ -36,13 +36,7 @@ export interface CardUpdate {
      * @type {number}
      * @memberof CardUpdate
      */
-    importance?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof CardUpdate
-     */
-    source?: string;
+    order?: number;
 }
 
 /**
@@ -64,8 +58,7 @@ export function CardUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         
         'title': json['title'] == null ? undefined : json['title'],
         'content': json['content'] == null ? undefined : json['content'],
-        'importance': json['importance'] == null ? undefined : json['importance'],
-        'source': json['source'] == null ? undefined : json['source'],
+        'order': json['order'] == null ? undefined : json['order'],
     };
 }
 
@@ -82,8 +75,7 @@ export function CardUpdateToJSONTyped(value?: CardUpdate | null, ignoreDiscrimin
         
         'title': value['title'],
         'content': value['content'],
-        'importance': value['importance'],
-        'source': value['source'],
+        'order': value['order'],
     };
 }
 

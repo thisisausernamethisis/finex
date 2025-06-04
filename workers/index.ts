@@ -1,5 +1,7 @@
 import { logger } from '../lib/logger';
 import { startMatrixWorker } from './matrixWorker';
+import { startTechnologyCategorizationWorker } from './technologyCategorizationWorker';
+import { startPortfolioInsightWorker } from './portfolioInsightWorker';
 
 // Main logger for workers
 const workerLogger = logger.child({ component: 'WorkerManager' });
@@ -15,6 +17,14 @@ function startAllWorkers() {
     const matrixWorker = startMatrixWorker();
     workerLogger.info('Matrix worker started');
     
+    // Start technology categorization worker
+    const techCategorizationWorker = startTechnologyCategorizationWorker();
+    workerLogger.info('Technology categorization worker started');
+    
+    // Start portfolio insight worker
+    const portfolioInsightWorker = startPortfolioInsightWorker();
+    workerLogger.info('Portfolio insight worker started');
+    
     // Growth worker and Probability worker would be started here
     // when they are implemented
     workerLogger.info('Growth and Probability workers not yet implemented');
@@ -27,6 +37,18 @@ function startAllWorkers() {
       if (matrixWorker) {
         await matrixWorker.close();
         workerLogger.info('Matrix worker closed');
+      }
+      
+      // Close technology categorization worker if it exists
+      if (techCategorizationWorker) {
+        await techCategorizationWorker.close();
+        workerLogger.info('Technology categorization worker closed');
+      }
+      
+      // Close portfolio insight worker if it exists
+      if (portfolioInsightWorker) {
+        await portfolioInsightWorker.close();
+        workerLogger.info('Portfolio insight worker closed');
       }
       
       process.exit(0);

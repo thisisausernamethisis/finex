@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Prisma, ScenarioType } from '@prisma/client';
 import { prisma } from '../db';
 import { logger } from '../logger';
 
@@ -15,17 +16,19 @@ export class ScenarioRepository {
   /**
    * Retrieves a list of scenarios with pagination
    * 
-   * @param userId The ID of the requesting user (for future access control)
+   * @param userId The ID of the requesting user
    * @param page The page number (1-indexed)
    * @param limit The number of items per page
    * @param search Optional search term to filter scenarios by name
+   * @param type Optional scenario type filter
    * @returns A paginated list of scenarios
    */
   public async listScenarios(
     userId: string,
     page: number = 1,
     limit: number = 10,
-    search?: string
+    search?: string,
+    type?: ScenarioType
   ): Promise<{
     items: Array<any>;
     total: number;
@@ -34,10 +37,17 @@ export class ScenarioRepository {
     const clampedLimit = Math.min(limit, MAX_PAGE_SIZE);
     const skip = (page - 1) * clampedLimit;
     
-    repoLogger.debug('Listing scenarios', { userId, page, limit: clampedLimit, search });
+    repoLogger.debug('Listing scenarios', { userId, page, limit: clampedLimit, search, type });
     
-    // Build the where clause
-    const where: any = {};
+    // Build the where clause - include user's own scenarios and public ones
+    const where: Prisma.ScenarioWhereInput = {
+      OR: [
+        // User's own scenarios
+        { userId },
+        // Public scenarios
+        { isPublic: true }
+      ]
+    };
     
     // Add search filter if provided
     if (search && search.trim()) {
@@ -45,6 +55,11 @@ export class ScenarioRepository {
         contains: search.trim(),
         mode: 'insensitive'
       };
+    }
+    
+    // Add type filter if provided
+    if (type) {
+      where.type = type;
     }
     
     // Get the total count
@@ -58,6 +73,10 @@ export class ScenarioRepository {
         name: true,
         description: true,
         probability: true,
+        type: true,
+        timeline: true,
+        userId: true,
+        isPublic: true,
         createdAt: true,
         updatedAt: true
       },
@@ -78,10 +97,11 @@ export class ScenarioRepository {
    * Retrieves a single scenario by ID
    * 
    * @param scenarioId The ID of the scenario to retrieve
-   * @returns The scenario if found, null otherwise
+   * @param userId The ID of the requesting user
+   * @returns The scenario if found and accessible, null otherwise
    */
-  public async getScenarioById(scenarioId: string): Promise<any | null> {
-    repoLogger.debug('Getting scenario by ID', { scenarioId });
+  public async getScenarioById(scenarioId: string, userId: string): Promise<any | null> {
+    repoLogger.debug('Getting scenario by ID', { scenarioId, userId });
     
     return prisma.scenario.findUnique({
       where: { id: scenarioId },
@@ -90,6 +110,10 @@ export class ScenarioRepository {
         name: true,
         description: true,
         probability: true,
+        type: true,
+        timeline: true,
+        userId: true,
+        isPublic: true,
         createdAt: true,
         updatedAt: true
       }
@@ -99,23 +123,33 @@ export class ScenarioRepository {
   /**
    * Creates a new scenario
    * 
+   * @param userId The ID of the user creating the scenario
    * @param data The scenario data
    * @returns The newly created scenario
    */
   public async createScenario(
-    data: { name: string; description?: string; probability?: number }
+    userId: string,
+    data: { 
+      name: string; 
+      description?: string; 
+      probability?: number;
+      type?: ScenarioType;
+      timeline?: string;
+      isPublic?: boolean;
+    }
   ): Promise<any> {
-    repoLogger.debug('Creating scenario', { data });
+    repoLogger.debug('Creating scenario', { userId, data });
     
     return prisma.scenario.create({
       data: {
         ...data,
+        userId,
         themes: {
           create: [
             { 
               name: 'Probability',
               themeType: 'PROBABILITY',
-              manualValue: data.probability || 0.5,
+              manualValue: (data.probability || 0.5) * 100, // Convert to percentage
               useManualValue: true
             },
             { 
@@ -129,6 +163,10 @@ export class ScenarioRepository {
         name: true,
         description: true,
         probability: true,
+        type: true,
+        timeline: true,
+        userId: true,
+        isPublic: true,
         createdAt: true,
         updatedAt: true
       }
@@ -140,13 +178,22 @@ export class ScenarioRepository {
    * 
    * @param scenarioId The ID of the scenario to update
    * @param data The scenario data to update
+   * @param userId The ID of the user updating the scenario
    * @returns The updated scenario, or null if not found
    */
   public async updateScenario(
     scenarioId: string,
-    data: { name?: string; description?: string; probability?: number }
+    data: { 
+      name?: string; 
+      description?: string; 
+      probability?: number;
+      type?: ScenarioType;
+      timeline?: string;
+      isPublic?: boolean;
+    },
+    userId: string
   ): Promise<any | null> {
-    repoLogger.debug('Updating scenario', { scenarioId, data });
+    repoLogger.debug('Updating scenario', { scenarioId, userId, data });
     
     // Check if probability is being updated
     if (data.probability !== undefined) {
@@ -162,7 +209,7 @@ export class ScenarioRepository {
         await prisma.theme.update({
           where: { id: probabilityTheme.id },
           data: { 
-            manualValue: data.probability,
+            manualValue: data.probability * 100, // Convert to percentage
             useManualValue: true
           }
         });
@@ -177,6 +224,10 @@ export class ScenarioRepository {
         name: true,
         description: true,
         probability: true,
+        type: true,
+        timeline: true,
+        userId: true,
+        isPublic: true,
         createdAt: true,
         updatedAt: true
       }

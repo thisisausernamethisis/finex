@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-
-// Temporarily comment out Clerk import until proper types are in place
-//import { authMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 // Rate limiting implementation
 const ratelimit = {
@@ -39,25 +37,13 @@ const ratelimit = {
   }
 }
 
-// Mock implementation of auth middleware until proper types are in place
-const mockAuthMiddleware = (config: any) => {
-  return (req: any) => {
-    if (config.beforeAuth) {
-      return config.beforeAuth(req);
-    }
-    return NextResponse.next();
-  };
-};
+// Define public routes that don't require authentication
+const isPublicRoute = createRouteMatcher(['/', '/sign-in', '/sign-up']);
 
-// This combines Clerk's auth middleware with rate limiting
-export default mockAuthMiddleware({
-  publicRoutes: ['/'],
-  beforeAuth: async (req: any) => {
-    // Only apply rate limiting to API routes
-    if (!req.nextUrl.pathname.startsWith('/api')) {
-      return NextResponse.next()
-    }
-    
+// Combine Clerk middleware with rate limiting
+export default clerkMiddleware(async (auth, req) => {
+  // Apply rate limiting to API routes
+  if (req.nextUrl.pathname.startsWith('/api')) {
     // Get client IP
     const ip = req.ip ?? '127.0.0.1'
     const { success, limit, remaining } = ratelimit.check(ip)
@@ -75,14 +61,17 @@ export default mockAuthMiddleware({
         }
       )
     }
-    
-    // Add rate limit headers
-    const response = NextResponse.next()
-    response.headers.set('X-RateLimit-Limit', limit.toString())
-    response.headers.set('X-RateLimit-Remaining', remaining.toString())
-    
-    return response
   }
+
+  // Protect all routes except public ones
+  if (!isPublicRoute(req)) {
+    const authResult = await auth();
+    if (!authResult.userId) {
+      return NextResponse.redirect(new URL('/sign-in', req.url));
+    }
+  }
+
+  return NextResponse.next();
 })
 
 // Export config from Clerk

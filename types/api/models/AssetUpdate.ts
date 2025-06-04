@@ -31,36 +31,7 @@ export interface AssetUpdate {
      * @memberof AssetUpdate
      */
     description?: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof AssetUpdate
-     */
-    isPublic?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof AssetUpdate
-     */
-    kind?: AssetUpdateKindEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof AssetUpdate
-     */
-    sourceTemplateId?: string;
 }
-
-
-/**
- * @export
- */
-export const AssetUpdateKindEnum = {
-    Regular: 'REGULAR',
-    Template: 'TEMPLATE'
-} as const;
-export type AssetUpdateKindEnum = typeof AssetUpdateKindEnum[keyof typeof AssetUpdateKindEnum];
-
 
 /**
  * Check if a given object implements the AssetUpdate interface.
@@ -81,9 +52,6 @@ export function AssetUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean
         
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'isPublic': json['isPublic'] == null ? undefined : json['isPublic'],
-        'kind': json['kind'] == null ? undefined : json['kind'],
-        'sourceTemplateId': json['sourceTemplateId'] == null ? undefined : json['sourceTemplateId'],
     };
 }
 
@@ -100,9 +68,6 @@ export function AssetUpdateToJSONTyped(value?: AssetUpdate | null, ignoreDiscrim
         
         'name': value['name'],
         'description': value['description'],
-        'isPublic': value['isPublic'],
-        'kind': value['kind'],
-        'sourceTemplateId': value['sourceTemplateId'],
     };
 }
 

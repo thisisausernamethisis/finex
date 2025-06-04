@@ -13,6 +13,21 @@
  */
 
 import { mapValues } from '../runtime';
+import type { MatrixAnalysisResultMatrixInnerInner } from './MatrixAnalysisResultMatrixInnerInner';
+import {
+    MatrixAnalysisResultMatrixInnerInnerFromJSON,
+    MatrixAnalysisResultMatrixInnerInnerFromJSONTyped,
+    MatrixAnalysisResultMatrixInnerInnerToJSON,
+    MatrixAnalysisResultMatrixInnerInnerToJSONTyped,
+} from './MatrixAnalysisResultMatrixInnerInner';
+import type { MatrixAnalysisResultMetadata } from './MatrixAnalysisResultMetadata';
+import {
+    MatrixAnalysisResultMetadataFromJSON,
+    MatrixAnalysisResultMetadataFromJSONTyped,
+    MatrixAnalysisResultMetadataToJSON,
+    MatrixAnalysisResultMetadataToJSONTyped,
+} from './MatrixAnalysisResultMetadata';
+
 /**
  * 
  * @export
@@ -24,86 +39,27 @@ export interface MatrixAnalysisResult {
      * @type {string}
      * @memberof MatrixAnalysisResult
      */
-    id?: string;
+    id: string;
     /**
      * 
-     * @type {string}
+     * @type {Array<Array<MatrixAnalysisResultMatrixInnerInner>>}
      * @memberof MatrixAnalysisResult
      */
-    assetId?: string;
+    matrix: Array<Array<MatrixAnalysisResultMatrixInnerInner>>;
     /**
      * 
-     * @type {string}
+     * @type {MatrixAnalysisResultMetadata}
      * @memberof MatrixAnalysisResult
      */
-    scenarioId?: string;
-    /**
-     * Impact score from -5 to +5
-     * @type {number}
-     * @memberof MatrixAnalysisResult
-     */
-    impact?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof MatrixAnalysisResult
-     */
-    summary?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof MatrixAnalysisResult
-     */
-    evidenceIds?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof MatrixAnalysisResult
-     */
-    status?: MatrixAnalysisResultStatusEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof MatrixAnalysisResult
-     */
-    error?: string;
-    /**
-     * 
-     * @type {Date}
-     * @memberof MatrixAnalysisResult
-     */
-    completedAt?: Date;
-    /**
-     * 
-     * @type {Date}
-     * @memberof MatrixAnalysisResult
-     */
-    createdAt?: Date;
-    /**
-     * 
-     * @type {Date}
-     * @memberof MatrixAnalysisResult
-     */
-    updatedAt?: Date;
+    metadata?: MatrixAnalysisResultMetadata;
 }
-
-
-/**
- * @export
- */
-export const MatrixAnalysisResultStatusEnum = {
-    Pending: 'pending',
-    Processing: 'processing',
-    Completed: 'completed',
-    Failed: 'failed'
-} as const;
-export type MatrixAnalysisResultStatusEnum = typeof MatrixAnalysisResultStatusEnum[keyof typeof MatrixAnalysisResultStatusEnum];
-
 
 /**
  * Check if a given object implements the MatrixAnalysisResult interface.
  */
 export function instanceOfMatrixAnalysisResult(value: object): value is MatrixAnalysisResult {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('matrix' in value) || value['matrix'] === undefined) return false;
     return true;
 }
 
@@ -117,17 +73,9 @@ export function MatrixAnalysisResultFromJSONTyped(json: any, ignoreDiscriminator
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'assetId': json['assetId'] == null ? undefined : json['assetId'],
-        'scenarioId': json['scenarioId'] == null ? undefined : json['scenarioId'],
-        'impact': json['impact'] == null ? undefined : json['impact'],
-        'summary': json['summary'] == null ? undefined : json['summary'],
-        'evidenceIds': json['evidenceIds'] == null ? undefined : json['evidenceIds'],
-        'status': json['status'] == null ? undefined : json['status'],
-        'error': json['error'] == null ? undefined : json['error'],
-        'completedAt': json['completedAt'] == null ? undefined : (new Date(json['completedAt'])),
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
-        'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
+        'id': json['id'],
+        'matrix': json['matrix'],
+        'metadata': json['metadata'] == null ? undefined : MatrixAnalysisResultMetadataFromJSON(json['metadata']),
     };
 }
 
@@ -143,16 +91,8 @@ export function MatrixAnalysisResultToJSONTyped(value?: MatrixAnalysisResult | n
     return {
         
         'id': value['id'],
-        'assetId': value['assetId'],
-        'scenarioId': value['scenarioId'],
-        'impact': value['impact'],
-        'summary': value['summary'],
-        'evidenceIds': value['evidenceIds'],
-        'status': value['status'],
-        'error': value['error'],
-        'completedAt': value['completedAt'] == null ? undefined : ((value['completedAt']).toISOString()),
-        'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
-        'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString()),
+        'matrix': value['matrix'],
+        'metadata': MatrixAnalysisResultMetadataToJSON(value['metadata']),
     };
 }
 

@@ -31,43 +31,7 @@ export interface ThemeCreate {
      * @memberof ThemeCreate
      */
     description?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ThemeCreate
-     */
-    category?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ThemeCreate
-     */
-    themeType?: ThemeCreateThemeTypeEnum;
-    /**
-     * 
-     * @type {number}
-     * @memberof ThemeCreate
-     */
-    manualValue?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ThemeCreate
-     */
-    useManualValue?: boolean;
 }
-
-
-/**
- * @export
- */
-export const ThemeCreateThemeTypeEnum = {
-    Standard: 'STANDARD',
-    Growth: 'GROWTH',
-    Probability: 'PROBABILITY'
-} as const;
-export type ThemeCreateThemeTypeEnum = typeof ThemeCreateThemeTypeEnum[keyof typeof ThemeCreateThemeTypeEnum];
-
 
 /**
  * Check if a given object implements the ThemeCreate interface.
@@ -89,10 +53,6 @@ export function ThemeCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean
         
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'category': json['category'] == null ? undefined : json['category'],
-        'themeType': json['themeType'] == null ? undefined : json['themeType'],
-        'manualValue': json['manualValue'] == null ? undefined : json['manualValue'],
-        'useManualValue': json['useManualValue'] == null ? undefined : json['useManualValue'],
     };
 }
 
@@ -109,10 +69,6 @@ export function ThemeCreateToJSONTyped(value?: ThemeCreate | null, ignoreDiscrim
         
         'name': value['name'],
         'description': value['description'],
-        'category': value['category'],
-        'themeType': value['themeType'],
-        'manualValue': value['manualValue'],
-        'useManualValue': value['useManualValue'],
     };
 }
 

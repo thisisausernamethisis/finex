@@ -31,24 +31,6 @@ export interface ThemeUpdate {
      * @memberof ThemeUpdate
      */
     description?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ThemeUpdate
-     */
-    category?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ThemeUpdate
-     */
-    manualValue?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ThemeUpdate
-     */
-    useManualValue?: boolean;
 }
 
 /**
@@ -70,9 +52,6 @@ export function ThemeUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean
         
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'category': json['category'] == null ? undefined : json['category'],
-        'manualValue': json['manualValue'] == null ? undefined : json['manualValue'],
-        'useManualValue': json['useManualValue'] == null ? undefined : json['useManualValue'],
     };
 }
 
@@ -89,9 +68,6 @@ export function ThemeUpdateToJSONTyped(value?: ThemeUpdate | null, ignoreDiscrim
         
         'name': value['name'],
         'description': value['description'],
-        'category': value['category'],
-        'manualValue': value['manualValue'],
-        'useManualValue': value['useManualValue'],
     };
 }
 

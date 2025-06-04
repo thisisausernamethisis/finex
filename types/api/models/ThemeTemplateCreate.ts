@@ -32,11 +32,11 @@ export interface ThemeTemplateCreate {
      */
     description?: string;
     /**
-     * ID of the theme to use as template
-     * @type {string}
+     * 
+     * @type {object}
      * @memberof ThemeTemplateCreate
      */
-    themeId: string;
+    template: object;
     /**
      * 
      * @type {boolean}
@@ -50,7 +50,7 @@ export interface ThemeTemplateCreate {
  */
 export function instanceOfThemeTemplateCreate(value: object): value is ThemeTemplateCreate {
     if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('themeId' in value) || value['themeId'] === undefined) return false;
+    if (!('template' in value) || value['template'] === undefined) return false;
     return true;
 }
 
@@ -66,7 +66,7 @@ export function ThemeTemplateCreateFromJSONTyped(json: any, ignoreDiscriminator:
         
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'themeId': json['themeId'],
+        'template': json['template'],
         'isPublic': json['isPublic'] == null ? undefined : json['isPublic'],
     };
 }
@@ -84,7 +84,7 @@ export function ThemeTemplateCreateToJSONTyped(value?: ThemeTemplateCreate | nul
         
         'name': value['name'],
         'description': value['description'],
-        'themeId': value['themeId'],
+        'template': value['template'],
         'isPublic': value['isPublic'],
     };
 }

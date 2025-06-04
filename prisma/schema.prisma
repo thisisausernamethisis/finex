@@ -14,6 +14,8 @@ datasource db {
 model User {
   id      String  @id
   assets  Asset[]
+  scenarios Scenario[]
+  themeTemplates ThemeTemplate[]
 }
 
 enum AssetKind {
@@ -21,26 +23,43 @@ enum AssetKind {
   TEMPLATE
 }
 
+enum TechnologyCategory {
+  AI_COMPUTE
+  ROBOTICS_PHYSICAL_AI
+  QUANTUM_COMPUTING
+  TRADITIONAL_TECH
+  BIOTECH_HEALTH
+  FINTECH_CRYPTO
+  ENERGY_CLEANTECH
+  SPACE_DEFENSE
+  OTHER
+}
+
 model Asset {
-  id              String    @id @default(cuid())
-  name            String
-  description     String?
-  growthValue     Float?
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
-  kind            AssetKind @default(REGULAR)
-  sourceTemplateId String?
-  themes          Theme[]
-  matrixResults   MatrixAnalysisResult[]
-  accesses        AssetAccess[]
-  isPublic        Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                String              @id @default(cuid())
+  name              String
+  description       String?
+  growthValue       Float?
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  kind              AssetKind           @default(REGULAR)
+  sourceTemplateId  String?
+  // Technology categorization fields for MetaMap
+  category          TechnologyCategory? // Auto-assigned by AI
+  categoryConfidence Float?             // 0.0-1.0 confidence score
+  categoryInsights  Json?               // Structured insights about categorization
+  // Relations
+  themes            Theme[]
+  matrixResults     MatrixAnalysisResult[]
+  accesses          AssetAccess[]
+  isPublic          Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model AssetAccess {
-  id      String  @id @default(cuid())
-  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id      String     @id @default(cuid())
+  asset   Asset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
   assetId String
   userId  String
   role    AccessRole
@@ -61,21 +80,21 @@ enum ThemeType {
 }
 
 model Theme {
-  id              String   @id @default(cuid())
+  id              String     @id @default(cuid())
   name            String
   description     String?
-  category        String   @default("Default")
-  themeType       ThemeType @default(STANDARD)
-  asset           Asset?   @relation(fields: [assetId], references: [id])
+  category        String     @default("Default")
+  themeType       ThemeType  @default(STANDARD)
+  asset           Asset?     @relation(fields: [assetId], references: [id])
   assetId         String?
-  scenario        Scenario? @relation(fields: [scenarioId], references: [id])
+  scenario        Scenario?  @relation(fields: [scenarioId], references: [id])
   scenarioId      String?
   calculatedValue Float?
   manualValue     Float?
-  useManualValue  Boolean @default(false)
+  useManualValue  Boolean    @default(false)
   cards           Card[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
   
   // Theme should have either assetId OR scenarioId set, but not both
   // This constraint is enforced at the application layer
@@ -98,27 +117,49 @@ model Chunk {
   id        String   @id @default(cuid())
   content   String   @db.Text
   order     Int
-  embedding Unsupported("vector(1536)")
+  // TODO: Enable when pgvector extension is available
+  // embedding Unsupported("vector(1536)")
   card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   cardId    String
 }
 
+enum ScenarioType {
+  TECHNOLOGY
+  ECONOMIC  
+  GEOPOLITICAL
+  REGULATORY
+  MARKET
+}
+
 model Scenario {
-  id       String @id @default(cuid())
-  name     String
+  id          String              @id @default(cuid())
+  name        String
   description String?
-  probability Float?
-  themes   Theme[]
+  probability Float?              // 0.0-1.0 probability score
+  type        ScenarioType        @default(TECHNOLOGY)  // MetaMap enhancement
+  timeline    String?             // e.g., "2-5 years", "1-3 years"
+  // User ownership
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  isPublic    Boolean             @default(false)
+  // Relations
+  themes      Theme[]
   matrixResults MatrixAnalysisResult[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 }
 
 model ThemeTemplate {
   id          String   @id @default(cuid())
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId     String
   name        String
   description String?
   payload     Json     // serialised Theme + Card structure
   isPublic    Boolean  @default(false)
+  // Metadata for better discoverability
+  tags        String[] // Technology categories, use cases, etc.
+  usageCount  Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -129,10 +170,12 @@ model MatrixAnalysisResult {
   assetId     String
   scenario    Scenario  @relation(fields: [scenarioId], references: [id])
   scenarioId  String
-  impact      Int       // −5…+5
-  summary     String?
-  evidenceIds String
-  status      String    @default("pending")
+  impact      Int       // −5…+5 impact score
+  confidence  Float?    // 0.0-1.0 confidence in analysis
+  summary     String?   // AI-generated summary
+  evidenceIds String    // JSON array of card IDs used as evidence
+  reasoning   String?   // AI-generated reasoning for the impact score
+  status      String    @default("pending") // pending, processing, completed, failed
   error       String?
   completedAt DateTime?
   createdAt   DateTime  @default(now())

@@ -13,6 +13,28 @@
  */
 
 import { mapValues } from '../runtime';
+import type { Asset } from './Asset';
+import {
+    AssetFromJSON,
+    AssetFromJSONTyped,
+    AssetToJSON,
+    AssetToJSONTyped,
+} from './Asset';
+import type { Theme } from './Theme';
+import {
+    ThemeFromJSON,
+    ThemeFromJSONTyped,
+    ThemeToJSON,
+    ThemeToJSONTyped,
+} from './Theme';
+import type { Card } from './Card';
+import {
+    CardFromJSON,
+    CardFromJSONTyped,
+    CardToJSON,
+    CardToJSONTyped,
+} from './Card';
+
 /**
  * 
  * @export
@@ -21,66 +43,38 @@ import { mapValues } from '../runtime';
 export interface SearchResult {
     /**
      * 
-     * @type {string}
+     * @type {Array<Asset>}
      * @memberof SearchResult
      */
-    id?: string;
+    assets: Array<Asset>;
     /**
      * 
-     * @type {string}
+     * @type {Array<Theme>}
      * @memberof SearchResult
      */
-    type?: SearchResultTypeEnum;
+    themes: Array<Theme>;
     /**
      * 
-     * @type {string}
+     * @type {Array<Card>}
      * @memberof SearchResult
      */
-    content?: string;
+    cards: Array<Card>;
     /**
      * 
      * @type {number}
      * @memberof SearchResult
      */
-    score?: number;
-    /**
-     * Theme ID for cards, asset ID for themes
-     * @type {string}
-     * @memberof SearchResult
-     */
-    parentId?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SearchResult
-     */
-    parentType?: SearchResultParentTypeEnum;
+    total: number;
 }
-
-
-/**
- * @export
- */
-export const SearchResultTypeEnum = {
-    Card: 'card',
-    Theme: 'theme'
-} as const;
-export type SearchResultTypeEnum = typeof SearchResultTypeEnum[keyof typeof SearchResultTypeEnum];
-
-/**
- * @export
- */
-export const SearchResultParentTypeEnum = {
-    Theme: 'theme',
-    Asset: 'asset'
-} as const;
-export type SearchResultParentTypeEnum = typeof SearchResultParentTypeEnum[keyof typeof SearchResultParentTypeEnum];
-
 
 /**
  * Check if a given object implements the SearchResult interface.
  */
 export function instanceOfSearchResult(value: object): value is SearchResult {
+    if (!('assets' in value) || value['assets'] === undefined) return false;
+    if (!('themes' in value) || value['themes'] === undefined) return false;
+    if (!('cards' in value) || value['cards'] === undefined) return false;
+    if (!('total' in value) || value['total'] === undefined) return false;
     return true;
 }
 
@@ -94,12 +88,10 @@ export function SearchResultFromJSONTyped(json: any, ignoreDiscriminator: boolea
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'type': json['type'] == null ? undefined : json['type'],
-        'content': json['content'] == null ? undefined : json['content'],
-        'score': json['score'] == null ? undefined : json['score'],
-        'parentId': json['parentId'] == null ? undefined : json['parentId'],
-        'parentType': json['parentType'] == null ? undefined : json['parentType'],
+        'assets': ((json['assets'] as Array<any>).map(AssetFromJSON)),
+        'themes': ((json['themes'] as Array<any>).map(ThemeFromJSON)),
+        'cards': ((json['cards'] as Array<any>).map(CardFromJSON)),
+        'total': json['total'],
     };
 }
 
@@ -114,12 +106,10 @@ export function SearchResultToJSONTyped(value?: SearchResult | null, ignoreDiscr
 
     return {
         
-        'id': value['id'],
-        'type': value['type'],
-        'content': value['content'],
-        'score': value['score'],
-        'parentId': value['parentId'],
-        'parentType': value['parentType'],
+        'assets': ((value['assets'] as Array<any>).map(AssetToJSON)),
+        'themes': ((value['themes'] as Array<any>).map(ThemeToJSON)),
+        'cards': ((value['cards'] as Array<any>).map(CardToJSON)),
+        'total': value['total'],
     };
 }
 

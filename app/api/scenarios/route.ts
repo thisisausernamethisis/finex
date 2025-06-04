@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Create scenario
-    const scenario = await scenarioRepository.createScenario(validation.data);
+    const scenario = await scenarioRepository.createScenario(user.id, validation.data);
     
     return NextResponse.json(scenario, { status: 201 });
   } catch (error) {

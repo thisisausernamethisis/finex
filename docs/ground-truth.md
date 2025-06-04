@@ -1,6 +1,7 @@
-# Finex Bot • Single‑Source‑of‑Truth
+# MetaMap • Single‑Source‑of‑Truth
 
-For autonomous coding agents
+> **Technology Disruption Analysis Tool**  
+> For autonomous coding agents
 
 ## 0 · Quick‑start TL;DR
 
@@ -18,27 +19,33 @@ If any spec ambiguity remains, emit `CLARIFICATION NEEDED: …` and halt.
 
 ## 1 · Mission & Product
 
-Finex Bot is an AI‑powered research workspace that lets analysts:
+**MetaMap** is an AI‑powered technology disruption analysis tool that enables investment analysts to:
 
-- curate Assets (e.g. $NVDA, US 10‑year, BTC),
-- define Scenarios ("Global Recession", "China invades Taiwan", …),
-- capture evidence in hierarchical Themes → Cards → Chunks,
-- view a Matrix of Impact (−5…+5) vs Growth % vs Risk, and
-- share templates with other analysts via the Template Library.
+- **Auto-categorize assets** by technology vertical (AI/Compute, Robotics/Physical AI, Quantum, Traditional)
+- **Analyze technology scenarios** ("AI Compute Breakthrough", "Physical AI Mass Adoption", "Quantum Viability")
+- **Generate instant insights** ("Tesla is 80% robotics play", "Portfolio has 60% AI exposure")
+- **View simplified matrix** of Technology Impact (-5…+5) vs Growth % vs Timeline
+- **Discover tech concentrations** with automatic portfolio risk analysis
+
+**Key Transformation**: From complex research workspace → Simple matrix analysis tool with maximum insight generation and minimum complexity.
+
+**Target User**: Individual technology-focused investment analysts who need rapid disruption impact assessment.
 
 Large‑language‑model pipelines (Retrieval‑Augmented Generation, "RAG") compute:
 
-- Impact per asset–scenario pair
-- Growth % per asset
-- Probability % per scenario
-- Explanations + linked evidence
+- **Technology categorization** per asset (auto-classification)
+- **Impact per asset–scenario pair** (technology disruption focus)
+- **Growth % per asset** with technology trend weighting
+- **Probability % per scenario** (technology timeline assessment)  
+- **Portfolio concentration insights** (exposure revelations)
+- **Technology explanations** + linked evidence
 
-Multi‑user: sharing with RBAC (VIEWER, EDITOR, ADMIN).
+**Preserved Sophistication**: All backend complexity (Themes→Cards→Chunks, workers, embeddings, hybrid search) remains but is hidden behind simplified interface.
 
 ## 2 · Operating Principles for Agents
 
-**UI‑First → Contract‑First**  
-Implement backend only to satisfy the OpenAPI contract derived from the validated UI (repo github.com/kiranism/next-shadcn-dashboard-starter forked to /frontend).
+**UI‑First → Contract‑First → Simplicity‑First**  
+Implement backend only to satisfy the OpenAPI contract derived from the validated UI, but prioritize maximum simplicity in user experience while preserving technical sophistication.
 
 **Phase‑locked (see §8)**  
 Never start tasks from a future phase without an explicit new YAML.
@@ -49,11 +56,14 @@ Every endpoint & worker has a failing Jest test stub. Your job: make them pass w
 **Ask before guessing**  
 Emit `CLARIFICATION NEEDED:` once per ambiguity—no silent assumptions.
 
+**Hide Complexity, Surface Insights**  
+Complex evidence capture (Themes→Cards→Chunks) remains in backend but is hidden from primary user interface. Focus on auto-generated insights and simple matrix views.
+
 ## 3 · Tech Stack Snapshot
 
 | Layer | Choice | Notes |
 |-------|--------|-------|
-| Frontend | Next.js 14 App Router · Shadcn UI · Tailwind v4 | already validated |
+| Frontend | Next.js 14 App Router · Shadcn UI · Tailwind v4 | **Simple matrix-focused interface** |
 | API | Next.js API routes (Node 18) | edge‑safe code in /edge/ uses @prisma/client/edge |
 | AuthN | Clerk | JWT in Authorization header for server calls |
 | ORM / DB | Prisma 5 · PostgreSQL (Neon) · pgvector | pooled connection string must be used (?pgbouncer=true…) |
@@ -67,38 +77,57 @@ Emit `CLARIFICATION NEEDED:` once per ambiguity—no silent assumptions.
 
 ```
 /
-├─ app/                ← Next.js pages & API routes
+├─ app/
+│   ├─ dashboard/          ← **Simple matrix interface**
+│   ├─ api/
+│   │   ├─ assets/
+│   │   │   └─ categorize/ ← **NEW: Auto-categorization endpoint**
+│   │   ├─ scenarios/
+│   │   │   └─ technology/ ← **NEW: Tech scenario templates**
+│   │   └─ matrix/
+│   │       └─ insights/   ← **NEW: Portfolio insights**
+│   └─ advanced/           ← Complex features for power users
 ├─ prisma/
-│   ├─ schema.prisma
-│   └─ seed.ts
+│   ├─ schema.prisma       ← **Enhanced with ScenarioType, Asset.category**
+│   └─ seed.ts             ← **Technology scenarios + categorized assets**
 ├─ lib/
 │   ├─ services/
 │   │   ├─ accessControlService.ts
 │   │   ├─ growthRiskService.ts
 │   │   ├─ searchService.ts
-│   │   └─ contextAssemblyService.ts
+│   │   ├─ contextAssemblyService.ts
+│   │   └─ categorizationService.ts  ← **NEW: Asset tech categorization**
 │   └─ hooks/
 ├─ workers/
 │   ├─ matrixWorker.ts
 │   ├─ growthWorker.ts
-│   └─ probabilityWorker.ts
+│   ├─ probabilityWorker.ts
+│   ├─ technologyCategorizationWorker.ts  ← **NEW: Asset intelligence**
+│   └─ portfolioInsightWorker.ts          ← **NEW: Portfolio analysis**
 ├─ openapi/
-│   └─ finex.yaml      ← **authoritative contract**
+│   └─ finex.yaml          ← **authoritative contract (enhanced)**
 ├─ tests/
-│   ├─ contract/…      ← MUST PASS
+│   ├─ contract/…          ← MUST PASS
 │   ├─ unit/…
 │   └─ e2e/…
-├─ tasks/              ← YAML task manifests (one per ticket)
+├─ tasks/                  ← YAML task manifests (one per ticket)
 └─ docs/
-    └─ runbooks/…
+    ├─ runbooks/…
+    └─ metamap-transformation-analysis.md  ← **Transformation plan**
 ```
 
-## 5 · Database Canonical Schema (Prisma)
+## 5 · Database Enhanced Schema (Prisma)
 
 Always migrate via `prisma migrate dev` using DIRECT_URL locally and pooled DATABASE_URL in runtime.
 
 ```prisma
 enum AssetKind { REGULAR TEMPLATE }
+
+enum ScenarioType { 
+  TECHNOLOGY
+  ECONOMIC  
+  GEOPOLITICAL 
+}
 
 model Asset {
   id              String   @id @default(cuid())
@@ -109,12 +138,25 @@ model Asset {
   userId          String
   kind            AssetKind @default(REGULAR)
   sourceTemplateId String?
+  category        String?   // "AI/Compute", "Robotics/Physical AI", "Quantum", "Traditional"
+  insights        String?   // AI-generated technology insights (JSON)
   themes          Theme[]
   matrixResults   MatrixAnalysisResult[]
   accesses        AssetAccess[]
   isPublic        Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model Scenario {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  type        ScenarioType @default(TRADITIONAL)  // NEW: Scenario categorization
+  timeline    String?                             // NEW: "2-5 years", "5-10 years"
+  probability Float?
+  themes      Theme[]
+  matrixResults MatrixAnalysisResult[]
 }
 
 model ThemeTemplate {
@@ -186,13 +228,14 @@ model MatrixAnalysisResult {
 }
 ```
 
-## 6 · OpenAPI Contract (excerpt)
+## 6 · Enhanced OpenAPI Contract
 
 ```yaml
 openapi: 3.1.0
 info:
-  title: Finex Bot API
-  version: "0.1.0"
+  title: MetaMap API
+  version: "0.2.0"
+  description: "Technology disruption analysis tool API"
 servers:
   - url: /api
 paths:
@@ -217,107 +260,226 @@ paths:
             schema: { $ref: "#/components/schemas/AssetCreate" }
       responses:
         "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Asset" } } } }
-  /assets/{assetId}:
-    get: …
-    put: …
-    delete: …
+
+  /assets/categorize:  # NEW ENDPOINT
+    post:
+      summary: Auto-categorize asset by technology vertical
+      security: [ { BearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assetId: { type: string }
+      responses:
+        "202": { description: Categorization job queued }
+
+  /scenarios/technology:  # NEW ENDPOINT
+    get:
+      summary: Get technology scenario templates
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Technology scenarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TechnologyScenario" }
+
+  /matrix/insights:  # NEW ENDPOINT
+    get:
+      summary: Get portfolio technology insights
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Portfolio insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioInsights"
+
+  /dashboard/simple:  # NEW ENDPOINT
+    get:
+      summary: Get simplified dashboard data
+      security: [ { BearerAuth: [] } ]
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleDashboardData"
+
 components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
   schemas:
-    Asset: …
-    AssetCreate:
-      type: object
-      required: [name]
-      properties:
-        name: { type: string, maxLength: 100 }
-        description: { type: string, maxLength: 500 }
-    PaginatedAssets:
+    TechnologyScenario:
       type: object
       properties:
-        items: { type: array, items: { $ref: "#/components/schemas/Asset" } }
-        total: { type: integer }
-        hasMore: { type: boolean }
+        id: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [TECHNOLOGY, ECONOMIC, GEOPOLITICAL] }
+        timeline: { type: string }
+        probability: { type: number }
+        category: { type: string }
+
+    PortfolioInsights:
+      type: object
+      properties:
+        concentrations: 
+          type: array
+          items:
+            type: object
+            properties:
+              category: { type: string }
+              percentage: { type: number }
+              risk: { type: string }
+        revelations:
+          type: array
+          items:
+            type: object
+            properties:
+              asset: { type: string }
+              insight: { type: string }
+              confidence: { type: number }
 ```
 
-The full file lives at [openapi/finex.yaml](../openapi/finex.yaml) and is the source of truth; regenerate TS types with `make api`.
-
-## 7 · Services & Algorithms (only the signatures)
+## 7 · Enhanced Services & Algorithms
 
 ```typescript
-// lib/services/accessControlService.ts
-export function hasAssetAccess(
-  userId: string, assetId: string, required: AccessRole
-): Promise<boolean>
+// lib/services/categorizationService.ts
+export async function categorizeAsset(assetName: string, context?: string): Promise<{
+  category: string;
+  confidence: number;
+  insights: string[];
+}>;
 
-// lib/services/growthRiskService.ts
-export async function updateAssetGrowthValue(assetId: string): Promise<void>
+// lib/services/portfolioInsightService.ts
+export async function generatePortfolioInsights(userId: string): Promise<{
+  concentrations: TechConcentration[];
+  revelations: AssetRevelation[];
+  risks: ConcentrationRisk[];
+}>;
 
-// lib/services/searchService.ts
-export async function hybridSearch(opts: {
-  query: string
-  assetId?: string
-  scenarioId?: string
-  limit?: number
-}): Promise<Array<{ id: string; score: number }>>
+// lib/services/technologyScenarioService.ts
+export async function getTechnologyScenarios(): Promise<TechnologyScenario[]>;
+export async function matchScenariosToAsset(assetCategory: string): Promise<string[]>;
 
-// lib/services/contextAssemblyService.ts
+// Enhanced existing services
 export async function assembleMatrixContext(
   assetId: string, scenarioId: string, tokenLimit: number
 ): Promise<string>
 
-// lib/services/templateService.ts
-export async function cloneAssetFromTemplate(
-  templateId: string, userId: string
-): Promise<string>
-
-export async function cloneThemeTemplate(
-  templateId: string, assetId: string, userId: string
-): Promise<string>
-
-export async function hasTemplateAccess(
-  userId: string, templateId: string, role: AccessRole
-): Promise<boolean>
+export async function hybridSearch(opts: {
+  query: string
+  assetId?: string
+  scenarioId?: string
+  technologyCategory?: string  // NEW: Filter by tech category
+  limit?: number
+}): Promise<Array<{ id: string; score: number }>>
 ```
 
-NOTE: searchService executes two raw SQL queries (tsvector & pgvector) and fuses them via RRF.
+## 8 · Enhanced Phased Road‑map & Task Seeds
 
-## 8 · Phased Road‑map & Task Seeds
+| Phase | Status | Key deliverables | Next Actions |
+|-------|--------|------------------|--------------|
+| **0 – UX Foundation** | **✅ COMPLETED** | **MetaMapper design integration, navigation, matrix grids, discovery cards** | **All MetaMap UI components implemented** |
+| **1 – Backend Foundation** | **✅ COMPLETED** | **Database schema, repositories, core API routes, authentication** | **Database seeded, APIs working, tests passing** |
+| **2 – Technology Intelligence** | **✅ COMPLETED** | **Asset categorization, portfolio insights, technology endpoints** | **Auto-categorization API, insight generation** |
+| **3 – AI Processing Pipeline** | **✅ COMPLETED** | **Enhanced vector search, matrix analysis engine, real LLM integration** | **Production-ready AI pipeline with prompt templates** |
+| 4 – Real-time Analysis Pipeline | 🚧 IN PROGRESS | WebSocket/SSE, streaming results, job optimization | T‑112_sse_endpoint.yml |
+| 5 – Template Library & Sharing | 📋 PLANNED | RBAC enforcement, template publishing, collaboration | T‑165_template_library_ui_stub.yml |
+| 6 – Production Optimization | 📋 PLANNED | RAGAS evaluation, performance monitoring, cost optimization | T‑130_ragas_ci_job.yml |
 
-| Phase | Key deliverables | Example task YAML |
-|-------|------------------|------------------|
-| 1 – Auth + Base UI | Clerk integration, layout scaffold, seed data | T‑001_add_clerk_middleware.yml |
-| 2 – UI Prototype + OpenAPI | All CRUD UI with mock data, openapi/finex.yaml, failing contract tests | T‑023_generate_openapi_stub.yml |
-| 3 – DB + Core API | Prisma schema, /assets, /themes, /cards routes, pass contract tests | T‑041_implement_GET_assets.yml |
-| 4 – AI Pipelines | chunking, embeddings, hybrid search, workers, analysis routes | T‑083_matrix_worker_basic.yml |
-| 5 – Sharing + SSE | RBAC enforcement, share endpoints, SSE for job updates | T‑112_sse_endpoint.yml |
-| 5b – Template Library | Template publishing, browsing, and cloning between analysts | T‑156_update_ground_truth_for_template_library.yml |
-| 6 – Optimisation & RAG eval | RAGAS reports, performance budgets, cost guard, monitoring hooks | T‑130_ragas_ci_job.yml |
+### **✅ Phase 3: AI Processing Pipeline - COMPLETED**
 
-Each YAML contains:
+#### **✅ Milestone 3.1: Enhanced Vector Search & Embeddings**
+- **T-029 ✅**: Chunking Service Implementation
+  - Intelligent sentence-boundary chunking with overlap
+  - Quality scoring and keyword extraction
+  - Context preservation for AI processing
+- **T-030 ✅**: Embedding Service Implementation  
+  - Mock service with OpenAI-compatible architecture
+  - 1536-dimensional embeddings ready for pgvector
+  - Batch processing and similarity search
+- **T-031 ✅**: Hybrid Search Service Implementation
+  - Reciprocal Rank Fusion (RRF) algorithm
+  - Technology category filtering
+  - Portfolio-based content recommendations
+- **T-032 ✅**: Context Assembly Service Implementation
+  - Matrix analysis context with evidence prioritization
+  - Token limit management and intelligent truncation
+  - Multi-source evidence assembly
 
-```yaml
-id: T-041
-title: "Implement GET /assets (Phase 3)"
-phase: 3
-acceptance:
-  - ci passes
-  - openapi unchanged
-  - tests/contract/assets.test.ts green
-files_touched:
-  - app/api/assets/route.ts
-  - lib/repositories/assetRepository.ts
-```
+#### **✅ Milestone 3.2: Matrix Analysis Engine**
+- **T-033 ✅**: Matrix Analysis Worker Implementation
+  - Single and batch analysis capabilities
+  - Sophisticated impact scoring with AI integration
+  - Confidence assessment and evidence summarization
+- **T-034 ✅**: Evidence Assembly Enhancement
+  - Multi-dimensional evidence scoring
+  - Temporal decay factors and source credibility
+  - Priority grouping (Critical/Important/Supporting)
+- **T-035 ✅**: Confidence Scoring System
+  - 6-dimensional confidence assessment
+  - Uncertainty quantification with bounds
+  - Quality grading with actionable recommendations
 
-## 9 · Validation & Testing
+#### **✅ Milestone 3.3: Prompt Templates & LLM Integration**
+- **Prompt Template Service ✅**: All documented templates implemented
+  - `ImpactExplain`: Scenario→Asset impact assessment
+  - `ThemeSummary`: Card synthesis with citations
+  - `BoardSummary`: Cross-theme macro analysis
+- **LLM Completion Service ✅**: Production OpenAI integration
+  - Retry logic with exponential backoff
+  - JSON response validation and parsing
+  - Cost estimation and health checking
+- **Enhanced Matrix Analysis ✅**: Real AI vs. heuristic fallback
+  - OpenAI GPT-4 integration for impact calculation
+  - Structured prompt formatting with evidence
+  - Confidence-aware analysis with LLM reasoning
 
-- **Unit**: services & utilities (Vitest).
-- **Contract**: Jest generates calls from openapi/finex.yaml and asserts status + schema.
-- **E2E**: Playwright seeds DB, logs in via Clerk test user, exercises UI flows.
-- **RAG**: npm run rag:eval produces CSV of precision/recall/faithfulness for 50 curated Q‑A.
+### **🚧 Phase 4: Real-time Analysis Pipeline - IN PROGRESS**
+
+#### **📋 Milestone 4.1: Server-Sent Events & Real-time Updates**
+- **T-112**: SSE Endpoint Implementation
+  - Real-time job status updates via Server-Sent Events
+  - Authentication and connection management
+  - Event filtering by job type and user access
+- **T-113**: WebSocket Integration (Alternative/Additional)
+  - Bidirectional real-time communication
+  - Live collaboration features
+  - Progressive analysis streaming
+
+#### **📋 Milestone 4.2: Job Queue Optimization**
+- **T-114**: Enhanced Worker Management
+  - Dynamic worker scaling based on load
+  - Priority queues for urgent analysis
+  - Dead letter queue management
+- **T-115**: Streaming Analysis Results
+  - Progressive result delivery as analysis proceeds
+  - Partial confidence updates during processing
+  - Real-time evidence discovery feedback
+
+#### **📋 Milestone 4.3: Performance & Monitoring**
+- **T-116**: Analysis Performance Optimization
+  - Parallel evidence gathering and ranking
+  - Context assembly optimization
+  - LLM call batching and caching
+- **T-117**: Real-time Metrics & Monitoring
+  - Live analysis performance dashboards
+  - Queue health monitoring
+  - Cost tracking and optimization alerts
+
+## 9 · Enhanced Validation & Testing
+
+- **Unit**: services & utilities (Vitest) + **technology categorization accuracy tests**.
+- **Contract**: Jest generates calls from openapi/finex.yaml and asserts status + schema + **technology endpoint compliance**.
+- **E2E**: Playwright seeds DB, logs in via Clerk test user, exercises UI flows + **simplified matrix workflow**.
+- **RAG**: npm run rag:eval produces CSV of precision/recall/faithfulness for 50 curated Q‑A + **technology insight accuracy**.
+- **MetaMap UX**: Time-to-insight < 2 minutes, 3-click portfolio analysis.
 - **CI** (.github/workflows/ci.yml) must stay green.
 
 ## 10 · Security & Quality Gates
@@ -327,43 +489,119 @@ files_touched:
 - Rate‑limit per‑IP (/middleware/rateLimit.ts placeholder).
 - Never store secrets in code – environment variables only.
 - Coverage target ≥ 80 % lines for lib/services & API routes.
-- Worker-job prompt budgets: Theme ≤400 tokens, Board ≤300 tokens, Impact ≤500 tokens.
-- JSON outputs (ImpactExplain) must pass schema validation ≥99.5 % and RAGAS faithfulness ≥0.8.
+- Worker-job prompt budgets: Theme ≤400 tokens, Board ≤300 tokens, Impact ≤500 tokens, **Technology Categorization ≤600 tokens**.
+- JSON outputs (ImpactExplain, **TechnologyInsight**) must pass schema validation ≥99.5 % and RAGAS faithfulness ≥0.8.
 
-## 11 · Seed Data (prisma/seed.ts)
+## 11 · Enhanced Seed Data (prisma/seed.ts)
 
 ```typescript
+// Technology-focused assets
 await prisma.asset.create({
   data: {
     name: 'NVIDIA',
+    category: 'AI/Compute',
+    insights: JSON.stringify({
+      primary: "Leading AI compute infrastructure provider",
+      secondary: "85% revenue from data center AI chips",
+      disruption_exposure: "High positive exposure to AI advancement"
+    }),
     userId,
     themes: {
       create: [
         { name: 'Growth', themeType: 'GROWTH', manualValue: 25.0 },
-        { name: 'Default Theme' }
+        { name: 'AI Compute Leadership' }
       ]
     }
   }
 })
-// … Tesla, Bitcoin, scenarios, cards, chunks …
 
-// DEMO TEMPLATE ASSET
+await prisma.asset.create({
+  data: {
+    name: 'Tesla',
+    category: 'Robotics/Physical AI',
+    insights: JSON.stringify({
+      primary: "Electric vehicle + robotics/AI company", 
+      secondary: "80% future value from robotics and AI",
+      disruption_exposure: "High exposure to physical AI adoption"
+    }),
+    userId,
+    themes: {
+      create: [
+        { name: 'Growth', themeType: 'GROWTH', manualValue: 18.5 },
+        { name: 'Robotics/FSD Development' }
+      ]
+    }
+  }
+})
+
+// Technology scenarios
+await prisma.scenario.create({
+  data: {
+    name: 'AI Compute Breakthrough',
+    type: 'TECHNOLOGY',
+    timeline: '2-5 years',
+    description: 'Major advancement in AI training efficiency',
+    probability: 0.4,
+    themes: {
+      create: [
+        { name: 'Technology Impact Analysis' },
+        { name: 'Probability', themeType: 'PROBABILITY', manualValue: 40.0 }
+      ]
+    }
+  }
+})
+
+await prisma.scenario.create({
+  data: {
+    name: 'Physical AI Mass Adoption', 
+    type: 'TECHNOLOGY',
+    timeline: '3-7 years',
+    description: 'Widespread robotics deployment in industry',
+    probability: 0.6,
+    themes: {
+      create: [
+        { name: 'Robotics Deployment Impact' },
+        { name: 'Probability', themeType: 'PROBABILITY', manualValue: 60.0 }
+      ]
+    }
+  }
+})
 ```
 
-Running `make db:seed` must leave the Matrix page fully populated.
+Running `make db:seed` must leave the Matrix page fully populated with **technology-focused scenarios and categorized assets**.
 
-## 12 · Runbooks & Monitoring (stubs)
+## 12 · User Journey Transformation
 
-- [docs/runbooks/worker.md](./runbooks/worker.md) – restart procedure, DLQ drain, metric names (bullmq.active, bullmq.failed).
-- [docs/runbooks/db.md](./runbooks/db.md) – Neon connection limits, how to use psql+pgvector.
-- Alerting: sample Prometheus rules in [ops/prometheus-rules.yml](../ops/prometheus-rules.yml).
+### **FROM (Complex - 6 steps):**
+1. Authentication → 2. Asset Management → 3. Evidence Capture (Themes→Cards→Chunks) → 4. Scenario Planning → 5. AI Analysis → 6. Team Collaboration
 
-## 13 · Style & Lint
+### **TO (Simple - 3 steps):**
+1. **Add Assets** → Auto-categorization reveals "Tesla is Robotics/Physical AI"
+2. **Analyze Matrix** → Simple grid shows technology disruption impacts  
+3. **Get Insights** → "Portfolio has 60% AI exposure, 20% robotics risk"
 
-- ESLint + Prettier configs pre‑committed.
-- `npm run lint:fix` before pushing.
-- Commit messages: `feat(api): implement DELETE /themes/:id`.
-- Branch naming: `phase3/T-041_get_assets`.
+### **Hidden Sophistication:**
+- Themes→Cards→Chunks processing happens automatically
+- Complex evidence capture available in `/advanced` route
+- Team features available but not primary workflow
+- All technical sophistication preserved in backend
+
+## 13 · Success Metrics
+
+### **UX Simplification:**
+- Time to first insight: < 2 minutes
+- Steps to analyze portfolio: 3 clicks
+- Learning curve: < 5 minutes
+
+### **Technology Intelligence:**
+- Auto-categorization accuracy: > 90%
+- Insight relevance: > 85% user approval  
+- Technology exposure detection: 100% coverage
+
+### **Performance:**
+- Matrix load time: < 2 seconds
+- Auto-categorization: < 30 seconds
+- Insight generation: < 60 seconds
 
 ## 14 · Environment template (.env.example)
 
@@ -382,6 +620,8 @@ REDIS_PORT="6379"
 |---------|--------------|-----|
 | P1001 can't reach database in local tests | using pooled URL for migrations | set DIRECT_URL env & run prisma migrate dev |
 | MaxListenersExceededWarning from BullMQ | forgot setMaxListeners(0) after adding N workers/tests | update queueEvents.setMaxListeners(0) in worker bootstrap |
+| Technology categorization failing | Missing AI context or token limits | Check OPENAI_API_KEY and increase categorization worker token budget |
+| Portfolio insights empty | No categorized assets | Run asset categorization jobs first, check seed data |
 
 ## 16 · Definition of Done (per task)
 
@@ -390,8 +630,11 @@ REDIS_PORT="6379"
 - Lint & typecheck pass.
 - No TODOs or console.log in changed lines.
 - At least one new unit test when fixing a bug.
+- **For MetaMap features**: UX simplicity verified, complex features properly hidden.
 
-ONE MORE TIME:
+**MetaMap Transformation Principle**: 
+> Preserve all technical sophistication, maximize user simplicity, surface automatic insights.
+
 If anything above is ambiguous, output exactly:
 
 ```

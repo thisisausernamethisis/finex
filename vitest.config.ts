@@ -10,6 +10,16 @@ export default defineConfig({
     }
   },
   test: {
-    setupFiles: ['./vitest.setup.ts']
+    // Exclude Jest contract tests and e2e tests from Vitest
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/tests/contract/**',
+      '**/tests/e2e/**'
+    ],
+    // Only run unit tests in tests/unit directory
+    include: ['tests/unit/**/*.test.ts'],
+    setupFiles: ['./vitest.setup.ts'],
+    environment: 'node'
   }
 });

@@ -24,13 +24,13 @@ export interface Scenario {
      * @type {string}
      * @memberof Scenario
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {string}
      * @memberof Scenario
      */
-    name?: string;
+    name: string;
     /**
      * 
      * @type {string}
@@ -39,16 +39,30 @@ export interface Scenario {
     description?: string;
     /**
      * 
-     * @type {number}
+     * @type {object}
      * @memberof Scenario
      */
-    probability?: number;
+    parameters?: object;
+    /**
+     * 
+     * @type {Date}
+     * @memberof Scenario
+     */
+    createdAt?: Date;
+    /**
+     * 
+     * @type {Date}
+     * @memberof Scenario
+     */
+    updatedAt?: Date;
 }
 
 /**
  * Check if a given object implements the Scenario interface.
  */
 export function instanceOfScenario(value: object): value is Scenario {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
     return true;
 }
 
@@ -62,10 +76,12 @@ export function ScenarioFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'name': json['name'] == null ? undefined : json['name'],
+        'id': json['id'],
+        'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'probability': json['probability'] == null ? undefined : json['probability'],
+        'parameters': json['parameters'] == null ? undefined : json['parameters'],
+        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
+        'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
     };
 }
 
@@ -83,7 +99,9 @@ export function ScenarioToJSONTyped(value?: Scenario | null, ignoreDiscriminator
         'id': value['id'],
         'name': value['name'],
         'description': value['description'],
-        'probability': value['probability'],
+        'parameters': value['parameters'],
+        'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
+        'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString()),
     };
 }
 

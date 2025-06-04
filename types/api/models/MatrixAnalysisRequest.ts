@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { MatrixAnalysisRequestOptions } from './MatrixAnalysisRequestOptions';
+import {
+    MatrixAnalysisRequestOptionsFromJSON,
+    MatrixAnalysisRequestOptionsFromJSONTyped,
+    MatrixAnalysisRequestOptionsToJSON,
+    MatrixAnalysisRequestOptionsToJSONTyped,
+} from './MatrixAnalysisRequestOptions';
+
 /**
  * 
  * @export
@@ -21,24 +29,30 @@ import { mapValues } from '../runtime';
 export interface MatrixAnalysisRequest {
     /**
      * 
-     * @type {string}
+     * @type {Array<string>}
      * @memberof MatrixAnalysisRequest
      */
-    assetId: string;
+    assetIds: Array<string>;
     /**
      * 
-     * @type {string}
+     * @type {Array<string>}
      * @memberof MatrixAnalysisRequest
      */
-    scenarioId: string;
+    scenarioIds: Array<string>;
+    /**
+     * 
+     * @type {MatrixAnalysisRequestOptions}
+     * @memberof MatrixAnalysisRequest
+     */
+    options?: MatrixAnalysisRequestOptions;
 }
 
 /**
  * Check if a given object implements the MatrixAnalysisRequest interface.
  */
 export function instanceOfMatrixAnalysisRequest(value: object): value is MatrixAnalysisRequest {
-    if (!('assetId' in value) || value['assetId'] === undefined) return false;
-    if (!('scenarioId' in value) || value['scenarioId'] === undefined) return false;
+    if (!('assetIds' in value) || value['assetIds'] === undefined) return false;
+    if (!('scenarioIds' in value) || value['scenarioIds'] === undefined) return false;
     return true;
 }
 
@@ -52,8 +66,9 @@ export function MatrixAnalysisRequestFromJSONTyped(json: any, ignoreDiscriminato
     }
     return {
         
-        'assetId': json['assetId'],
-        'scenarioId': json['scenarioId'],
+        'assetIds': json['assetIds'],
+        'scenarioIds': json['scenarioIds'],
+        'options': json['options'] == null ? undefined : MatrixAnalysisRequestOptionsFromJSON(json['options']),
     };
 }
 
@@ -68,8 +83,9 @@ export function MatrixAnalysisRequestToJSONTyped(value?: MatrixAnalysisRequest |
 
     return {
         
-        'assetId': value['assetId'],
-        'scenarioId': value['scenarioId'],
+        'assetIds': value['assetIds'],
+        'scenarioIds': value['scenarioIds'],
+        'options': MatrixAnalysisRequestOptionsToJSON(value['options']),
     };
 }
 

@@ -1,10 +1,9 @@
 // tests/_setup/globalTeardown.js
-// Using more traditional dynamic import pattern to work with ESM
-// TODO: replace with vitest globalTeardown once Vitest ≥1.4 supports it
+// Jest global teardown in CommonJS format
 
-export default async () => {
+module.exports = async () => {
   try {
-    // eslint-disable-next-line import/extensions
+    // Dynamic import for ESM module
     const { disconnectPrisma } = await import('./prismaTestEnv.js');
     await disconnectPrisma();
     console.log('Test environment teardown complete');

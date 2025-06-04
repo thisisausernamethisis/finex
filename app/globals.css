@@ -4,7 +4,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-gray-200;
   }
 }
 
@@ -19,7 +19,7 @@
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
   
-  /* Color system variables for consistent usage */
+  /* Enhanced Color System - MetaMap Technology Theme */
   --primary: 24 96 226;        /* #1860e2 */
   --primary-foreground: 255 255 255;
   
@@ -45,6 +45,28 @@
   --input: 226 232 240;
   
   --ring: 24 96 226;           /* #1860e2 */
+  
+  /* Technology Category Colors */
+  --ai-compute: 59 130 246;    /* Blue - #3b82f6 */
+  --robotics: 16 185 129;      /* Green - #10b981 */
+  --quantum: 139 92 246;       /* Purple - #8b5cf6 */
+  --traditional: 107 114 128;  /* Gray - #6b7280 */
+  
+  /* Gradient Definitions */
+  --gradient-ai: linear-gradient(135deg, rgb(59 130 246) 0%, rgb(147 197 253) 100%);
+  --gradient-robotics: linear-gradient(135deg, rgb(16 185 129) 0%, rgb(110 231 183) 100%);
+  --gradient-quantum: linear-gradient(135deg, rgb(139 92 246) 0%, rgb(196 181 253) 100%);
+  --gradient-traditional: linear-gradient(135deg, rgb(107 114 128) 0%, rgb(156 163 175) 100%);
+  
+  /* UI Enhancement Variables */
+  --nav-height: 4rem;
+  --sidebar-width: 16rem;
+  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Animation Variables */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -78,6 +100,12 @@
     --input: 51 65 85;
     
     --ring: 59 130 246;        /* #3b82f6 */
+    
+    /* Dark mode gradient adjustments */
+    --gradient-ai: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(59 130 246) 100%);
+    --gradient-robotics: linear-gradient(135deg, rgb(5 150 105) 0%, rgb(16 185 129) 100%);
+    --gradient-quantum: linear-gradient(135deg, rgb(109 40 217) 0%, rgb(139 92 246) 100%);
+    --gradient-traditional: linear-gradient(135deg, rgb(75 85 99) 0%, rgb(107 114 128) 100%);
   }
 }
 
@@ -89,6 +117,146 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+/* Enhanced Component Styles */
+@layer components {
+  .metric-card {
+    background-color: rgb(var(--card));
+    border-color: rgb(var(--border) / 0.5);
+    @apply rounded-xl p-6 shadow-lg border;
+    @apply hover:shadow-xl transition-all duration-300;
+    box-shadow: var(--card-shadow);
+  }
+  
+  .metric-card:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+  }
+  
+  .gradient-ai {
+    background: var(--gradient-ai);
+  }
+  
+  .gradient-robotics {
+    background: var(--gradient-robotics);
+  }
+  
+  .gradient-quantum {
+    background: var(--gradient-quantum);
+  }
+  
+  .gradient-traditional {
+    background: var(--gradient-traditional);
+  }
+  
+  .nav-link {
+    @apply px-4 py-2 rounded-lg transition-all duration-200;
+    background-color: transparent;
+    color: rgb(var(--muted-foreground));
+  }
+  
+  .nav-link:hover {
+    background-color: rgb(var(--muted) / 0.5);
+    color: rgb(var(--foreground));
+  }
+  
+  .nav-link.active {
+    background-color: rgb(var(--primary));
+    color: rgb(var(--primary-foreground));
+    @apply shadow-sm;
+  }
+  
+  .discovery-card {
+    @apply metric-card relative overflow-hidden;
+  }
+  
+  .discovery-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, transparent, rgb(var(--primary) / 0.05), transparent);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  
+  .matrix-cell {
+    border-color: rgb(var(--border) / 0.3);
+    @apply rounded-lg border transition-all duration-200 cursor-pointer;
+  }
+  
+  .matrix-cell:hover {
+    border-color: rgb(var(--primary) / 0.5);
+    @apply shadow-md;
+  }
+  
+  .matrix-cell.positive {
+    @apply bg-green-50 border-green-200 hover:bg-green-100;
+  }
+  
+  .matrix-cell.negative {
+    @apply bg-red-50 border-red-200 hover:bg-red-100;
+  }
+  
+  .matrix-cell.neutral {
+    @apply bg-gray-50 border-gray-200 hover:bg-gray-100;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .matrix-cell.positive {
+      @apply bg-green-950/30 border-green-800/50 hover:bg-green-900/40;
+    }
+    
+    .matrix-cell.negative {
+      @apply bg-red-950/30 border-red-800/50 hover:bg-red-900/40;
+    }
+    
+    .matrix-cell.neutral {
+      @apply bg-gray-950/30 border-gray-800/50 hover:bg-gray-900/40;
+    }
+  }
+}
+
+/* Animation Keyframes */
+@keyframes counter {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes sparkline {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+  }
+}
+
+.animate-counter {
+  animation: counter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-sparkline {
+  stroke-dasharray: 100;
+  animation: sparkline 2s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 /* v4 compatibility classes */

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, TechnologyCategory } from '@prisma/client';
 import { prisma } from '../db';
 import { hasAssetAccess } from '../services/accessControlService';
 import { logger } from '../logger';
@@ -20,13 +20,15 @@ export class AssetRepository {
    * @param page The page number (1-indexed)
    * @param limit The number of items per page
    * @param search Optional search term to filter assets by name
+   * @param category Optional technology category filter
    * @returns A paginated list of assets
    */
   public async listAssets(
     userId: string,
     page: number = 1,
     limit: number = 10,
-    search?: string
+    search?: string,
+    category?: TechnologyCategory
   ): Promise<{
     items: Array<any>;
     total: number;
@@ -36,7 +38,7 @@ export class AssetRepository {
     const clampedLimit = Math.min(limit, MAX_PAGE_SIZE);
     const skip = (page - 1) * clampedLimit;
     
-    repoLogger.debug('Listing assets', { userId, page, limit: clampedLimit, search });
+    repoLogger.debug('Listing assets', { userId, page, limit: clampedLimit, search, category });
     
     // Build the where clause to handle RBAC
     // Includes: (1) user's own assets, (2) assets shared with the user, (3) public assets
@@ -65,6 +67,11 @@ export class AssetRepository {
       };
     }
     
+    // Add category filter if provided
+    if (category) {
+      where.category = category;
+    }
+    
     // Get the total count
     const total = await prisma.asset.count({ where });
     
@@ -77,6 +84,9 @@ export class AssetRepository {
         description: true,
         growthValue: true,
         userId: true,
+        category: true,
+        categoryConfidence: true,
+        categoryInsights: true,
         isPublic: true,
         createdAt: true,
         updatedAt: true
@@ -118,6 +128,9 @@ export class AssetRepository {
         description: true,
         growthValue: true,
         userId: true,
+        category: true,
+        categoryConfidence: true,
+        categoryInsights: true,
         isPublic: true,
         createdAt: true,
         updatedAt: true
@@ -134,7 +147,14 @@ export class AssetRepository {
    */
   public async createAsset(
     userId: string,
-    data: { name: string; description?: string; isPublic?: boolean }
+    data: { 
+      name: string; 
+      description?: string; 
+      isPublic?: boolean;
+      category?: TechnologyCategory;
+      categoryConfidence?: number;
+      categoryInsights?: any;
+    }
   ): Promise<any> {
     repoLogger.debug('Creating asset', { userId, data });
     
@@ -162,6 +182,9 @@ export class AssetRepository {
         description: true,
         growthValue: true,
         userId: true,
+        category: true,
+        categoryConfidence: true,
+        categoryInsights: true,
         isPublic: true,
         createdAt: true,
         updatedAt: true
@@ -179,7 +202,14 @@ export class AssetRepository {
    */
   public async updateAsset(
     assetId: string,
-    data: { name?: string; description?: string; isPublic?: boolean },
+    data: { 
+      name?: string; 
+      description?: string; 
+      isPublic?: boolean;
+      category?: TechnologyCategory;
+      categoryConfidence?: number;
+      categoryInsights?: any;
+    },
     userId: string
   ): Promise<any | null> {
     repoLogger.debug('Updating asset', { assetId, userId, data });
@@ -194,6 +224,9 @@ export class AssetRepository {
         description: true,
         growthValue: true,
         userId: true,
+        category: true,
+        categoryConfidence: true,
+        categoryInsights: true,
         isPublic: true,
         createdAt: true,
         updatedAt: true

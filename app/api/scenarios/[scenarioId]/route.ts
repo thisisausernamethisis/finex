@@ -52,7 +52,7 @@ export async function GET(
     }
     
     // Get scenario from repository
-    const scenario = await scenarioRepository.getScenarioById(scenarioId);
+    const scenario = await scenarioRepository.getScenarioById(scenarioId, user.id);
     
     if (!scenario) {
       return notFound('Scenario not found', logger);
@@ -109,7 +109,8 @@ export async function PUT(
     // Update scenario
     const scenario = await scenarioRepository.updateScenario(
       scenarioId,
-      schemaValidation.data
+      schemaValidation.data,
+      user.id
     );
     
     if (!scenario) {

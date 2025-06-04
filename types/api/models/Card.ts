@@ -13,14 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { Chunk } from './Chunk';
-import {
-    ChunkFromJSON,
-    ChunkFromJSONTyped,
-    ChunkToJSON,
-    ChunkToJSONTyped,
-} from './Chunk';
-
 /**
  * 
  * @export
@@ -32,13 +24,13 @@ export interface Card {
      * @type {string}
      * @memberof Card
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {string}
      * @memberof Card
      */
-    title?: string;
+    title: string;
     /**
      * 
      * @type {string}
@@ -47,22 +39,16 @@ export interface Card {
     content?: string;
     /**
      * 
+     * @type {string}
+     * @memberof Card
+     */
+    themeId: string;
+    /**
+     * 
      * @type {number}
      * @memberof Card
      */
-    importance?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof Card
-     */
-    source?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Card
-     */
-    themeId?: string;
+    order?: number;
     /**
      * 
      * @type {Date}
@@ -75,18 +61,15 @@ export interface Card {
      * @memberof Card
      */
     updatedAt?: Date;
-    /**
-     * 
-     * @type {Array<Chunk>}
-     * @memberof Card
-     */
-    chunks?: Array<Chunk>;
 }
 
 /**
  * Check if a given object implements the Card interface.
  */
 export function instanceOfCard(value: object): value is Card {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('title' in value) || value['title'] === undefined) return false;
+    if (!('themeId' in value) || value['themeId'] === undefined) return false;
     return true;
 }
 
@@ -100,15 +83,13 @@ export function CardFromJSONTyped(json: any, ignoreDiscriminator: boolean): Card
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'title': json['title'] == null ? undefined : json['title'],
+        'id': json['id'],
+        'title': json['title'],
         'content': json['content'] == null ? undefined : json['content'],
-        'importance': json['importance'] == null ? undefined : json['importance'],
-        'source': json['source'] == null ? undefined : json['source'],
-        'themeId': json['themeId'] == null ? undefined : json['themeId'],
+        'themeId': json['themeId'],
+        'order': json['order'] == null ? undefined : json['order'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
-        'chunks': json['chunks'] == null ? undefined : ((json['chunks'] as Array<any>).map(ChunkFromJSON)),
     };
 }
 
@@ -126,12 +107,10 @@ export function CardToJSONTyped(value?: Card | null, ignoreDiscriminator: boolea
         'id': value['id'],
         'title': value['title'],
         'content': value['content'],
-        'importance': value['importance'],
-        'source': value['source'],
         'themeId': value['themeId'],
+        'order': value['order'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
         'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString()),
-        'chunks': value['chunks'] == null ? undefined : ((value['chunks'] as Array<any>).map(ChunkToJSON)),
     };
 }
 

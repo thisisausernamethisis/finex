@@ -625,3 +625,384 @@ paths:
       responses:
         "201":
           description: Template cloned successfully
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    # Core Entities
+    Asset:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+      required: [id, name, userId]
+    
+    AssetCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required: [name]
+    
+    AssetUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    
+    Theme:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        assetId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, assetId]
+    
+    ThemeCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required: [name]
+    
+    ThemeUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        themeId:
+          type: string
+        order:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, title, themeId]
+    
+    CardCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        order:
+          type: integer
+      required: [title]
+    
+    CardUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        order:
+          type: integer
+    
+    Scenario:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        parameters:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name]
+    
+    ScenarioCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        parameters:
+          type: object
+      required: [name]
+    
+    ScenarioUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        parameters:
+          type: object
+    
+    # Matrix Analysis
+    MatrixAnalysisRequest:
+      type: object
+      properties:
+        assetIds:
+          type: array
+          items:
+            type: string
+        scenarioIds:
+          type: array
+          items:
+            type: string
+        options:
+          type: object
+          properties:
+            includeConfidence:
+              type: boolean
+            includeDetails:
+              type: boolean
+      required: [assetIds, scenarioIds]
+    
+    MatrixAnalysisResult:
+      type: object
+      properties:
+        id:
+          type: string
+        matrix:
+          type: array
+          items:
+            type: array
+            items:
+              type: object
+              properties:
+                assetId:
+                  type: string
+                scenarioId:
+                  type: string
+                impact:
+                  type: number
+                confidence:
+                  type: number
+                details:
+                  type: string
+        metadata:
+          type: object
+          properties:
+            computedAt:
+              type: string
+              format: date-time
+            totalCells:
+              type: integer
+            averageConfidence:
+              type: number
+      required: [id, matrix]
+    
+    # Access Control
+    AssetAccess:
+      type: object
+      properties:
+        id:
+          type: string
+        assetId:
+          type: string
+        userId:
+          type: string
+        permission:
+          type: string
+          enum: [read, write, admin]
+        grantedAt:
+          type: string
+          format: date-time
+        grantedBy:
+          type: string
+      required: [id, assetId, userId, permission]
+    
+    AssetAccessCreate:
+      type: object
+      properties:
+        userId:
+          type: string
+        permission:
+          type: string
+          enum: [read, write, admin]
+      required: [userId, permission]
+    
+    AssetAccessRemove:
+      type: object
+      properties:
+        userId:
+          type: string
+      required: [userId]
+    
+    # Theme Templates
+    ThemeTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        template:
+          type: object
+        isPublic:
+          type: boolean
+        ownerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, template, ownerId]
+    
+    ThemeTemplateCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        template:
+          type: object
+        isPublic:
+          type: boolean
+          default: false
+      required: [name, template]
+    
+    ThemeTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        template:
+          type: object
+        isPublic:
+          type: boolean
+    
+    ThemeTemplateClone:
+      type: object
+      properties:
+        assetId:
+          type: string
+        name:
+          type: string
+      required: [assetId]
+    
+    # Search
+    SearchResult:
+      type: object
+      properties:
+        assets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Asset"
+        themes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Theme"
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Card"
+        total:
+          type: integer
+      required: [assets, themes, cards, total]
+    
+    # Pagination
+    PaginatedAssets:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Asset"
+        pagination:
+          $ref: "#/components/schemas/PaginationInfo"
+      required: [data, pagination]
+    
+    PaginatedScenarios:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Scenario"
+        pagination:
+          $ref: "#/components/schemas/PaginationInfo"
+      required: [data, pagination]
+    
+    PaginatedThemeTemplates:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ThemeTemplate"
+        pagination:
+          $ref: "#/components/schemas/PaginationInfo"
+      required: [data, pagination]
+    
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        pages:
+          type: integer
+      required: [page, limit, total, pages]

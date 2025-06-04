@@ -30,19 +30,19 @@ export interface AssetAccessCreate {
      * @type {string}
      * @memberof AssetAccessCreate
      */
-    role: AssetAccessCreateRoleEnum;
+    permission: AssetAccessCreatePermissionEnum;
 }
 
 
 /**
  * @export
  */
-export const AssetAccessCreateRoleEnum = {
-    Viewer: 'VIEWER',
-    Editor: 'EDITOR',
-    Admin: 'ADMIN'
+export const AssetAccessCreatePermissionEnum = {
+    Read: 'read',
+    Write: 'write',
+    Admin: 'admin'
 } as const;
-export type AssetAccessCreateRoleEnum = typeof AssetAccessCreateRoleEnum[keyof typeof AssetAccessCreateRoleEnum];
+export type AssetAccessCreatePermissionEnum = typeof AssetAccessCreatePermissionEnum[keyof typeof AssetAccessCreatePermissionEnum];
 
 
 /**
@@ -50,7 +50,7 @@ export type AssetAccessCreateRoleEnum = typeof AssetAccessCreateRoleEnum[keyof t
  */
 export function instanceOfAssetAccessCreate(value: object): value is AssetAccessCreate {
     if (!('userId' in value) || value['userId'] === undefined) return false;
-    if (!('role' in value) || value['role'] === undefined) return false;
+    if (!('permission' in value) || value['permission'] === undefined) return false;
     return true;
 }
 
@@ -65,7 +65,7 @@ export function AssetAccessCreateFromJSONTyped(json: any, ignoreDiscriminator: b
     return {
         
         'userId': json['userId'],
-        'role': json['role'],
+        'permission': json['permission'],
     };
 }
 
@@ -81,7 +81,7 @@ export function AssetAccessCreateToJSONTyped(value?: AssetAccessCreate | null, i
     return {
         
         'userId': value['userId'],
-        'role': value['role'],
+        'permission': value['permission'],
     };
 }
 

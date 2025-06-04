@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { PaginationInfo } from './PaginationInfo';
+import {
+    PaginationInfoFromJSON,
+    PaginationInfoFromJSONTyped,
+    PaginationInfoToJSON,
+    PaginationInfoToJSONTyped,
+} from './PaginationInfo';
 import type { Asset } from './Asset';
 import {
     AssetFromJSON,
@@ -32,25 +39,21 @@ export interface PaginatedAssets {
      * @type {Array<Asset>}
      * @memberof PaginatedAssets
      */
-    items?: Array<Asset>;
+    data: Array<Asset>;
     /**
      * 
-     * @type {number}
+     * @type {PaginationInfo}
      * @memberof PaginatedAssets
      */
-    total?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof PaginatedAssets
-     */
-    hasMore?: boolean;
+    pagination: PaginationInfo;
 }
 
 /**
  * Check if a given object implements the PaginatedAssets interface.
  */
 export function instanceOfPaginatedAssets(value: object): value is PaginatedAssets {
+    if (!('data' in value) || value['data'] === undefined) return false;
+    if (!('pagination' in value) || value['pagination'] === undefined) return false;
     return true;
 }
 
@@ -64,9 +67,8 @@ export function PaginatedAssetsFromJSONTyped(json: any, ignoreDiscriminator: boo
     }
     return {
         
-        'items': json['items'] == null ? undefined : ((json['items'] as Array<any>).map(AssetFromJSON)),
-        'total': json['total'] == null ? undefined : json['total'],
-        'hasMore': json['hasMore'] == null ? undefined : json['hasMore'],
+        'data': ((json['data'] as Array<any>).map(AssetFromJSON)),
+        'pagination': PaginationInfoFromJSON(json['pagination']),
     };
 }
 
@@ -81,9 +83,8 @@ export function PaginatedAssetsToJSONTyped(value?: PaginatedAssets | null, ignor
 
     return {
         
-        'items': value['items'] == null ? undefined : ((value['items'] as Array<any>).map(AssetToJSON)),
-        'total': value['total'],
-        'hasMore': value['hasMore'],
+        'data': ((value['data'] as Array<any>).map(AssetToJSON)),
+        'pagination': PaginationInfoToJSON(value['pagination']),
     };
 }
 

@@ -24,49 +24,19 @@ export interface Asset {
      * @type {string}
      * @memberof Asset
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {string}
      * @memberof Asset
      */
-    name?: string;
+    name: string;
     /**
      * 
      * @type {string}
      * @memberof Asset
      */
     description?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof Asset
-     */
-    growthValue?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof Asset
-     */
-    userId?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Asset
-     */
-    kind?: AssetKindEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof Asset
-     */
-    sourceTemplateId?: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof Asset
-     */
-    isPublic?: boolean;
     /**
      * 
      * @type {Date}
@@ -79,23 +49,21 @@ export interface Asset {
      * @memberof Asset
      */
     updatedAt?: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof Asset
+     */
+    userId: string;
 }
-
-
-/**
- * @export
- */
-export const AssetKindEnum = {
-    Regular: 'REGULAR',
-    Template: 'TEMPLATE'
-} as const;
-export type AssetKindEnum = typeof AssetKindEnum[keyof typeof AssetKindEnum];
-
 
 /**
  * Check if a given object implements the Asset interface.
  */
 export function instanceOfAsset(value: object): value is Asset {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     return true;
 }
 
@@ -109,16 +77,12 @@ export function AssetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Ass
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'name': json['name'] == null ? undefined : json['name'],
+        'id': json['id'],
+        'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'growthValue': json['growthValue'] == null ? undefined : json['growthValue'],
-        'userId': json['userId'] == null ? undefined : json['userId'],
-        'kind': json['kind'] == null ? undefined : json['kind'],
-        'sourceTemplateId': json['sourceTemplateId'] == null ? undefined : json['sourceTemplateId'],
-        'isPublic': json['isPublic'] == null ? undefined : json['isPublic'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
+        'userId': json['userId'],
     };
 }
 
@@ -136,13 +100,9 @@ export function AssetToJSONTyped(value?: Asset | null, ignoreDiscriminator: bool
         'id': value['id'],
         'name': value['name'],
         'description': value['description'],
-        'growthValue': value['growthValue'],
-        'userId': value['userId'],
-        'kind': value['kind'],
-        'sourceTemplateId': value['sourceTemplateId'],
-        'isPublic': value['isPublic'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
         'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString()),
+        'userId': value['userId'],
     };
 }
 

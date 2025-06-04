@@ -31,36 +31,7 @@ export interface AssetCreate {
      * @memberof AssetCreate
      */
     description?: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof AssetCreate
-     */
-    isPublic?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof AssetCreate
-     */
-    kind?: AssetCreateKindEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof AssetCreate
-     */
-    sourceTemplateId?: string;
 }
-
-
-/**
- * @export
- */
-export const AssetCreateKindEnum = {
-    Regular: 'REGULAR',
-    Template: 'TEMPLATE'
-} as const;
-export type AssetCreateKindEnum = typeof AssetCreateKindEnum[keyof typeof AssetCreateKindEnum];
-
 
 /**
  * Check if a given object implements the AssetCreate interface.
@@ -82,9 +53,6 @@ export function AssetCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean
         
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'isPublic': json['isPublic'] == null ? undefined : json['isPublic'],
-        'kind': json['kind'] == null ? undefined : json['kind'],
-        'sourceTemplateId': json['sourceTemplateId'] == null ? undefined : json['sourceTemplateId'],
     };
 }
 
@@ -101,9 +69,6 @@ export function AssetCreateToJSONTyped(value?: AssetCreate | null, ignoreDiscrim
         
         'name': value['name'],
         'description': value['description'],
-        'isPublic': value['isPublic'],
-        'kind': value['kind'],
-        'sourceTemplateId': value['sourceTemplateId'],
     };
 }
 

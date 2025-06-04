@@ -24,19 +24,13 @@ export interface ThemeTemplate {
      * @type {string}
      * @memberof ThemeTemplate
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {string}
      * @memberof ThemeTemplate
      */
-    ownerId?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ThemeTemplate
-     */
-    name?: string;
+    name: string;
     /**
      * 
      * @type {string}
@@ -45,10 +39,22 @@ export interface ThemeTemplate {
     description?: string;
     /**
      * 
+     * @type {object}
+     * @memberof ThemeTemplate
+     */
+    template: object;
+    /**
+     * 
      * @type {boolean}
      * @memberof ThemeTemplate
      */
     isPublic?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ThemeTemplate
+     */
+    ownerId: string;
     /**
      * 
      * @type {Date}
@@ -67,6 +73,10 @@ export interface ThemeTemplate {
  * Check if a given object implements the ThemeTemplate interface.
  */
 export function instanceOfThemeTemplate(value: object): value is ThemeTemplate {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('template' in value) || value['template'] === undefined) return false;
+    if (!('ownerId' in value) || value['ownerId'] === undefined) return false;
     return true;
 }
 
@@ -80,11 +90,12 @@ export function ThemeTemplateFromJSONTyped(json: any, ignoreDiscriminator: boole
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'ownerId': json['ownerId'] == null ? undefined : json['ownerId'],
-        'name': json['name'] == null ? undefined : json['name'],
+        'id': json['id'],
+        'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
+        'template': json['template'],
         'isPublic': json['isPublic'] == null ? undefined : json['isPublic'],
+        'ownerId': json['ownerId'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
     };
@@ -102,10 +113,11 @@ export function ThemeTemplateToJSONTyped(value?: ThemeTemplate | null, ignoreDis
     return {
         
         'id': value['id'],
-        'ownerId': value['ownerId'],
         'name': value['name'],
         'description': value['description'],
+        'template': value['template'],
         'isPublic': value['isPublic'],
+        'ownerId': value['ownerId'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
         'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString()),
     };

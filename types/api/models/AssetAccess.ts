@@ -24,43 +24,59 @@ export interface AssetAccess {
      * @type {string}
      * @memberof AssetAccess
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {string}
      * @memberof AssetAccess
      */
-    assetId?: string;
+    assetId: string;
     /**
      * 
      * @type {string}
      * @memberof AssetAccess
      */
-    userId?: string;
+    userId: string;
     /**
      * 
      * @type {string}
      * @memberof AssetAccess
      */
-    role?: AssetAccessRoleEnum;
+    permission: AssetAccessPermissionEnum;
+    /**
+     * 
+     * @type {Date}
+     * @memberof AssetAccess
+     */
+    grantedAt?: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof AssetAccess
+     */
+    grantedBy?: string;
 }
 
 
 /**
  * @export
  */
-export const AssetAccessRoleEnum = {
-    Viewer: 'VIEWER',
-    Editor: 'EDITOR',
-    Admin: 'ADMIN'
+export const AssetAccessPermissionEnum = {
+    Read: 'read',
+    Write: 'write',
+    Admin: 'admin'
 } as const;
-export type AssetAccessRoleEnum = typeof AssetAccessRoleEnum[keyof typeof AssetAccessRoleEnum];
+export type AssetAccessPermissionEnum = typeof AssetAccessPermissionEnum[keyof typeof AssetAccessPermissionEnum];
 
 
 /**
  * Check if a given object implements the AssetAccess interface.
  */
 export function instanceOfAssetAccess(value: object): value is AssetAccess {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('assetId' in value) || value['assetId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
+    if (!('permission' in value) || value['permission'] === undefined) return false;
     return true;
 }
 
@@ -74,10 +90,12 @@ export function AssetAccessFromJSONTyped(json: any, ignoreDiscriminator: boolean
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'assetId': json['assetId'] == null ? undefined : json['assetId'],
-        'userId': json['userId'] == null ? undefined : json['userId'],
-        'role': json['role'] == null ? undefined : json['role'],
+        'id': json['id'],
+        'assetId': json['assetId'],
+        'userId': json['userId'],
+        'permission': json['permission'],
+        'grantedAt': json['grantedAt'] == null ? undefined : (new Date(json['grantedAt'])),
+        'grantedBy': json['grantedBy'] == null ? undefined : json['grantedBy'],
     };
 }
 
@@ -95,7 +113,9 @@ export function AssetAccessToJSONTyped(value?: AssetAccess | null, ignoreDiscrim
         'id': value['id'],
         'assetId': value['assetId'],
         'userId': value['userId'],
-        'role': value['role'],
+        'permission': value['permission'],
+        'grantedAt': value['grantedAt'] == null ? undefined : ((value['grantedAt']).toISOString()),
+        'grantedBy': value['grantedBy'],
     };
 }
 

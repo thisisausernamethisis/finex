@@ -20,19 +20,25 @@ import { mapValues } from '../runtime';
  */
 export interface ThemeTemplateUpdate {
     /**
-     * Display name for the template
+     * 
      * @type {string}
      * @memberof ThemeTemplateUpdate
      */
     name?: string;
     /**
-     * Description of the template purpose and content
+     * 
      * @type {string}
      * @memberof ThemeTemplateUpdate
      */
     description?: string;
     /**
-     * Whether the template is publicly available to all users
+     * 
+     * @type {object}
+     * @memberof ThemeTemplateUpdate
+     */
+    template?: object;
+    /**
+     * 
      * @type {boolean}
      * @memberof ThemeTemplateUpdate
      */
@@ -58,6 +64,7 @@ export function ThemeTemplateUpdateFromJSONTyped(json: any, ignoreDiscriminator:
         
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
+        'template': json['template'] == null ? undefined : json['template'],
         'isPublic': json['isPublic'] == null ? undefined : json['isPublic'],
     };
 }
@@ -75,6 +82,7 @@ export function ThemeTemplateUpdateToJSONTyped(value?: ThemeTemplateUpdate | nul
         
         'name': value['name'],
         'description': value['description'],
+        'template': value['template'],
         'isPublic': value['isPublic'],
     };
 }

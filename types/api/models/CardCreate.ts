@@ -30,19 +30,13 @@ export interface CardCreate {
      * @type {string}
      * @memberof CardCreate
      */
-    content: string;
+    content?: string;
     /**
      * 
      * @type {number}
      * @memberof CardCreate
      */
-    importance?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof CardCreate
-     */
-    source?: string;
+    order?: number;
 }
 
 /**
@@ -50,7 +44,6 @@ export interface CardCreate {
  */
 export function instanceOfCardCreate(value: object): value is CardCreate {
     if (!('title' in value) || value['title'] === undefined) return false;
-    if (!('content' in value) || value['content'] === undefined) return false;
     return true;
 }
 
@@ -65,9 +58,8 @@ export function CardCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     return {
         
         'title': json['title'],
-        'content': json['content'],
-        'importance': json['importance'] == null ? undefined : json['importance'],
-        'source': json['source'] == null ? undefined : json['source'],
+        'content': json['content'] == null ? undefined : json['content'],
+        'order': json['order'] == null ? undefined : json['order'],
     };
 }
 
@@ -84,8 +76,7 @@ export function CardCreateToJSONTyped(value?: CardCreate | null, ignoreDiscrimin
         
         'title': value['title'],
         'content': value['content'],
-        'importance': value['importance'],
-        'source': value['source'],
+        'order': value['order'],
     };
 }
 

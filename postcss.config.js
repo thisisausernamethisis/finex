@@ -1,5 +1,5 @@
-// Converted to ESM syntax
-export default {
+// CommonJS syntax for compatibility
+module.exports = {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},

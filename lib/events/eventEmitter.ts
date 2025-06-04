@@ -13,7 +13,7 @@ eventEmitter.on('newListener', (event) => {
 });
 
 // Event types for type safety
-export type JobEventType = 'matrix' | 'growth' | 'probability';
+export type JobEventType = 'matrix' | 'growth' | 'probability' | 'tech-categorization';
 
 export interface JobEvent {
   type: JobEventType;
@@ -21,6 +21,7 @@ export interface JobEvent {
   status: 'queued' | 'started' | 'completed' | 'failed';
   timestamp: string;
   data?: Record<string, any>;
+  error?: string;
 }
 
 // Helper to emit job events with consistent structure
@@ -30,7 +31,7 @@ export function emitJobEvent(event: JobEvent) {
     throw new Error('Job event must include a jobId');
   }
   
-  const validTypes: JobEventType[] = ['matrix', 'growth', 'probability'];
+  const validTypes: JobEventType[] = ['matrix', 'growth', 'probability', 'tech-categorization'];
   if (!validTypes.includes(event.type)) {
     throw new Error(`Invalid event type: ${event.type}. Must be one of: ${validTypes.join(', ')}`);
   }

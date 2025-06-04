@@ -40,6 +40,8 @@ import type {
   ThemeTemplateClone,
   ThemeTemplateCreate,
   ThemeTemplateUpdate,
+  ThemeTemplatesGet400Response,
+  ThemeTemplatesGet429Response,
   ThemeUpdate,
 } from '../models/index';
 import {
@@ -93,6 +95,10 @@ import {
     ThemeTemplateCreateToJSON,
     ThemeTemplateUpdateFromJSON,
     ThemeTemplateUpdateToJSON,
+    ThemeTemplatesGet400ResponseFromJSON,
+    ThemeTemplatesGet400ResponseToJSON,
+    ThemeTemplatesGet429ResponseFromJSON,
+    ThemeTemplatesGet429ResponseToJSON,
     ThemeUpdateFromJSON,
     ThemeUpdateToJSON,
 } from '../models/index';
@@ -202,7 +208,8 @@ export interface SearchGetRequest {
 export interface ThemeTemplatesGetRequest {
     page?: number;
     limit?: number;
-    search?: string;
+    q?: string;
+    mine?: boolean;
     publicOnly?: boolean;
 }
 
@@ -1304,8 +1311,12 @@ export class DefaultApi extends runtime.BaseAPI {
             queryParameters['limit'] = requestParameters['limit'];
         }
 
-        if (requestParameters['search'] != null) {
-            queryParameters['search'] = requestParameters['search'];
+        if (requestParameters['q'] != null) {
+            queryParameters['q'] = requestParameters['q'];
+        }
+
+        if (requestParameters['mine'] != null) {
+            queryParameters['mine'] = requestParameters['mine'];
         }
 
         if (requestParameters['publicOnly'] != null) {
@@ -1345,7 +1356,7 @@ export class DefaultApi extends runtime.BaseAPI {
      * Clone a theme template into the specified asset
      * Clone a theme template
      */
-    async themeTemplatesIdClonePostRaw(requestParameters: ThemeTemplatesIdClonePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Theme>> {
+    async themeTemplatesIdClonePostRaw(requestParameters: ThemeTemplatesIdClonePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
@@ -1382,16 +1393,15 @@ export class DefaultApi extends runtime.BaseAPI {
             body: ThemeTemplateCloneToJSON(requestParameters['themeTemplateClone']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => ThemeFromJSON(jsonValue));
+        return new runtime.VoidApiResponse(response);
     }
 
     /**
      * Clone a theme template into the specified asset
      * Clone a theme template
      */
-    async themeTemplatesIdClonePost(requestParameters: ThemeTemplatesIdClonePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Theme> {
-        const response = await this.themeTemplatesIdClonePostRaw(requestParameters, initOverrides);
-        return await response.value();
+    async themeTemplatesIdClonePost(requestParameters: ThemeTemplatesIdClonePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.themeTemplatesIdClonePostRaw(requestParameters, initOverrides);
     }
 
     /**

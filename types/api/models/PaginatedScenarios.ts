@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { PaginationInfo } from './PaginationInfo';
+import {
+    PaginationInfoFromJSON,
+    PaginationInfoFromJSONTyped,
+    PaginationInfoToJSON,
+    PaginationInfoToJSONTyped,
+} from './PaginationInfo';
 import type { Scenario } from './Scenario';
 import {
     ScenarioFromJSON,
@@ -32,25 +39,21 @@ export interface PaginatedScenarios {
      * @type {Array<Scenario>}
      * @memberof PaginatedScenarios
      */
-    items?: Array<Scenario>;
+    data: Array<Scenario>;
     /**
      * 
-     * @type {number}
+     * @type {PaginationInfo}
      * @memberof PaginatedScenarios
      */
-    total?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof PaginatedScenarios
-     */
-    hasMore?: boolean;
+    pagination: PaginationInfo;
 }
 
 /**
  * Check if a given object implements the PaginatedScenarios interface.
  */
 export function instanceOfPaginatedScenarios(value: object): value is PaginatedScenarios {
+    if (!('data' in value) || value['data'] === undefined) return false;
+    if (!('pagination' in value) || value['pagination'] === undefined) return false;
     return true;
 }
 
@@ -64,9 +67,8 @@ export function PaginatedScenariosFromJSONTyped(json: any, ignoreDiscriminator: 
     }
     return {
         
-        'items': json['items'] == null ? undefined : ((json['items'] as Array<any>).map(ScenarioFromJSON)),
-        'total': json['total'] == null ? undefined : json['total'],
-        'hasMore': json['hasMore'] == null ? undefined : json['hasMore'],
+        'data': ((json['data'] as Array<any>).map(ScenarioFromJSON)),
+        'pagination': PaginationInfoFromJSON(json['pagination']),
     };
 }
 
@@ -81,9 +83,8 @@ export function PaginatedScenariosToJSONTyped(value?: PaginatedScenarios | null,
 
     return {
         
-        'items': value['items'] == null ? undefined : ((value['items'] as Array<any>).map(ScenarioToJSON)),
-        'total': value['total'],
-        'hasMore': value['hasMore'],
+        'data': ((value['data'] as Array<any>).map(ScenarioToJSON)),
+        'pagination': PaginationInfoToJSON(value['pagination']),
     };
 }
 

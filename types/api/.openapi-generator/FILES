@@ -10,13 +10,16 @@ models/AssetUpdate.ts
 models/Card.ts
 models/CardCreate.ts
 models/CardUpdate.ts
-models/Chunk.ts
 models/MatrixAnalysisRequest.ts
+models/MatrixAnalysisRequestOptions.ts
 models/MatrixAnalysisResult.ts
+models/MatrixAnalysisResultMatrixInnerInner.ts
+models/MatrixAnalysisResultMetadata.ts
 models/MatrixPost202Response.ts
 models/PaginatedAssets.ts
 models/PaginatedScenarios.ts
 models/PaginatedThemeTemplates.ts
+models/PaginationInfo.ts
 models/Scenario.ts
 models/ScenarioCreate.ts
 models/ScenarioUpdate.ts
@@ -27,6 +30,8 @@ models/ThemeTemplate.ts
 models/ThemeTemplateClone.ts
 models/ThemeTemplateCreate.ts
 models/ThemeTemplateUpdate.ts
+models/ThemeTemplatesGet400Response.ts
+models/ThemeTemplatesGet429Response.ts
 models/ThemeUpdate.ts
 models/index.ts
 runtime.ts
