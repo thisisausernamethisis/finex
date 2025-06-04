@@ -5,6 +5,9 @@ import { ScenarioRepository } from '../../../../lib/repositories/scenarioReposit
 import { createChildLogger } from '../../../../lib/logger';
 import { serverError, unauthorized } from '../../../../lib/utils/http';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Define enums locally
 enum TechnologyCategory {
   AI_COMPUTE = 'AI_COMPUTE',

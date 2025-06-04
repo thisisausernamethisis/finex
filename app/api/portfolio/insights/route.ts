@@ -4,6 +4,9 @@ import { AssetRepository } from '../../../../lib/repositories/assetRepository';
 import { createChildLogger } from '../../../../lib/logger';
 import { serverError, unauthorized } from '../../../../lib/utils/http';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Define TechnologyCategory enum locally until Prisma client is properly generated
 enum TechnologyCategory {
   AI_COMPUTE = 'AI_COMPUTE',

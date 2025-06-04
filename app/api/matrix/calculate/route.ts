@@ -4,6 +4,9 @@ import { matrixCalculationService } from '../../../../lib/services/matrixCalcula
 import { CacheService } from '../../../../lib/services/cacheService';
 import { logger } from '../../../../lib/logger';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Create a route-specific logger
 const routeLogger = logger.child({ route: 'GET /api/matrix/calculate' });
 

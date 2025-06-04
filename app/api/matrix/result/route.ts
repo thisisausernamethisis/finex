@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 import { MatrixRepository } from '../../../../lib/repositories/matrixRepository';
 import { AssetRepository } from '../../../../lib/repositories/assetRepository';
 import { ScenarioRepository } from '../../../../lib/repositories/scenarioRepository';

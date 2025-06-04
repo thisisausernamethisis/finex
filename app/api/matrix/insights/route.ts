@@ -4,6 +4,9 @@ import { portfolioAnalysisService } from '../../../../lib/services/portfolioAnal
 import { createChildLogger } from '../../../../lib/logger';
 import { serverError, unauthorized } from '../../../../lib/utils/http';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Create a route-specific logger
 const logger = createChildLogger({ route: 'GET /api/matrix/insights' });
 

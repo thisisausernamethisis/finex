@@ -4,6 +4,9 @@ import { prisma } from '@/lib/db';
 import { ScenarioType } from '@prisma/client';
 import { logger } from '@/lib/logger';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 const routeLogger = logger.child({ route: '/api/scenarios/technology' });
 
 /**
