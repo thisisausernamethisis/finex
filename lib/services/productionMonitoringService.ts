@@ -456,7 +456,7 @@ export class ProductionMonitoringService {
     
     // Return stats for all endpoints
     const allStats: any = {};
-    for (const [key, metrics] of this.metricsCache.entries()) {
+    for (const [key, metrics] of Array.from(this.metricsCache.entries())) {
       if (key.startsWith('api-metrics-')) {
         const endpoint = key.replace('api-metrics-', '');
         allStats[endpoint] = this.getAPIPerformanceStats(endpoint);

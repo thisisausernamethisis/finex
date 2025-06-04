@@ -3,10 +3,10 @@ import { matrixCalculationService } from '../lib/services/matrixCalculationServi
 import { logger } from '../lib/logger';
 import Redis from 'ioredis';
 
-// Redis connection for BullMQ
+// Redis connection for BullMQ - disabled for Vercel deployment
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: 3,
-  retryDelayOnFailover: 100,
+  lazyConnect: true,
 });
 
 // Create a worker-specific logger
@@ -109,8 +109,8 @@ export const matrixWorker = new Worker<MatrixCalculationJobData>(
   {
     connection: redis,
     concurrency: 3, // Process up to 3 matrix calculations simultaneously
-    removeOnComplete: 50, // Keep last 50 completed jobs
-    removeOnFail: 20, // Keep last 20 failed jobs
+    removeOnComplete: { count: 50 }, // Keep last 50 completed jobs
+    removeOnFail: { count: 20 }, // Keep last 20 failed jobs
   }
 );
 
