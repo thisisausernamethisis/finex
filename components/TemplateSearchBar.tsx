@@ -1,5 +1,6 @@
-'use client'
+'use client';
 // @ts-nocheck
+// Fixed: Client component for Vercel compatibility
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
