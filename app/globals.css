@@ -4,7 +4,7 @@
 
 @layer base {
   * {
-    @apply border-gray-200;
+    border-color: rgb(226 232 240); /* equivalent to border-gray-200 */
   }
 }
 

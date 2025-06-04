@@ -5,6 +5,9 @@ import { TemplateCard } from '@/components/TemplateCard';
 import { TemplateSearchBar } from '@/components/TemplateSearchBar';
 import { Suspense } from 'react';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 interface SearchParams {
   q?: string;
   mine?: string;

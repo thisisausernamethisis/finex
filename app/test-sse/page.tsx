@@ -3,6 +3,9 @@
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 interface SSEEvent {
   id?: string;
   event?: string;
