@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface TemplateSearchBarProps {
   initialSearch?: string;
@@ -11,7 +14,7 @@ interface TemplateSearchBarProps {
   onFilterChange?: (mine: boolean) => void;
 }
 
-// Simple debounce function
+// Simple debounce function to avoid external dependencies
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
   let timeout: NodeJS.Timeout;
   return ((...args: any[]) => {
@@ -91,58 +94,46 @@ export function TemplateSearchBar({
   return (
     <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-center w-full mb-6">
       <div className="relative flex-1">
-        <input
+        <Input
           type="text"
           placeholder="Search templates..."
           value={searchText}
           onChange={handleSearchChange}
-          className="w-full h-10 pl-10 pr-10 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="pl-10 pr-10 h-10"
           data-testid="template-search-input"
         />
         <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
         {searchText && (
-          <button
-            className="absolute right-1 top-1 h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1 h-8 w-8"
             onClick={handleClearSearch}
             data-testid="clear-search"
           >
-            <X className="h-4 w-4 mx-auto" />
-          </button>
+            <X className="h-4 w-4" />
+          </Button>
         )}
       </div>
       
-      <div className="w-full md:w-auto">
-        <div className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
-          <button
-            className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all ${
-              !filterMine && filterMine !== undefined
-                ? "bg-background text-foreground shadow-sm"
-                : "hover:bg-background/50"
-            }`}
-            onClick={() => handleFilterChange('all')}
-            data-testid="filter-all"
-          >
-            All
-          </button>
-          <button
-            className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all ${
-              filterMine
-                ? "bg-background text-foreground shadow-sm"
-                : "hover:bg-background/50"
-            }`}
-            onClick={() => handleFilterChange('mine')}
-            data-testid="filter-mine"
-          >
-            Mine
-          </button>
-          <button
-            className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all hover:bg-background/50`}
-            onClick={() => handleFilterChange('public')}
-            data-testid="filter-public"
-          >
-            Public
-          </button>
-        </div>
+      <div>
+        <Tabs
+          defaultValue={filterMine ? 'mine' : 'all'}
+          onValueChange={handleFilterChange}
+          className="w-full md:w-auto"
+        >
+          <TabsList>
+            <TabsTrigger value="all" data-testid="filter-all">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="mine" data-testid="filter-mine">
+              Mine
+            </TabsTrigger>
+            <TabsTrigger value="public" data-testid="filter-public">
+              Public
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
     </div>
   );
