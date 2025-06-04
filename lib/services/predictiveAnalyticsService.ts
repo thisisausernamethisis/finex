@@ -140,7 +140,7 @@ export class PredictiveAnalyticsService {
   static async calculateRiskMetrics(portfolioData: any[]): Promise<RiskMetrics> {
     analyticsLogger.info('Calculating risk metrics', { portfolioSize: portfolioData.length });
     
-    const categories = [...new Set(portfolioData.map(asset => asset.category))];
+    const categories = Array.from(new Set(portfolioData.map(asset => asset.category)));
     
     // Calculate category exposures
     const categoryExposures = categories.reduce((acc, category) => {
@@ -153,7 +153,7 @@ export class PredictiveAnalyticsService {
     const correlationMatrix = await this.calculateCorrelationMatrix(categories, portfolioData);
     
     // Calculate concentration risk (Herfindahl index)
-    const concentrationRisk = Object.values(categoryExposures)
+    const concentrationRisk = (Object.values(categoryExposures) as number[])
       .reduce((sum, exposure) => sum + exposure * exposure, 0);
     
     // Calculate diversification score (inverse of concentration)
@@ -219,7 +219,7 @@ export class PredictiveAnalyticsService {
       const riskMetrics = await this.calculateRiskMetrics(portfolioData);
       
       // Analyze trends for each category
-      const categories = [...new Set(portfolioData.map(asset => asset.category))];
+      const categories = Array.from(new Set(portfolioData.map(asset => asset.category)));
       const trendAnalyses: Record<string, TrendAnalysis> = {};
       
       for (const category of categories) {
@@ -445,7 +445,7 @@ export class PredictiveAnalyticsService {
   }
 
   private static generateMockHistoricalData(portfolioData: any[]): TrendDataPoint[] {
-    const categories = [...new Set(portfolioData.map(asset => asset.category))];
+    const categories = Array.from(new Set(portfolioData.map(asset => asset.category)));
     const data: TrendDataPoint[] = [];
     
     categories.forEach(category => {

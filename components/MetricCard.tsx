@@ -245,7 +245,7 @@ export function MetricCard({
       {insight && (
         <div className="mt-3 pt-3 border-t border-border/50">
           <p className="text-xs text-muted-foreground italic">
-            "{insight}"
+            &ldquo;{insight}&rdquo;
           </p>
         </div>
       )}

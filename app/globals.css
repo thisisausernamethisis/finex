@@ -124,13 +124,16 @@ body {
   .metric-card {
     background-color: rgb(var(--card));
     border-color: rgb(var(--border) / 0.5);
-    @apply rounded-xl p-6 shadow-lg border;
-    @apply hover:shadow-xl transition-all duration-300;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    border-width: 1px;
+    transition: all 0.3s ease;
     box-shadow: var(--card-shadow);
   }
   
   .metric-card:hover {
-    box-shadow: var(--card-shadow-hover);
+    box-shadow: 0 25px 25px -5px rgb(0 0 0 / 0.1), 0 20px 10px -6px rgb(0 0 0 / 0.1);
     transform: translateY(-2px);
   }
   
@@ -151,7 +154,9 @@ body {
   }
   
   .nav-link {
-    @apply px-4 py-2 rounded-lg transition-all duration-200;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
     background-color: transparent;
     color: rgb(var(--muted-foreground));
   }
@@ -164,11 +169,19 @@ body {
   .nav-link.active {
     background-color: rgb(var(--primary));
     color: rgb(var(--primary-foreground));
-    @apply shadow-sm;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   }
   
   .discovery-card {
-    @apply metric-card relative overflow-hidden;
+    background-color: rgb(var(--card));
+    border-color: rgb(var(--border) / 0.5);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    border-width: 1px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
   }
   
   .discovery-card::before {
@@ -181,37 +194,70 @@ body {
   
   .matrix-cell {
     border-color: rgb(var(--border) / 0.3);
-    @apply rounded-lg border transition-all duration-200 cursor-pointer;
+    border-radius: 0.5rem;
+    border-width: 1px;
+    transition: all 0.2s ease;
+    cursor: pointer;
   }
   
   .matrix-cell:hover {
     border-color: rgb(var(--primary) / 0.5);
-    @apply shadow-md;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
   
   .matrix-cell.positive {
-    @apply bg-green-50 border-green-200 hover:bg-green-100;
+    background-color: rgb(240 253 244);
+    border-color: rgb(187 247 208);
+  }
+  
+  .matrix-cell.positive:hover {
+    background-color: rgb(220 252 231);
   }
   
   .matrix-cell.negative {
-    @apply bg-red-50 border-red-200 hover:bg-red-100;
+    background-color: rgb(254 242 242);
+    border-color: rgb(254 202 202);
+  }
+  
+  .matrix-cell.negative:hover {
+    background-color: rgb(254 226 226);
   }
   
   .matrix-cell.neutral {
-    @apply bg-gray-50 border-gray-200 hover:bg-gray-100;
+    background-color: rgb(249 250 251);
+    border-color: rgb(229 231 235);
+  }
+  
+  .matrix-cell.neutral:hover {
+    background-color: rgb(243 244 246);
   }
   
   @media (prefers-color-scheme: dark) {
     .matrix-cell.positive {
-      @apply bg-green-950/30 border-green-800/50 hover:bg-green-900/40;
+      background-color: rgb(5 46 22 / 0.3);
+      border-color: rgb(22 101 52 / 0.5);
+    }
+    
+    .matrix-cell.positive:hover {
+      background-color: rgb(20 83 45 / 0.4);
     }
     
     .matrix-cell.negative {
-      @apply bg-red-950/30 border-red-800/50 hover:bg-red-900/40;
+      background-color: rgb(69 10 10 / 0.3);
+      border-color: rgb(153 27 27 / 0.5);
+    }
+    
+    .matrix-cell.negative:hover {
+      background-color: rgb(127 29 29 / 0.4);
     }
     
     .matrix-cell.neutral {
-      @apply bg-gray-950/30 border-gray-800/50 hover:bg-gray-900/40;
+      background-color: rgb(23 23 23 / 0.3);
+      border-color: rgb(41 37 36 / 0.5);
+    }
+    
+    .matrix-cell.neutral:hover {
+      background-color: rgb(28 25 23 / 0.4);
     }
   }
 }

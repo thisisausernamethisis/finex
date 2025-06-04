@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { headers } from 'next/headers';
 import { currentUser } from '@clerk/nextjs/server';
-import TemplateCard from '@/components/TemplateCard';
+import { TemplateCard } from '@/components/TemplateCard';
 import { TemplateSearchBar } from '@/components/TemplateSearchBar';
 import { Suspense } from 'react';
 

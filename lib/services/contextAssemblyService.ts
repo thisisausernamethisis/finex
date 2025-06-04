@@ -278,7 +278,7 @@ export class ContextAssemblyService {
       const insights = await this.gatherPortfolioInsights(userAssets, focusAreas);
 
       // Assemble comprehensive context
-      const context = this.assemblePortfolioContext(portfolioOverview, insights, {
+      const context = this.assemblePortfolioContextData(portfolioOverview, insights, {
         tokenLimit: options?.tokenLimit || this.maxTokens * 2 // Larger limit for portfolio
       });
 
@@ -703,7 +703,7 @@ export class ContextAssemblyService {
   /**
    * Assemble portfolio context (placeholder)
    */
-  private assemblePortfolioContext(
+  private assemblePortfolioContextData(
     overview: PortfolioOverview,
     insights: EvidenceItem[],
     options: { tokenLimit: number }

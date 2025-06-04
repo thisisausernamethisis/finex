@@ -65,8 +65,13 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Protect all routes except public ones
   if (!isPublicRoute(req)) {
-    const authResult = await auth();
-    if (!authResult.userId) {
+    try {
+      const authResult = await auth();
+      if (!authResult.userId) {
+        return NextResponse.redirect(new URL('/sign-in', req.url));
+      }
+    } catch (error) {
+      // Handle auth error gracefully
       return NextResponse.redirect(new URL('/sign-in', req.url));
     }
   }

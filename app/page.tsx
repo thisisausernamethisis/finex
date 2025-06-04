@@ -112,7 +112,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Instant Revelations</h3>
               <p className="text-muted-foreground">
-                Discover surprising insights like "Tesla is 80% robotics" through continuous 
+                Discover surprising insights like &ldquo;Tesla is 80% robotics&rdquo; through continuous 
                 AI analysis of your portfolio composition.
               </p>
             </div>
