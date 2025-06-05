@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, Search, Calendar, TrendingUp, Clock, Globe, MoreHorizontal, Edit, Trash } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
+import { useToast } from '@/components/ui/use-toast';
 import ScenarioEditModal from '@/components/features/ScenarioManagement/ScenarioEditModal';
 import ScenarioDeleteModal from '@/components/features/ScenarioManagement/ScenarioDeleteModal';
 
