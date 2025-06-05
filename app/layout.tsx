@@ -26,14 +26,6 @@ export default function RootLayout({
     <html lang="en">
       <ClerkProvider publishableKey={clerkPublishableKey}>
         <body className={inter.className}>
-          <script dangerouslySetInnerHTML={{
-            __html: `
-              // Temporary site protection - redirect away
-              if (typeof window !== 'undefined') {
-                window.location.href = 'https://google.com';
-              }
-            `
-          }} />
           <Navigation />
           <main>
             {children}

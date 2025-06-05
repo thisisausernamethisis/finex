@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import type { NextFetchEvent } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 // Development password lock
 const DEV_USERNAME = 'admin'
 const DEV_PASSWORD = 'wombat81'
 
-function checkDevAuth(req: any) {
+function checkDevAuth(req: NextRequest) {
   const devAuth = req.cookies.get('dev-auth')?.value
   return devAuth === 'authenticated'
 }
@@ -16,14 +17,17 @@ function createDevLoginPage() {
     <html>
     <head>
       <title>Development Access</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f5f5f5; }
-        .login-box { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input { display: block; width: 100%; margin: 0.5rem 0; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #1860e2; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; width: 100%; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .login-box { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); max-width: 400px; width: 90%; }
+        input { display: block; width: 100%; margin: 0.75rem 0; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+        button { background: #1860e2; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; font-weight: 600; }
         button:hover { background: #1550c2; }
-        h2 { text-align: center; color: #333; }
-        .error { color: red; text-align: center; margin: 0.5rem 0; }
+        h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
+        .error { color: #dc2626; text-align: center; margin: 0.75rem 0; background: #fef2f2; padding: 0.5rem; border-radius: 4px; }
+        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-top: 1.5rem; }
       </style>
     </head>
     <body>
@@ -34,14 +38,13 @@ function createDevLoginPage() {
           <input type="password" name="password" placeholder="Password" required />
           <button type="submit">Access Application</button>
         </form>
-        <p style="text-align: center; color: #666; font-size: 0.9rem; margin-top: 1rem;">
-          Development environment - authorized access only
-        </p>
+        <p class="subtitle">Development environment - authorized access only</p>
       </div>
     </body>
     </html>
   `, {
-    headers: { 'Content-Type': 'text/html' }
+    headers: { 'Content-Type': 'text/html' },
+    status: 200
   })
 }
 
@@ -84,18 +87,8 @@ const ratelimit = {
 // Define public routes that don't require authentication
 const isPublicRoute = createRouteMatcher(['/', '/sign-in', '/sign-up']);
 
-// Combine Clerk middleware with rate limiting and dev auth
-export default clerkMiddleware(async (auth, req) => {
-  // Skip dev auth for the dev-auth API endpoint
-  if (req.nextUrl.pathname === '/api/dev-auth') {
-    return NextResponse.next();
-  }
-
-  // Development password check - FIRST PRIORITY
-  if (!checkDevAuth(req)) {
-    return createDevLoginPage();
-  }
-
+// Create Clerk middleware with our logic
+const clerkHandler = clerkMiddleware(async (auth, req) => {
   // Apply rate limiting to API routes
   if (req.nextUrl.pathname.startsWith('/api')) {
     // Get client IP safely
@@ -132,9 +125,25 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   return NextResponse.next();
-})
+});
 
-// Export config from Clerk
+// Main middleware function
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  // Skip dev auth for the dev-auth API endpoint
+  if (req.nextUrl.pathname === '/api/dev-auth') {
+    return clerkHandler(req, event);
+  }
+
+  // FIRST: Development password check - blocks everything if not authenticated
+  if (!checkDevAuth(req)) {
+    return createDevLoginPage();
+  }
+
+  // SECOND: Apply Clerk middleware only after dev auth passes
+  return clerkHandler(req, event);
+}
+
+// Export config
 export const config = {
   matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 }
