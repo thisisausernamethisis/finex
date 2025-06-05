@@ -2,7 +2,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { NextFetchEvent } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-// Development password lock
+// HTTP Basic Auth for development protection
+function checkBasicAuth(request: NextRequest): Response | null {
+  const auth = request.headers.get('authorization')
+  
+  if (!auth || !auth.startsWith('Basic ')) {
+    return new Response('Development Environment - Authentication Required', {
+      status: 401,
+      headers: {
+        'WWW-Authenticate': 'Basic realm="Development Access"',
+        'Content-Type': 'text/html'
+      }
+    })
+  }
+
+  const credentials = auth.slice('Basic '.length)
+  const decoded = atob(credentials)
+  const [username, password] = decoded.split(':')
+
+  if (username !== 'admin' || password !== 'wombat81') {
+    return new Response('Invalid Credentials', {
+      status: 401,
+      headers: {
+        'WWW-Authenticate': 'Basic realm="Development Access"'
+      }
+    })
+  }
+
+  return null; // Auth successful
+}
+
+// Development password lock (keeping as backup)
 const DEV_USERNAME = 'admin'
 const DEV_PASSWORD = 'wombat81'
 
@@ -129,17 +159,18 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
 
 // Main middleware function
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
-  // Skip dev auth for the dev-auth API endpoint
+  // FIRST: HTTP Basic Auth (browser popup) - ALWAYS FIRST
+  const basicAuthResult = checkBasicAuth(req);
+  if (basicAuthResult) {
+    return basicAuthResult;
+  }
+
+  // Skip remaining auth for the dev-auth API endpoint
   if (req.nextUrl.pathname === '/api/dev-auth') {
     return clerkHandler(req, event);
   }
 
-  // FIRST: Development password check - blocks everything if not authenticated
-  if (!checkDevAuth(req)) {
-    return createDevLoginPage();
-  }
-
-  // SECOND: Apply Clerk middleware only after dev auth passes
+  // SECOND: Apply Clerk middleware 
   return clerkHandler(req, event);
 }
 
