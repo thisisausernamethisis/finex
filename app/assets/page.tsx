@@ -10,19 +10,19 @@ import { Plus, Search, Building2, Tag, Edit, Trash, File, X } from 'lucide-react
 import { useAuth } from '@clerk/nextjs';
 import { useToast } from '@/components/ui/use-toast';
 
-interface DataCard {
+interface Card {
   id: string;
-  name: string;
-  description?: string;
-  url?: string;
-  type: 'report' | 'article' | 'video' | 'document' | 'other';
+  title: string;
+  content: string;
+  source?: string;
+  importance?: number;
 }
 
 interface Theme {
   id: string;
   name: string;
   description?: string;
-  dataCards: DataCard[];
+  cards: Card[];
 }
 
 interface Asset {
@@ -44,7 +44,9 @@ export default function AssetsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editingTheme, setEditingTheme] = useState<{ assetId: string; theme: Theme | null }>({ assetId: '', theme: null });
-  const [editingDataCard, setEditingDataCard] = useState<{ assetId: string; themeId: string; dataCard: DataCard | null }>({ assetId: '', themeId: '', dataCard: null });
+  const [editingCard, setEditingCard] = useState<{ assetId: string; themeId: string; card: Card | null }>({ assetId: '', themeId: '', card: null });
+  const [loadingTheme, setLoadingTheme] = useState(false);
+  const [loadingCard, setLoadingCard] = useState(false);
   
   const [newAsset, setNewAsset] = useState({
     name: '',
@@ -56,11 +58,11 @@ export default function AssetsPage() {
     description: ''
   });
 
-  const [newDataCard, setNewDataCard] = useState({
-    name: '',
-    description: '',
-    url: '',
-    type: 'report' as DataCard['type']
+  const [newCard, setNewCard] = useState({
+    title: '',
+    content: '',
+    source: '',
+    importance: 1
   });
 
   const loadAssets = useCallback(async () => {
@@ -80,16 +82,52 @@ export default function AssetsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setAssets(data.items || []);
+        // Load themes for each asset
+        const assetsWithThemes = await Promise.all(
+          (data.items || []).map(async (asset: Asset) => {
+            const themesResponse = await fetch(`/api/themes?assetId=${asset.id}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (themesResponse.ok) {
+              const themesData = await themesResponse.json();
+              // Load cards for each theme
+              const themesWithCards = await Promise.all(
+                (themesData.items || []).map(async (theme: Theme) => {
+                  const cardsResponse = await fetch(`/api/cards?themeId=${theme.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  
+                  if (cardsResponse.ok) {
+                    const cardsData = await cardsResponse.json();
+                    return { ...theme, cards: cardsData.items || [] };
+                  }
+                  return { ...theme, cards: [] };
+                })
+              );
+              return { ...asset, themes: themesWithCards };
+            }
+            return { ...asset, themes: [] };
+          })
+        );
+        setAssets(assetsWithThemes);
       } else {
         console.error('Failed to load assets');
+        toast({
+          title: "Failed to load assets",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error loading assets:', error);
+      toast({
+        title: "Error loading assets",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
-  }, [getToken, searchTerm]);
+  }, [getToken, searchTerm, toast]);
 
   const createAsset = async () => {
     if (!newAsset.name.trim()) return;
@@ -116,6 +154,11 @@ export default function AssetsPage() {
         toast({
           title: "Asset created",
           description: `${newAsset.name} has been created.`
+        });
+      } else {
+        toast({
+          title: "Failed to create asset",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -144,6 +187,11 @@ export default function AssetsPage() {
           title: "Asset deleted",
           description: "Asset has been removed."
         });
+      } else {
+        toast({
+          title: "Failed to delete asset",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error deleting asset:', error);
@@ -157,109 +205,157 @@ export default function AssetsPage() {
   const addTheme = async (assetId: string) => {
     if (!newTheme.name.trim()) return;
 
-    // Mock implementation - in real app, this would call an API
-    const updatedAssets = assets.map(asset => {
-      if (asset.id === assetId) {
-        const newThemeObj: Theme = {
-          id: Date.now().toString(),
+    setLoadingTheme(true);
+    try {
+      const token = await getToken();
+      
+      const response = await fetch('/api/themes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
           name: newTheme.name,
           description: newTheme.description,
-          dataCards: []
-        };
-        return {
-          ...asset,
-          themes: [...(asset.themes || []), newThemeObj]
-        };
-      }
-      return asset;
-    });
-    
-    setAssets(updatedAssets);
-    setNewTheme({ name: '', description: '' });
-    setEditingTheme({ assetId: '', theme: null });
-    
-    toast({
-      title: "Theme added",
-      description: `${newTheme.name} has been added.`
-    });
-  };
+          assetId: assetId
+        }),
+      });
 
-  const removeTheme = async (assetId: string, themeId: string) => {
-    const updatedAssets = assets.map(asset => {
-      if (asset.id === assetId) {
-        return {
-          ...asset,
-          themes: asset.themes.filter(theme => theme.id !== themeId)
-        };
-      }
-      return asset;
-    });
-    
-    setAssets(updatedAssets);
-    toast({
-      title: "Theme removed",
-      description: "Theme has been deleted."
-    });
-  };
-
-  const addDataCard = async (assetId: string, themeId: string) => {
-    if (!newDataCard.name.trim()) return;
-
-    const updatedAssets = assets.map(asset => {
-      if (asset.id === assetId) {
-        const updatedThemes = asset.themes.map(theme => {
-          if (theme.id === themeId) {
-            const newDataCardObj: DataCard = {
-              id: Date.now().toString(),
-              name: newDataCard.name,
-              description: newDataCard.description,
-              url: newDataCard.url,
-              type: newDataCard.type
-            };
-            return {
-              ...theme,
-              dataCards: [...theme.dataCards, newDataCardObj]
-            };
-          }
-          return theme;
+      if (response.ok) {
+        setNewTheme({ name: '', description: '' });
+        setEditingTheme({ assetId: '', theme: null });
+        loadAssets(); // Reload to get updated data
+        toast({
+          title: "Theme added",
+          description: `${newTheme.name} has been added.`
         });
-        return { ...asset, themes: updatedThemes };
+      } else {
+        toast({
+          title: "Failed to add theme",
+          variant: "destructive"
+        });
       }
-      return asset;
-    });
-    
-    setAssets(updatedAssets);
-    setNewDataCard({ name: '', description: '', url: '', type: 'report' });
-    setEditingDataCard({ assetId: '', themeId: '', dataCard: null });
-    
-    toast({
-      title: "Data card added",
-      description: `${newDataCard.name} has been added.`
-    });
+    } catch (error) {
+      console.error('Error adding theme:', error);
+      toast({
+        title: "Failed to add theme",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingTheme(false);
+    }
   };
 
-  const removeDataCard = async (assetId: string, themeId: string, dataCardId: string) => {
-    const updatedAssets = assets.map(asset => {
-      if (asset.id === assetId) {
-        const updatedThemes = asset.themes.map(theme => {
-          if (theme.id === themeId) {
-            return {
-              ...theme,
-              dataCards: theme.dataCards.filter(card => card.id !== dataCardId)
-            };
-          }
-          return theme;
+  const removeTheme = async (themeId: string) => {
+    try {
+      const token = await getToken();
+      
+      const response = await fetch(`/api/themes/${themeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        loadAssets(); // Reload to get updated data
+        toast({
+          title: "Theme removed",
+          description: "Theme has been deleted."
         });
-        return { ...asset, themes: updatedThemes };
+      } else {
+        toast({
+          title: "Failed to remove theme",
+          variant: "destructive"
+        });
       }
-      return asset;
-    });
-    
-    setAssets(updatedAssets);
-    toast({
-      title: "Data card removed",
-      description: "Data card has been deleted."
-    });
+    } catch (error) {
+      console.error('Error removing theme:', error);
+      toast({
+        title: "Failed to remove theme",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const addCard = async (themeId: string) => {
+    if (!newCard.title.trim()) return;
+
+    setLoadingCard(true);
+    try {
+      const token = await getToken();
+      
+      const response = await fetch('/api/cards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: newCard.title,
+          content: newCard.content,
+          source: newCard.source,
+          importance: newCard.importance,
+          themeId: themeId
+        }),
+      });
+
+      if (response.ok) {
+        setNewCard({ title: '', content: '', source: '', importance: 1 });
+        setEditingCard({ assetId: '', themeId: '', card: null });
+        loadAssets(); // Reload to get updated data
+        toast({
+          title: "Card added",
+          description: `${newCard.title} has been added.`
+        });
+      } else {
+        toast({
+          title: "Failed to add card",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error adding card:', error);
+      toast({
+        title: "Failed to add card",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingCard(false);
+    }
+  };
+
+  const removeCard = async (cardId: string) => {
+    try {
+      const token = await getToken();
+      
+      const response = await fetch(`/api/cards/${cardId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        loadAssets(); // Reload to get updated data
+        toast({
+          title: "Card removed",
+          description: "Card has been deleted."
+        });
+      } else {
+        toast({
+          title: "Failed to remove card",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error removing card:', error);
+      toast({
+        title: "Failed to remove card",
+        variant: "destructive"
+      });
+    }
   };
 
   useEffect(() => {
@@ -372,6 +468,7 @@ export default function AssetsPage() {
                     variant="outline" 
                     size="sm"
                     onClick={() => setEditingTheme({ assetId: asset.id, theme: null })}
+                    disabled={loadingTheme}
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Add Theme
@@ -393,7 +490,13 @@ export default function AssetsPage() {
                         onChange={(e) => setNewTheme({ ...newTheme, description: e.target.value })}
                       />
                       <div className="flex space-x-2">
-                        <Button size="sm" onClick={() => addTheme(asset.id)}>Add</Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => addTheme(asset.id)}
+                          disabled={loadingTheme}
+                        >
+                          {loadingTheme ? 'Adding...' : 'Add'}
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => setEditingTheme({ assetId: '', theme: null })}>Cancel</Button>
                       </div>
                     </div>
@@ -414,67 +517,70 @@ export default function AssetsPage() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => setEditingDataCard({ assetId: asset.id, themeId: theme.id, dataCard: null })}
+                          onClick={() => setEditingCard({ assetId: asset.id, themeId: theme.id, card: null })}
+                          disabled={loadingCard}
                         >
                           <Plus className="w-3 h-3 mr-1" />
                           Add Card
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => removeTheme(asset.id, theme.id)}>
+                        <Button variant="outline" size="sm" onClick={() => removeTheme(theme.id)}>
                           <X className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
 
-                    {/* Add Data Card Form */}
-                    {editingDataCard.assetId === asset.id && editingDataCard.themeId === theme.id && !editingDataCard.dataCard && (
+                    {/* Add Card Form */}
+                    {editingCard.assetId === asset.id && editingCard.themeId === theme.id && !editingCard.card && (
                       <Card className="p-3 bg-muted/20 mb-3">
                         <div className="space-y-2">
                           <Input
-                            placeholder="Data card name"
-                            value={newDataCard.name}
-                            onChange={(e) => setNewDataCard({ ...newDataCard, name: e.target.value })}
+                            placeholder="Card title"
+                            value={newCard.title}
+                            onChange={(e) => setNewCard({ ...newCard, title: e.target.value })}
+                          />
+                          <Textarea
+                            placeholder="Content"
+                            value={newCard.content}
+                            onChange={(e) => setNewCard({ ...newCard, content: e.target.value })}
                           />
                           <Input
-                            placeholder="URL (optional)"
-                            value={newDataCard.url}
-                            onChange={(e) => setNewDataCard({ ...newDataCard, url: e.target.value })}
+                            placeholder="Source (optional)"
+                            value={newCard.source}
+                            onChange={(e) => setNewCard({ ...newCard, source: e.target.value })}
                           />
-                          <select
-                            value={newDataCard.type}
-                            onChange={(e) => setNewDataCard({ ...newDataCard, type: e.target.value as DataCard['type'] })}
-                            className="w-full p-2 border rounded-md"
-                          >
-                            <option value="report">Report</option>
-                            <option value="article">Article</option>
-                            <option value="video">Video</option>
-                            <option value="document">Document</option>
-                            <option value="other">Other</option>
-                          </select>
                           <div className="flex space-x-2">
-                            <Button size="sm" onClick={() => addDataCard(asset.id, theme.id)}>Add</Button>
-                            <Button variant="outline" size="sm" onClick={() => setEditingDataCard({ assetId: '', themeId: '', dataCard: null })}>Cancel</Button>
+                            <Button 
+                              size="sm" 
+                              onClick={() => addCard(theme.id)}
+                              disabled={loadingCard}
+                            >
+                              {loadingCard ? 'Adding...' : 'Add'}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setEditingCard({ assetId: '', themeId: '', card: null })}>Cancel</Button>
                           </div>
                         </div>
                       </Card>
                     )}
 
-                    {/* Data Cards */}
+                    {/* Cards */}
                     <div className="space-y-2">
-                      {theme.dataCards.map((dataCard) => (
-                        <div key={dataCard.id} className="flex items-center justify-between p-2 bg-muted/20 rounded-md">
+                      {theme.cards?.map((card) => (
+                        <div key={card.id} className="flex items-center justify-between p-2 bg-muted/20 rounded-md">
                           <div className="flex items-center space-x-2">
                             <File className="w-4 h-4 text-muted-foreground" />
                             <div>
-                              <span className="text-sm font-medium">{dataCard.name}</span>
-                              <Badge variant="secondary" className="ml-2 text-xs">{dataCard.type}</Badge>
-                              {dataCard.url && (
-                                <a href={dataCard.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-primary hover:underline">
-                                  View
+                              <span className="text-sm font-medium">{card.title}</span>
+                              {card.source && (
+                                <a href={card.source} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-primary hover:underline">
+                                  View Source
                                 </a>
+                              )}
+                              {card.content && (
+                                <p className="text-xs text-muted-foreground truncate max-w-xs">{card.content}</p>
                               )}
                             </div>
                           </div>
-                          <Button variant="outline" size="sm" onClick={() => removeDataCard(asset.id, theme.id, dataCard.id)}>
+                          <Button variant="outline" size="sm" onClick={() => removeCard(card.id)}>
                             <X className="w-3 h-3" />
                           </Button>
                         </div>
