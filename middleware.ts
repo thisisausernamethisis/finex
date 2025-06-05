@@ -141,14 +141,9 @@ const ratelimit = {
 // Define public routes that don't require authentication
 const isPublicRoute = createRouteMatcher(['/', '/sign-in', '/sign-up']);
 
-// Simplified Clerk middleware
+// Simple Clerk middleware - back to working state
 const clerkHandler = clerkMiddleware(async (auth, req) => {
-  // Skip Clerk auth for API routes to avoid complications
-  if (req.nextUrl.pathname.startsWith('/api')) {
-    return NextResponse.next();
-  }
-
-  // Only apply Clerk to non-public routes
+  // Protect all routes except public ones
   if (!isPublicRoute(req)) {
     try {
       const authResult = await auth();
@@ -156,7 +151,7 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(new URL('/sign-in', req.url));
       }
     } catch (error) {
-      console.error('Clerk auth error:', error)
+      // Handle auth error gracefully
       return NextResponse.redirect(new URL('/sign-in', req.url));
     }
   }
@@ -164,27 +159,12 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
   return NextResponse.next();
 });
 
-// Main middleware function - MINIMAL & BULLETPROOF
+// Main middleware function - BACK TO WORKING STATE
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
-  try {
-    // STEP 1: HTTP Basic Auth protection
-    const basicAuthResult = checkBasicAuth(req);
-    if (basicAuthResult) {
-      return basicAuthResult;
-    }
-
-    // STEP 2: Apply Clerk middleware after Basic Auth passes
-    return clerkHandler(req, event);
-  } catch (error) {
-    console.error('Middleware error:', error)
-    // Fallback: Allow request to proceed rather than crash
-    return NextResponse.next();
-  }
+  return clerkHandler(req, event);
 }
 
-// Simplified config
+// Export config
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)',
-  ],
+  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 }
