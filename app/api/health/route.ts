@@ -188,4 +188,6 @@ function determineOverallStatus(healthChecks: any[]): 'HEALTHY' | 'DEGRADED' | '
   if (unhealthyCount > 0) return 'UNHEALTHY';
   if (degradedCount > 0) return 'DEGRADED';
   return 'HEALTHY';
-} 
+}
+
+ 
