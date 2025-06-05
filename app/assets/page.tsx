@@ -2,48 +2,37 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Search, Building2, TrendingUp, Tag, MoreHorizontal, Edit, Trash, Bookmark } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Search, Building2, Tag, Edit, Trash, File, X } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
 import { useToast } from '@/components/ui/use-toast';
-import AssetEditModal from '@/components/features/AssetManagement/AssetEditModal';
-import AssetDeleteModal from '@/components/features/AssetManagement/AssetDeleteModal';
-import AssetTemplateModal from '@/components/features/AssetManagement/AssetTemplateModal';
 
-// Technology Category Enum (matches Prisma schema)
-const TechnologyCategory = {
-  AI_COMPUTE: 'AI_COMPUTE',
-  ROBOTICS_PHYSICAL_AI: 'ROBOTICS_PHYSICAL_AI', 
-  QUANTUM_COMPUTING: 'QUANTUM_COMPUTING',
-  TRADITIONAL_TECH: 'TRADITIONAL_TECH',
-  BIOTECH_HEALTH: 'BIOTECH_HEALTH',
-  FINTECH_CRYPTO: 'FINTECH_CRYPTO',
-  ENERGY_CLEANTECH: 'ENERGY_CLEANTECH',
-  SPACE_DEFENSE: 'SPACE_DEFENSE',
-  OTHER: 'OTHER'
-} as const;
+interface DataCard {
+  id: string;
+  name: string;
+  description?: string;
+  url?: string;
+  type: 'report' | 'article' | 'video' | 'document' | 'other';
+}
+
+interface Theme {
+  id: string;
+  name: string;
+  description?: string;
+  dataCards: DataCard[];
+}
 
 interface Asset {
   id: string;
   name: string;
   description?: string;
-  growthValue?: number;
   userId: string;
-  category?: keyof typeof TechnologyCategory;
-  categoryConfidence?: number;
-  categoryInsights?: any;
-  isPublic: boolean;
+  themes: Theme[];
   createdAt: string;
   updatedAt: string;
-}
-
-interface PaginatedAssets {
-  items: Asset[];
-  total: number;
-  hasMore: boolean;
 }
 
 export default function AssetsPage() {
@@ -52,20 +41,26 @@ export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [showPublicOnly, setShowPublicOnly] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
-  const [deletingAsset, setDeletingAsset] = useState<Asset | null>(null);
-  const [templatingAsset, setTemplatingAsset] = useState<Asset | null>(null);
+  const [editingTheme, setEditingTheme] = useState<{ assetId: string; theme: Theme | null }>({ assetId: '', theme: null });
+  const [editingDataCard, setEditingDataCard] = useState<{ assetId: string; themeId: string; dataCard: DataCard | null }>({ assetId: '', themeId: '', dataCard: null });
+  
   const [newAsset, setNewAsset] = useState({
     name: '',
+    description: ''
+  });
+
+  const [newTheme, setNewTheme] = useState({
+    name: '',
+    description: ''
+  });
+
+  const [newDataCard, setNewDataCard] = useState({
+    name: '',
     description: '',
-    growthValue: '',
-    category: '' as keyof typeof TechnologyCategory | '',
-    categoryConfidence: '',
-    isPublic: false
+    url: '',
+    type: 'report' as DataCard['type']
   });
 
   const loadAssets = useCallback(async () => {
@@ -76,12 +71,6 @@ export default function AssetsPage() {
       if (searchTerm) {
         url.searchParams.set('search', searchTerm);
       }
-      if (categoryFilter) {
-        url.searchParams.set('category', categoryFilter);
-      }
-      if (showPublicOnly) {
-        url.searchParams.set('isPublic', 'true');
-      }
       
       const response = await fetch(url, {
         headers: {
@@ -90,8 +79,8 @@ export default function AssetsPage() {
       });
 
       if (response.ok) {
-        const data: PaginatedAssets = await response.json();
-        setAssets(data.items);
+        const data = await response.json();
+        setAssets(data.items || []);
       } else {
         console.error('Failed to load assets');
       }
@@ -100,24 +89,13 @@ export default function AssetsPage() {
     } finally {
       setLoading(false);
     }
-  }, [getToken, searchTerm, categoryFilter, showPublicOnly]);
+  }, [getToken, searchTerm]);
 
   const createAsset = async () => {
     if (!newAsset.name.trim()) return;
     
-    setCreating(true);
     try {
       const token = await getToken();
-      
-      // Build request body with only defined fields
-      const requestBody: any = {
-        name: newAsset.name,
-        isPublic: newAsset.isPublic,
-      };
-      
-      if (newAsset.description) requestBody.description = newAsset.description;
-      if (newAsset.category) requestBody.category = newAsset.category;
-      if (newAsset.categoryConfidence) requestBody.categoryConfidence = parseFloat(newAsset.categoryConfidence);
       
       const response = await fetch('/api/assets', {
         method: 'POST',
@@ -125,278 +103,204 @@ export default function AssetsPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          name: newAsset.name,
+          description: newAsset.description
+        }),
       });
 
       if (response.ok) {
         setShowCreateForm(false);
-        setNewAsset({ 
-          name: '', 
-          description: '', 
-          growthValue: '',
-          category: '',
-          categoryConfidence: '',
-          isPublic: false 
-        });
-        loadAssets(); // Reload assets
+        setNewAsset({ name: '', description: '' });
+        loadAssets();
         toast({
-          title: "Asset created successfully",
-          description: `${newAsset.name} has been added to your portfolio.`
-        });
-      } else {
-        console.error('Failed to create asset');
-        toast({
-          title: "Failed to create asset",
-          description: "Please try again later.",
-          variant: "destructive"
+          title: "Asset created",
+          description: `${newAsset.name} has been created.`
         });
       }
     } catch (error) {
       console.error('Error creating asset:', error);
       toast({
-        title: "Network error",
-        description: "Unable to connect to server. Please check your connection.",
+        title: "Failed to create asset",
         variant: "destructive"
       });
-    } finally {
-      setCreating(false);
     }
   };
 
-  const handleEditAsset = (asset: Asset) => {
-    setEditingAsset(asset);
+  const deleteAsset = async (assetId: string) => {
+    try {
+      const token = await getToken();
+      
+      const response = await fetch(`/api/assets/${assetId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        loadAssets();
+        toast({
+          title: "Asset deleted",
+          description: "Asset has been removed."
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting asset:', error);
+      toast({
+        title: "Failed to delete asset",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteAsset = (asset: Asset) => {
-    setDeletingAsset(asset);
+  const addTheme = async (assetId: string) => {
+    if (!newTheme.name.trim()) return;
+
+    // Mock implementation - in real app, this would call an API
+    const updatedAssets = assets.map(asset => {
+      if (asset.id === assetId) {
+        const newThemeObj: Theme = {
+          id: Date.now().toString(),
+          name: newTheme.name,
+          description: newTheme.description,
+          dataCards: []
+        };
+        return {
+          ...asset,
+          themes: [...(asset.themes || []), newThemeObj]
+        };
+      }
+      return asset;
+    });
+    
+    setAssets(updatedAssets);
+    setNewTheme({ name: '', description: '' });
+    setEditingTheme({ assetId: '', theme: null });
+    
+    toast({
+      title: "Theme added",
+      description: `${newTheme.name} has been added.`
+    });
   };
 
-  const handleTemplateAsset = (asset: Asset) => {
-    setTemplatingAsset(asset);
+  const removeTheme = async (assetId: string, themeId: string) => {
+    const updatedAssets = assets.map(asset => {
+      if (asset.id === assetId) {
+        return {
+          ...asset,
+          themes: asset.themes.filter(theme => theme.id !== themeId)
+        };
+      }
+      return asset;
+    });
+    
+    setAssets(updatedAssets);
+    toast({
+      title: "Theme removed",
+      description: "Theme has been deleted."
+    });
   };
 
-  const handleEditSave = () => {
-    loadAssets(); // Refresh the list after edit
+  const addDataCard = async (assetId: string, themeId: string) => {
+    if (!newDataCard.name.trim()) return;
+
+    const updatedAssets = assets.map(asset => {
+      if (asset.id === assetId) {
+        const updatedThemes = asset.themes.map(theme => {
+          if (theme.id === themeId) {
+            const newDataCardObj: DataCard = {
+              id: Date.now().toString(),
+              name: newDataCard.name,
+              description: newDataCard.description,
+              url: newDataCard.url,
+              type: newDataCard.type
+            };
+            return {
+              ...theme,
+              dataCards: [...theme.dataCards, newDataCardObj]
+            };
+          }
+          return theme;
+        });
+        return { ...asset, themes: updatedThemes };
+      }
+      return asset;
+    });
+    
+    setAssets(updatedAssets);
+    setNewDataCard({ name: '', description: '', url: '', type: 'report' });
+    setEditingDataCard({ assetId: '', themeId: '', dataCard: null });
+    
+    toast({
+      title: "Data card added",
+      description: `${newDataCard.name} has been added.`
+    });
   };
 
-  const handleDeleteConfirm = () => {
-    loadAssets(); // Refresh the list after delete
-  };
-
-  const handleTemplateSave = () => {
-    loadAssets(); // Refresh the list after template creation
+  const removeDataCard = async (assetId: string, themeId: string, dataCardId: string) => {
+    const updatedAssets = assets.map(asset => {
+      if (asset.id === assetId) {
+        const updatedThemes = asset.themes.map(theme => {
+          if (theme.id === themeId) {
+            return {
+              ...theme,
+              dataCards: theme.dataCards.filter(card => card.id !== dataCardId)
+            };
+          }
+          return theme;
+        });
+        return { ...asset, themes: updatedThemes };
+      }
+      return asset;
+    });
+    
+    setAssets(updatedAssets);
+    toast({
+      title: "Data card removed",
+      description: "Data card has been deleted."
+    });
   };
 
   useEffect(() => {
     loadAssets();
-  }, [searchTerm, categoryFilter, showPublicOnly, loadAssets]);
+  }, [searchTerm, loadAssets]);
 
-  const getCategoryColor = (category?: string) => {
-    switch (category) {
-      case 'AI_COMPUTE': return 'bg-purple-100 text-purple-800';
-      case 'ROBOTICS_PHYSICAL_AI': return 'bg-blue-100 text-blue-800';
-      case 'QUANTUM_COMPUTING': return 'bg-indigo-100 text-indigo-800';
-      case 'BIOTECH_HEALTH': return 'bg-green-100 text-green-800';
-      case 'FINTECH_CRYPTO': return 'bg-yellow-100 text-yellow-800';
-      case 'ENERGY_CLEANTECH': return 'bg-emerald-100 text-emerald-800';
-      case 'SPACE_DEFENSE': return 'bg-red-100 text-red-800';
-      case 'TRADITIONAL_TECH': return 'bg-gray-100 text-gray-800';
-      case 'OTHER': return 'bg-slate-100 text-slate-800';
-      default: return 'bg-slate-100 text-slate-800';
-    }
-  };
-
-  const formatCategoryName = (category?: string) => {
-    if (!category) return 'Uncategorized';
-    return category.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-  };
+  const filteredAssets = assets.filter(asset =>
+    asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (asset.description && asset.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 mb-8"></div>
-            <div className="grid gap-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-32 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading assets...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Assets</h1>
-            <p className="text-muted-foreground">
-              Manage your portfolio assets and their categorization
-            </p>
+            <h1 className="text-3xl font-bold text-foreground">Assets</h1>
+            <p className="text-muted-foreground mt-1">Manage your assets, themes, and data cards</p>
           </div>
-          
-          <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setShowCreateForm(true)} size="lg">
+            <Plus className="w-4 h-4 mr-2" />
             New Asset
           </Button>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg mb-6">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Filters:</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Category:</label>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Categories</option>
-              <option value="AI_COMPUTE">AI Compute</option>
-              <option value="ROBOTICS_PHYSICAL_AI">Robotics & Physical AI</option>
-              <option value="QUANTUM_COMPUTING">Quantum Computing</option>
-              <option value="BIOTECH_HEALTH">Biotech & Health</option>
-              <option value="FINTECH_CRYPTO">Fintech & Crypto</option>
-              <option value="ENERGY_CLEANTECH">Energy & CleanTech</option>
-              <option value="SPACE_DEFENSE">Space & Defense</option>
-              <option value="TRADITIONAL_TECH">Traditional Tech</option>
-              <option value="OTHER">Other</option>
-            </select>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="publicOnly"
-              checked={showPublicOnly}
-              onChange={(e) => setShowPublicOnly(e.target.checked)}
-              className="rounded"
-            />
-            <label htmlFor="publicOnly" className="text-sm text-gray-600">Public assets only</label>
-          </div>
-          
-          {(categoryFilter || showPublicOnly) && (
-            <Button 
-              onClick={() => {
-                setCategoryFilter('');
-                setShowPublicOnly(false);
-              }}
-              className="text-sm px-3 py-1 h-auto bg-gray-200 hover:bg-gray-300 text-gray-700"
-            >
-              Clear Filters
-            </Button>
-          )}
-        </div>
-
-        {/* Create Form */}
-        {showCreateForm && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Create New Asset</CardTitle>
-              <CardDescription>
-                Add a new asset to your portfolio for analysis
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2">Asset Name *</label>
-                  <Input
-                    id="name"
-                    value={newAsset.name}
-                    onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                    placeholder="e.g., NVIDIA Corporation"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium mb-2">Description</label>
-                  <textarea
-                    id="description"
-                    value={newAsset.description}
-                    onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })}
-                    placeholder="Brief description of the asset..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="category" className="block text-sm font-medium mb-2">Technology Category</label>
-                  <select
-                    id="category"
-                    value={newAsset.category}
-                    onChange={(e) => setNewAsset({ ...newAsset, category: e.target.value as keyof typeof TechnologyCategory })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Category</option>
-                    <option value="AI_COMPUTE">AI Compute</option>
-                    <option value="ROBOTICS_PHYSICAL_AI">Robotics & Physical AI</option>
-                    <option value="QUANTUM_COMPUTING">Quantum Computing</option>
-                    <option value="BIOTECH_HEALTH">Biotech & Health</option>
-                    <option value="FINTECH_CRYPTO">Fintech & Crypto</option>
-                    <option value="ENERGY_CLEANTECH">Energy & CleanTech</option>
-                    <option value="SPACE_DEFENSE">Space & Defense</option>
-                    <option value="TRADITIONAL_TECH">Traditional Tech</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-
-                {newAsset.category && (
-                  <div>
-                    <label htmlFor="categoryConfidence" className="block text-sm font-medium mb-2">
-                      Category Confidence (0.0 - 1.0)
-                    </label>
-                    <Input
-                      id="categoryConfidence"
-                      type="number"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={newAsset.categoryConfidence}
-                      onChange={(e) => setNewAsset({ ...newAsset, categoryConfidence: e.target.value })}
-                      placeholder="e.g., 0.8"
-                    />
-                  </div>
-                )}
-                
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isPublic"
-                    checked={newAsset.isPublic}
-                    onChange={(e) => setNewAsset({ ...newAsset, isPublic: e.target.checked })}
-                    className="rounded"
-                  />
-                  <label htmlFor="isPublic" className="text-sm">Make asset public</label>
-                </div>
-                
-                <div className="flex gap-2 pt-4">
-                  <Button onClick={createAsset} disabled={creating || !newAsset.name.trim()}>
-                    {creating ? 'Creating...' : 'Create Asset'}
-                  </Button>
-                  <Button onClick={() => setShowCreateForm(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Search */}
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search assets..."
               value={searchTerm}
@@ -406,142 +310,197 @@ export default function AssetsPage() {
           </div>
         </div>
 
-        {/* Assets Grid */}
-        {assets.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No assets yet</h3>
-              <p className="text-gray-500 mb-4">
-                Add your first asset to start building your portfolio analysis
-              </p>
-              <Button onClick={() => setShowCreateForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Asset
-              </Button>
+        {/* Create Asset Form */}
+        {showCreateForm && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Create New Asset</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                placeholder="Asset name"
+                value={newAsset.name}
+                onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+              />
+              <Textarea
+                placeholder="Description (optional)"
+                value={newAsset.description}
+                onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })}
+              />
+              <div className="flex space-x-2">
+                <Button onClick={createAsset}>Create Asset</Button>
+                <Button variant="outline" onClick={() => setShowCreateForm(false)}>Cancel</Button>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {assets.map((asset) => (
-              <Card key={asset.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{asset.name}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <div className="flex flex-col gap-1">
-                        {asset.category && (
-                          <Badge className={getCategoryColor(asset.category)}>
-                            {formatCategoryName(asset.category)}
-                          </Badge>
-                        )}
-                        {asset.isPublic && (
-                          <Badge className="bg-blue-100 text-blue-800">
-                            Public
-                          </Badge>
+        )}
+
+        {/* Assets Grid */}
+        <div className="grid gap-6">
+          {filteredAssets.map((asset) => (
+            <Card key={asset.id} className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{asset.name}</h3>
+                    {asset.description && (
+                      <p className="text-muted-foreground text-sm">{asset.description}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => setEditingAsset(asset)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => deleteAsset(asset.id)}>
+                    <Trash className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Themes */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium flex items-center">
+                    <Tag className="w-4 h-4 mr-2" />
+                    Themes ({asset.themes?.length || 0})
+                  </h4>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setEditingTheme({ assetId: asset.id, theme: null })}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Theme
+                  </Button>
+                </div>
+
+                {/* Add Theme Form */}
+                {editingTheme.assetId === asset.id && !editingTheme.theme && (
+                  <Card className="p-4 bg-muted/30">
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Theme name"
+                        value={newTheme.name}
+                        onChange={(e) => setNewTheme({ ...newTheme, name: e.target.value })}
+                      />
+                      <Textarea
+                        placeholder="Description (optional)"
+                        value={newTheme.description}
+                        onChange={(e) => setNewTheme({ ...newTheme, description: e.target.value })}
+                      />
+                      <div className="flex space-x-2">
+                        <Button size="sm" onClick={() => addTheme(asset.id)}>Add</Button>
+                        <Button variant="outline" size="sm" onClick={() => setEditingTheme({ assetId: '', theme: null })}>Cancel</Button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Themes List */}
+                {asset.themes?.map((theme) => (
+                  <Card key={theme.id} className="p-4 ml-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h5 className="font-medium">{theme.name}</h5>
+                        {theme.description && (
+                          <p className="text-sm text-muted-foreground">{theme.description}</p>
                         )}
                       </div>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button className="h-8 w-8 p-0 hover:bg-gray-100">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditAsset(asset)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTemplateAsset(asset)}>
-                            <Bookmark className="h-4 w-4 mr-2" />
-                            Create Template
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteAsset(asset)}
-                            className="text-red-600"
+                      <div className="flex space-x-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setEditingDataCard({ assetId: asset.id, themeId: theme.id, dataCard: null })}
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Add Card
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => removeTheme(asset.id, theme.id)}>
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Add Data Card Form */}
+                    {editingDataCard.assetId === asset.id && editingDataCard.themeId === theme.id && !editingDataCard.dataCard && (
+                      <Card className="p-3 bg-muted/20 mb-3">
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Data card name"
+                            value={newDataCard.name}
+                            onChange={(e) => setNewDataCard({ ...newDataCard, name: e.target.value })}
+                          />
+                          <Input
+                            placeholder="URL (optional)"
+                            value={newDataCard.url}
+                            onChange={(e) => setNewDataCard({ ...newDataCard, url: e.target.value })}
+                          />
+                          <select
+                            value={newDataCard.type}
+                            onChange={(e) => setNewDataCard({ ...newDataCard, type: e.target.value as DataCard['type'] })}
+                            className="w-full p-2 border rounded-md"
                           >
-                            <Trash className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                  {asset.description && (
-                    <CardDescription className="line-clamp-2">
-                      {asset.description}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="space-y-2">
-                    {asset.growthValue !== undefined && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Growth Value:</span>
-                        <span className="font-medium flex items-center">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          {asset.growthValue.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {asset.categoryConfidence !== undefined && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Category Confidence:</span>
-                        <span className="text-sm font-medium">
-                          {Math.round(asset.categoryConfidence * 100)}%
-                        </span>
-                      </div>
+                            <option value="report">Report</option>
+                            <option value="article">Article</option>
+                            <option value="video">Video</option>
+                            <option value="document">Document</option>
+                            <option value="other">Other</option>
+                          </select>
+                          <div className="flex space-x-2">
+                            <Button size="sm" onClick={() => addDataCard(asset.id, theme.id)}>Add</Button>
+                            <Button variant="outline" size="sm" onClick={() => setEditingDataCard({ assetId: '', themeId: '', dataCard: null })}>Cancel</Button>
+                          </div>
+                        </div>
+                      </Card>
                     )}
 
-                    {asset.categoryInsights && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">AI Insights:</span>
-                        <Tag className="h-4 w-4 text-gray-400" />
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center text-xs text-gray-500 pt-2 border-t">
-                      <span>Created</span>
-                      <span>{new Date(asset.createdAt).toLocaleDateString()}</span>
+                    {/* Data Cards */}
+                    <div className="space-y-2">
+                      {theme.dataCards.map((dataCard) => (
+                        <div key={dataCard.id} className="flex items-center justify-between p-2 bg-muted/20 rounded-md">
+                          <div className="flex items-center space-x-2">
+                            <File className="w-4 h-4 text-muted-foreground" />
+                            <div>
+                              <span className="text-sm font-medium">{dataCard.name}</span>
+                              <Badge variant="secondary" className="ml-2 text-xs">{dataCard.type}</Badge>
+                              {dataCard.url && (
+                                <a href={dataCard.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-primary hover:underline">
+                                  View
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => removeDataCard(asset.id, theme.id, dataCard.id)}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {filteredAssets.length === 0 && (
+          <div className="text-center py-12">
+            <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No assets found</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first asset'}
+            </p>
+            {!searchTerm && (
+              <Button onClick={() => setShowCreateForm(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Asset
+              </Button>
+            )}
           </div>
-        )}
-
-        {/* Edit Modal */}
-        {editingAsset && (
-          <AssetEditModal
-            asset={editingAsset}
-            open={!!editingAsset}
-            onOpenChange={(open) => !open && setEditingAsset(null)}
-            onSave={handleEditSave}
-          />
-        )}
-
-        {/* Delete Modal */}
-        {deletingAsset && (
-          <AssetDeleteModal
-            asset={deletingAsset}
-            open={!!deletingAsset}
-            onOpenChange={(open) => !open && setDeletingAsset(null)}
-            onDelete={handleDeleteConfirm}
-          />
-        )}
-
-        {/* Template Modal */}
-        {templatingAsset && (
-          <AssetTemplateModal
-            asset={templatingAsset}
-            open={!!templatingAsset}
-            onOpenChange={(open) => !open && setTemplatingAsset(null)}
-            onSave={handleTemplateSave}
-          />
         )}
       </div>
     </div>
