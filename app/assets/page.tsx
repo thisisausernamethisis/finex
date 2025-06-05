@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +68,7 @@ export default function AssetsPage() {
     isPublic: false
   });
 
-  const loadAssets = async () => {
+  const loadAssets = useCallback(async () => {
     try {
       const token = await getToken();
       const url = new URL('/api/assets', window.location.origin);
@@ -100,7 +100,7 @@ export default function AssetsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getToken, searchTerm, categoryFilter, showPublicOnly]);
 
   const createAsset = async () => {
     if (!newAsset.name.trim()) return;
@@ -189,7 +189,7 @@ export default function AssetsPage() {
 
   useEffect(() => {
     loadAssets();
-  }, [searchTerm, categoryFilter, showPublicOnly]);
+  }, [searchTerm, categoryFilter, showPublicOnly, loadAssets]);
 
   const getCategoryColor = (category?: string) => {
     switch (category) {

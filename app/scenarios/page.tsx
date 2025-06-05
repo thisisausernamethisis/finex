@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +60,7 @@ export default function ScenariosPage() {
     isPublic: false
   });
 
-  const loadScenarios = async () => {
+  const loadScenarios = useCallback(async () => {
     try {
       const token = await getToken();
       const url = new URL('/api/scenarios', window.location.origin);
@@ -86,7 +86,7 @@ export default function ScenariosPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getToken, searchTerm]);
 
   const createScenario = async () => {
     if (!newScenario.name.trim()) return;
@@ -155,7 +155,7 @@ export default function ScenariosPage() {
 
   useEffect(() => {
     loadScenarios();
-  }, [searchTerm]);
+  }, [searchTerm, loadScenarios]);
 
   const getTypeColor = (type?: string) => {
     switch (type) {
