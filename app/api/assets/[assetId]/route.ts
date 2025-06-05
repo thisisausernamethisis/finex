@@ -1,46 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { AssetRepository } from '../../../../lib/repositories/assetRepository';
-import { AccessRole, hasAssetAccess } from '../../../../lib/services/accessControlService';
+import { hasAssetAccess, AccessRole } from '../../../../lib/services/accessControlService';
+import { TechnologyCategory } from '@prisma/client';
 import { z } from 'zod';
 import { createChildLogger } from '../../../../lib/logger';
-import { badRequest, forbidden, notFound, serverError, unauthorized } from '../../../../lib/utils/http';
-import { validateCuid, validateSchema } from '../../../../lib/utils/api';
+import { serverError, unauthorized, notFound, forbidden } from '../../../../lib/utils/http';
+import { validateSchema } from '../../../../lib/utils/api';
 
-// Create repository instance
-const assetRepository = new AssetRepository();
+// Create route-specific loggers
+const getLogger = createChildLogger({ route: 'GET /api/assets/[assetId]' });
+const updateLogger = createChildLogger({ route: 'PUT /api/assets/[assetId]' });
+const deleteLogger = createChildLogger({ route: 'DELETE /api/assets/[assetId]' });
 
 // Schema validation for updating assets
 const updateAssetSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
+  category: z.nativeEnum(TechnologyCategory).optional(),
+  categoryConfidence: z.number().min(0).max(1).optional(),
+  categoryInsights: z.any().optional(),
   isPublic: z.boolean().optional()
 });
 
+// Create repository instance
+const assetRepository = new AssetRepository();
+
 // Handler for GET /api/assets/[assetId]
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { assetId: string } }
-) {
-  const logger = createChildLogger({ route: 'GET /api/assets/[assetId]', assetId: params.assetId });
-  
+export async function GET(req: NextRequest, { params }: { params: { assetId: string } }) {
   try {
     const user = await currentUser();
     
     if (!user) {
-      return unauthorized();
-    }
-    
-    // Validate asset ID format and existence
-    const validation = await validateCuid(
-      params.assetId,
-      assetRepository.assetExists.bind(assetRepository),
-      'Asset',
-      logger
-    );
-    
-    if (!validation.valid) {
-      return validation.error;
+      return unauthorized('Authentication required', getLogger);
     }
     
     const assetId = params.assetId;
@@ -48,124 +40,88 @@ export async function GET(
     // Check if user has access to this asset
     const hasAccess = await hasAssetAccess(user.id, assetId, AccessRole.VIEWER);
     if (!hasAccess) {
-      return forbidden('You do not have access to this asset', logger);
+      return forbidden('You do not have access to this asset', getLogger);
     }
     
-    // Get asset from repository
+    // Get the asset
     const asset = await assetRepository.getAssetById(assetId, user.id);
     
     if (!asset) {
-      return notFound('Asset not found', logger);
+      return notFound('Asset not found', getLogger);
     }
     
     return NextResponse.json(asset);
   } catch (error) {
-    return serverError(error instanceof Error ? error : new Error('Unknown error'), logger);
+    return serverError(error instanceof Error ? error : new Error('Unknown error'), getLogger);
   }
 }
 
 // Handler for PUT /api/assets/[assetId]
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { assetId: string } }
-) {
-  const logger = createChildLogger({ route: 'PUT /api/assets/[assetId]', assetId: params.assetId });
-  
+export async function PUT(req: NextRequest, { params }: { params: { assetId: string } }) {
   try {
     const user = await currentUser();
     
     if (!user) {
-      return unauthorized();
-    }
-    
-    // Validate asset ID format and existence
-    const idValidation = await validateCuid(
-      params.assetId,
-      assetRepository.assetExists.bind(assetRepository),
-      'Asset',
-      logger
-    );
-    
-    if (!idValidation.valid) {
-      return idValidation.error;
+      return unauthorized('Authentication required', updateLogger);
     }
     
     const assetId = params.assetId;
     
-    // Check if user has EDITOR access to this asset
-    const hasEditorAccess = await hasAssetAccess(user.id, assetId, AccessRole.EDITOR);
-    if (!hasEditorAccess) {
-      return forbidden('You do not have edit access to this asset', logger);
+    // Check if user has edit access to this asset
+    const hasAccess = await hasAssetAccess(user.id, assetId, AccessRole.EDITOR);
+    if (!hasAccess) {
+      return forbidden('You do not have permission to edit this asset', updateLogger);
     }
     
-    // Parse and validate request body
+    // Parse request body
     const body = await req.json();
-    const schemaValidation = validateSchema(updateAssetSchema, body, logger);
     
-    if (!schemaValidation.success) {
-      return schemaValidation.error;
+    // Validate using zod schema
+    const validation = validateSchema(updateAssetSchema, body, updateLogger);
+    
+    if (!validation.success) {
+      return validation.error;
     }
     
     // Update asset
-    const asset = await assetRepository.updateAsset(
-      assetId,
-      schemaValidation.data,
-      user.id
-    );
+    const updatedAsset = await assetRepository.updateAsset(assetId, validation.data, user.id);
     
-    if (!asset) {
-      return notFound('Asset not found or update failed', logger);
+    if (!updatedAsset) {
+      return notFound('Asset not found', updateLogger);
     }
     
-    return NextResponse.json(asset);
+    return NextResponse.json(updatedAsset);
   } catch (error) {
-    return serverError(error instanceof Error ? error : new Error('Unknown error'), logger);
+    return serverError(error instanceof Error ? error : new Error('Unknown error'), updateLogger);
   }
 }
 
 // Handler for DELETE /api/assets/[assetId]
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { assetId: string } }
-) {
-  const logger = createChildLogger({ route: 'DELETE /api/assets/[assetId]', assetId: params.assetId });
-  
+export async function DELETE(req: NextRequest, { params }: { params: { assetId: string } }) {
   try {
     const user = await currentUser();
     
     if (!user) {
-      return unauthorized();
-    }
-    
-    // Validate asset ID format and existence
-    const idValidation = await validateCuid(
-      params.assetId,
-      assetRepository.assetExists.bind(assetRepository),
-      'Asset',
-      logger
-    );
-    
-    if (!idValidation.valid) {
-      return idValidation.error;
+      return unauthorized('Authentication required', deleteLogger);
     }
     
     const assetId = params.assetId;
     
-    // For deletion, require ADMIN access
-    const hasAdminAccess = await hasAssetAccess(user.id, assetId, AccessRole.ADMIN);
-    if (!hasAdminAccess) {
-      return forbidden('You do not have admin access to delete this asset', logger);
+    // Check if user has admin access to this asset (only admins can delete)
+    const hasAccess = await hasAssetAccess(user.id, assetId, AccessRole.ADMIN);
+    if (!hasAccess) {
+      return forbidden('You do not have permission to delete this asset', deleteLogger);
     }
     
     // Delete asset
     const success = await assetRepository.deleteAsset(assetId, user.id);
     
     if (!success) {
-      return serverError(new Error('Failed to delete asset'), logger);
+      return notFound('Asset not found', deleteLogger);
     }
     
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return serverError(error instanceof Error ? error : new Error('Unknown error'), logger);
+    return serverError(error instanceof Error ? error : new Error('Unknown error'), deleteLogger);
   }
 }

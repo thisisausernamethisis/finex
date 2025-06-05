@@ -7,8 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Search, Calendar, TrendingUp, Clock, Globe } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Search, Calendar, TrendingUp, Clock, Globe, MoreHorizontal, Edit, Trash } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
+import ScenarioEditModal from '@/components/features/ScenarioManagement/ScenarioEditModal';
+import ScenarioDeleteModal from '@/components/features/ScenarioManagement/ScenarioDeleteModal';
 
 // Scenario Type Enum (matches Prisma schema)
 const ScenarioType = {
@@ -45,6 +48,8 @@ export default function ScenariosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [editingScenario, setEditingScenario] = useState<Scenario | null>(null);
+  const [deletingScenario, setDeletingScenario] = useState<Scenario | null>(null);
   const [newScenario, setNewScenario] = useState({
     name: '',
     description: '',
@@ -131,6 +136,22 @@ export default function ScenariosPage() {
     }
   };
 
+  const handleEditScenario = (scenario: Scenario) => {
+    setEditingScenario(scenario);
+  };
+
+  const handleDeleteScenario = (scenario: Scenario) => {
+    setDeletingScenario(scenario);
+  };
+
+  const handleEditSave = () => {
+    loadScenarios(); // Refresh the list after edit
+  };
+
+  const handleDeleteConfirm = () => {
+    loadScenarios(); // Refresh the list after delete
+  };
+
   useEffect(() => {
     loadScenarios();
   }, [searchTerm]);
@@ -200,7 +221,7 @@ export default function ScenariosPage() {
             <CardHeader>
               <CardTitle>Create New Scenario</CardTitle>
               <CardDescription>
-                Define a future scenario to analyze its impact on your assets
+                Add a new scenario to analyze potential future events
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -211,7 +232,7 @@ export default function ScenariosPage() {
                     id="name"
                     value={newScenario.name}
                     onChange={(e) => setNewScenario({ ...newScenario, name: e.target.value })}
-                    placeholder="e.g., AI Regulation Wave"
+                    placeholder="e.g., AI Regulation Impact"
                   />
                 </div>
                 
@@ -221,25 +242,41 @@ export default function ScenariosPage() {
                     id="description"
                     value={newScenario.description}
                     onChange={(e) => setNewScenario({ ...newScenario, description: e.target.value })}
-                    placeholder="Describe the scenario in detail..."
+                    placeholder="Describe the scenario and its potential impact..."
                     rows={3}
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="type">Scenario Type</Label>
-                  <select
-                    id="type"
-                    value={newScenario.type}
-                    onChange={(e) => setNewScenario({ ...newScenario, type: e.target.value as keyof typeof ScenarioType })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="TECHNOLOGY">Technology</option>
-                    <option value="ECONOMIC">Economic</option>
-                    <option value="GEOPOLITICAL">Geopolitical</option>
-                    <option value="REGULATORY">Regulatory</option>
-                    <option value="MARKET">Market</option>
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="probability">Probability (0.0 - 1.0) *</Label>
+                    <Input
+                      id="probability"
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={newScenario.probability}
+                      onChange={(e) => setNewScenario({ ...newScenario, probability: parseFloat(e.target.value) })}
+                      placeholder="e.g., 0.7"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="type">Scenario Type *</Label>
+                    <select
+                      id="type"
+                      value={newScenario.type}
+                      onChange={(e) => setNewScenario({ ...newScenario, type: e.target.value as keyof typeof ScenarioType })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="TECHNOLOGY">Technology</option>
+                      <option value="ECONOMIC">Economic</option>
+                      <option value="GEOPOLITICAL">Geopolitical</option>
+                      <option value="REGULATORY">Regulatory</option>
+                      <option value="MARKET">Market</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>
@@ -248,29 +285,10 @@ export default function ScenariosPage() {
                     id="timeline"
                     value={newScenario.timeline}
                     onChange={(e) => setNewScenario({ ...newScenario, timeline: e.target.value })}
-                    placeholder="e.g., 2-5 years, Near term, Long term"
+                    placeholder="e.g., 2-3 years, Q2 2025"
                   />
                 </div>
                 
-                <div>
-                  <Label htmlFor="probability">Probability ({Math.round(newScenario.probability * 100)}%)</Label>
-                  <input
-                    type="range"
-                    id="probability"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={newScenario.probability}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewScenario({ ...newScenario, probability: parseFloat(e.target.value) })}
-                    className="w-full mt-2"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>0%</span>
-                    <span>50%</span>
-                    <span>100%</span>
-                  </div>
-                </div>
-
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -279,7 +297,7 @@ export default function ScenariosPage() {
                     onChange={(e) => setNewScenario({ ...newScenario, isPublic: e.target.checked })}
                     className="rounded"
                   />
-                  <label htmlFor="isPublic" className="text-sm">Make scenario public</label>
+                  <Label htmlFor="isPublic">Make scenario public</Label>
                 </div>
                 
                 <div className="flex gap-2 pt-4">
@@ -312,14 +330,14 @@ export default function ScenariosPage() {
         {scenarios.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
-              <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No scenarios yet</h3>
               <p className="text-gray-500 mb-4">
-                Create your first scenario to start analyzing future impacts
+                Add your first scenario to start analyzing future impacts
               </p>
               <Button onClick={() => setShowCreateForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create First Scenario
+                Add First Scenario
               </Button>
             </CardContent>
           </Card>
@@ -330,18 +348,41 @@ export default function ScenariosPage() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{scenario.name}</CardTitle>
-                    <div className="flex flex-col gap-1">
-                      {scenario.type && (
-                        <Badge className={getTypeColor(scenario.type)}>
-                          {formatTypeName(scenario.type)}
-                        </Badge>
-                      )}
-                      {scenario.isPublic && (
-                        <Badge className="bg-blue-100 text-blue-800">
-                          <Globe className="h-3 w-3 mr-1" />
-                          Public
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-1">
+                        {scenario.type && (
+                          <Badge className={getTypeColor(scenario.type)}>
+                            {formatTypeName(scenario.type)}
+                          </Badge>
+                        )}
+                        {scenario.isPublic && (
+                          <Badge className="bg-blue-100 text-blue-800">
+                            <Globe className="h-3 w-3 mr-1" />
+                            Public
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button className="h-8 w-8 p-0 hover:bg-gray-100">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditScenario(scenario)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteScenario(scenario)}
+                            className="text-red-600"
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                   {scenario.description && (
@@ -356,7 +397,8 @@ export default function ScenariosPage() {
                     {scenario.probability !== undefined && (
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Probability:</span>
-                        <span className={`font-medium ${getProbabilityColor(scenario.probability)}`}>
+                        <span className={`font-medium flex items-center ${getProbabilityColor(scenario.probability)}`}>
+                          <TrendingUp className="h-3 w-3 mr-1" />
                           {Math.round(scenario.probability * 100)}%
                         </span>
                       </div>
@@ -365,7 +407,7 @@ export default function ScenariosPage() {
                     {scenario.timeline && (
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Timeline:</span>
-                        <span className="text-sm flex items-center">
+                        <span className="text-sm font-medium flex items-center">
                           <Clock className="h-3 w-3 mr-1" />
                           {scenario.timeline}
                         </span>
@@ -381,6 +423,26 @@ export default function ScenariosPage() {
               </Card>
             ))}
           </div>
+        )}
+
+        {/* Edit Modal */}
+        {editingScenario && (
+          <ScenarioEditModal
+            scenario={editingScenario}
+            open={!!editingScenario}
+            onOpenChange={(open) => !open && setEditingScenario(null)}
+            onSave={handleEditSave}
+          />
+        )}
+
+        {/* Delete Modal */}
+        {deletingScenario && (
+          <ScenarioDeleteModal
+            scenario={deletingScenario}
+            open={!!deletingScenario}
+            onOpenChange={(open) => !open && setDeletingScenario(null)}
+            onDelete={handleDeleteConfirm}
+          />
         )}
       </div>
     </div>

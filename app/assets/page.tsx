@@ -5,8 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Building2, TrendingUp, Tag } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Search, Building2, TrendingUp, Tag, MoreHorizontal, Edit, Trash, Bookmark } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
+import { useToast } from '@/components/ui/use-toast';
+import AssetEditModal from '@/components/features/AssetManagement/AssetEditModal';
+import AssetDeleteModal from '@/components/features/AssetManagement/AssetDeleteModal';
+import AssetTemplateModal from '@/components/features/AssetManagement/AssetTemplateModal';
 
 // Technology Category Enum (matches Prisma schema)
 const TechnologyCategory = {
@@ -43,11 +48,17 @@ interface PaginatedAssets {
 
 export default function AssetsPage() {
   const { getToken } = useAuth();
+  const { toast } = useToast();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [showPublicOnly, setShowPublicOnly] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [deletingAsset, setDeletingAsset] = useState<Asset | null>(null);
+  const [templatingAsset, setTemplatingAsset] = useState<Asset | null>(null);
   const [newAsset, setNewAsset] = useState({
     name: '',
     description: '',
@@ -64,6 +75,12 @@ export default function AssetsPage() {
       
       if (searchTerm) {
         url.searchParams.set('search', searchTerm);
+      }
+      if (categoryFilter) {
+        url.searchParams.set('category', categoryFilter);
+      }
+      if (showPublicOnly) {
+        url.searchParams.set('isPublic', 'true');
       }
       
       const response = await fetch(url, {
@@ -122,19 +139,57 @@ export default function AssetsPage() {
           isPublic: false 
         });
         loadAssets(); // Reload assets
+        toast({
+          title: "Asset created successfully",
+          description: `${newAsset.name} has been added to your portfolio.`
+        });
       } else {
         console.error('Failed to create asset');
+        toast({
+          title: "Failed to create asset",
+          description: "Please try again later.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error creating asset:', error);
+      toast({
+        title: "Network error",
+        description: "Unable to connect to server. Please check your connection.",
+        variant: "destructive"
+      });
     } finally {
       setCreating(false);
     }
   };
 
+  const handleEditAsset = (asset: Asset) => {
+    setEditingAsset(asset);
+  };
+
+  const handleDeleteAsset = (asset: Asset) => {
+    setDeletingAsset(asset);
+  };
+
+  const handleTemplateAsset = (asset: Asset) => {
+    setTemplatingAsset(asset);
+  };
+
+  const handleEditSave = () => {
+    loadAssets(); // Refresh the list after edit
+  };
+
+  const handleDeleteConfirm = () => {
+    loadAssets(); // Refresh the list after delete
+  };
+
+  const handleTemplateSave = () => {
+    loadAssets(); // Refresh the list after template creation
+  };
+
   useEffect(() => {
     loadAssets();
-  }, [searchTerm]);
+  }, [searchTerm, categoryFilter, showPublicOnly]);
 
   const getCategoryColor = (category?: string) => {
     switch (category) {
@@ -190,6 +245,56 @@ export default function AssetsPage() {
             <Plus className="h-4 w-4 mr-2" />
             New Asset
           </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Filters:</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Category:</label>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Categories</option>
+              <option value="AI_COMPUTE">AI Compute</option>
+              <option value="ROBOTICS_PHYSICAL_AI">Robotics & Physical AI</option>
+              <option value="QUANTUM_COMPUTING">Quantum Computing</option>
+              <option value="BIOTECH_HEALTH">Biotech & Health</option>
+              <option value="FINTECH_CRYPTO">Fintech & Crypto</option>
+              <option value="ENERGY_CLEANTECH">Energy & CleanTech</option>
+              <option value="SPACE_DEFENSE">Space & Defense</option>
+              <option value="TRADITIONAL_TECH">Traditional Tech</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="publicOnly"
+              checked={showPublicOnly}
+              onChange={(e) => setShowPublicOnly(e.target.checked)}
+              className="rounded"
+            />
+            <label htmlFor="publicOnly" className="text-sm text-gray-600">Public assets only</label>
+          </div>
+          
+          {(categoryFilter || showPublicOnly) && (
+            <Button 
+              onClick={() => {
+                setCategoryFilter('');
+                setShowPublicOnly(false);
+              }}
+              className="text-sm px-3 py-1 h-auto bg-gray-200 hover:bg-gray-300 text-gray-700"
+            >
+              Clear Filters
+            </Button>
+          )}
         </div>
 
         {/* Create Form */}
@@ -323,17 +428,44 @@ export default function AssetsPage() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{asset.name}</CardTitle>
-                    <div className="flex flex-col gap-1">
-                      {asset.category && (
-                        <Badge className={getCategoryColor(asset.category)}>
-                          {formatCategoryName(asset.category)}
-                        </Badge>
-                      )}
-                      {asset.isPublic && (
-                        <Badge className="bg-blue-100 text-blue-800">
-                          Public
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-1">
+                        {asset.category && (
+                          <Badge className={getCategoryColor(asset.category)}>
+                            {formatCategoryName(asset.category)}
+                          </Badge>
+                        )}
+                        {asset.isPublic && (
+                          <Badge className="bg-blue-100 text-blue-800">
+                            Public
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button className="h-8 w-8 p-0 hover:bg-gray-100">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditAsset(asset)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleTemplateAsset(asset)}>
+                            <Bookmark className="h-4 w-4 mr-2" />
+                            Create Template
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteAsset(asset)}
+                            className="text-red-600"
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                   {asset.description && (
@@ -380,6 +512,36 @@ export default function AssetsPage() {
               </Card>
             ))}
           </div>
+        )}
+
+        {/* Edit Modal */}
+        {editingAsset && (
+          <AssetEditModal
+            asset={editingAsset}
+            open={!!editingAsset}
+            onOpenChange={(open) => !open && setEditingAsset(null)}
+            onSave={handleEditSave}
+          />
+        )}
+
+        {/* Delete Modal */}
+        {deletingAsset && (
+          <AssetDeleteModal
+            asset={deletingAsset}
+            open={!!deletingAsset}
+            onOpenChange={(open) => !open && setDeletingAsset(null)}
+            onDelete={handleDeleteConfirm}
+          />
+        )}
+
+        {/* Template Modal */}
+        {templatingAsset && (
+          <AssetTemplateModal
+            asset={templatingAsset}
+            open={!!templatingAsset}
+            onOpenChange={(open) => !open && setTemplatingAsset(null)}
+            onSave={handleTemplateSave}
+          />
         )}
       </div>
     </div>

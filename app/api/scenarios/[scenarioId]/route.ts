@@ -1,46 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { ScenarioRepository } from '../../../../lib/repositories/scenarioRepository';
-import { AccessRole, hasScenarioAccess } from '../../../../lib/services/accessControlService';
+import { hasScenarioAccess, AccessRole } from '../../../../lib/services/accessControlService';
+import { ScenarioType } from '@prisma/client';
 import { z } from 'zod';
 import { createChildLogger } from '../../../../lib/logger';
-import { badRequest, forbidden, notFound, serverError, unauthorized } from '../../../../lib/utils/http';
-import { validateCuid, validateSchema } from '../../../../lib/utils/api';
+import { serverError, unauthorized, notFound, forbidden } from '../../../../lib/utils/http';
+import { validateSchema } from '../../../../lib/utils/api';
 
-// Create repository instance
-const scenarioRepository = new ScenarioRepository();
+// Create route-specific loggers
+const getLogger = createChildLogger({ route: 'GET /api/scenarios/[scenarioId]' });
+const updateLogger = createChildLogger({ route: 'PUT /api/scenarios/[scenarioId]' });
+const deleteLogger = createChildLogger({ route: 'DELETE /api/scenarios/[scenarioId]' });
 
 // Schema validation for updating scenarios
 const updateScenarioSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
-  probability: z.number().min(0).max(1).optional()
+  probability: z.number().min(0).max(1).optional(),
+  type: z.nativeEnum(ScenarioType).optional(),
+  timeline: z.string().max(100).optional(),
+  isPublic: z.boolean().optional()
 });
 
+// Create repository instance
+const scenarioRepository = new ScenarioRepository();
+
 // Handler for GET /api/scenarios/[scenarioId]
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { scenarioId: string } }
-) {
-  const logger = createChildLogger({ route: 'GET /api/scenarios/[scenarioId]', scenarioId: params.scenarioId });
-  
+export async function GET(req: NextRequest, { params }: { params: { scenarioId: string } }) {
   try {
     const user = await currentUser();
     
     if (!user) {
-      return unauthorized('Authentication required', logger);
-    }
-    
-    // Validate scenario ID format and existence
-    const validation = await validateCuid(
-      params.scenarioId,
-      scenarioRepository.scenarioExists.bind(scenarioRepository),
-      'Scenario',
-      logger
-    );
-    
-    if (!validation.valid) {
-      return validation.error;
+      return unauthorized('Authentication required', getLogger);
     }
     
     const scenarioId = params.scenarioId;
@@ -48,124 +40,88 @@ export async function GET(
     // Check if user has access to this scenario
     const hasAccess = await hasScenarioAccess(user.id, scenarioId, AccessRole.VIEWER);
     if (!hasAccess) {
-      return forbidden('You do not have access to this scenario', logger);
+      return forbidden('You do not have access to this scenario', getLogger);
     }
     
-    // Get scenario from repository
+    // Get the scenario
     const scenario = await scenarioRepository.getScenarioById(scenarioId, user.id);
     
     if (!scenario) {
-      return notFound('Scenario not found', logger);
+      return notFound('Scenario not found', getLogger);
     }
     
     return NextResponse.json(scenario);
   } catch (error) {
-    return serverError(error instanceof Error ? error : new Error('Unknown error'), logger);
+    return serverError(error instanceof Error ? error : new Error('Unknown error'), getLogger);
   }
 }
 
 // Handler for PUT /api/scenarios/[scenarioId]
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { scenarioId: string } }
-) {
-  const logger = createChildLogger({ route: 'PUT /api/scenarios/[scenarioId]', scenarioId: params.scenarioId });
-  
+export async function PUT(req: NextRequest, { params }: { params: { scenarioId: string } }) {
   try {
     const user = await currentUser();
     
     if (!user) {
-      return unauthorized('Authentication required', logger);
-    }
-    
-    // Validate scenario ID format and existence
-    const idValidation = await validateCuid(
-      params.scenarioId,
-      scenarioRepository.scenarioExists.bind(scenarioRepository),
-      'Scenario',
-      logger
-    );
-    
-    if (!idValidation.valid) {
-      return idValidation.error;
+      return unauthorized('Authentication required', updateLogger);
     }
     
     const scenarioId = params.scenarioId;
     
-    // Check if user has EDITOR access to this scenario
-    const hasEditorAccess = await hasScenarioAccess(user.id, scenarioId, AccessRole.EDITOR);
-    if (!hasEditorAccess) {
-      return forbidden('You do not have edit access to this scenario', logger);
+    // Check if user has edit access to this scenario
+    const hasAccess = await hasScenarioAccess(user.id, scenarioId, AccessRole.EDITOR);
+    if (!hasAccess) {
+      return forbidden('You do not have permission to edit this scenario', updateLogger);
     }
     
-    // Parse and validate request body
+    // Parse request body
     const body = await req.json();
-    const schemaValidation = validateSchema(updateScenarioSchema, body, logger);
     
-    if (!schemaValidation.success) {
-      return schemaValidation.error;
+    // Validate using zod schema
+    const validation = validateSchema(updateScenarioSchema, body, updateLogger);
+    
+    if (!validation.success) {
+      return validation.error;
     }
     
     // Update scenario
-    const scenario = await scenarioRepository.updateScenario(
-      scenarioId,
-      schemaValidation.data,
-      user.id
-    );
+    const updatedScenario = await scenarioRepository.updateScenario(scenarioId, validation.data, user.id);
     
-    if (!scenario) {
-      return notFound('Scenario not found or update failed', logger);
+    if (!updatedScenario) {
+      return notFound('Scenario not found', updateLogger);
     }
     
-    return NextResponse.json(scenario);
+    return NextResponse.json(updatedScenario);
   } catch (error) {
-    return serverError(error instanceof Error ? error : new Error('Unknown error'), logger);
+    return serverError(error instanceof Error ? error : new Error('Unknown error'), updateLogger);
   }
 }
 
 // Handler for DELETE /api/scenarios/[scenarioId]
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { scenarioId: string } }
-) {
-  const logger = createChildLogger({ route: 'DELETE /api/scenarios/[scenarioId]', scenarioId: params.scenarioId });
-  
+export async function DELETE(req: NextRequest, { params }: { params: { scenarioId: string } }) {
   try {
     const user = await currentUser();
     
     if (!user) {
-      return unauthorized('Authentication required', logger);
-    }
-    
-    // Validate scenario ID format and existence
-    const idValidation = await validateCuid(
-      params.scenarioId,
-      scenarioRepository.scenarioExists.bind(scenarioRepository),
-      'Scenario',
-      logger
-    );
-    
-    if (!idValidation.valid) {
-      return idValidation.error;
+      return unauthorized('Authentication required', deleteLogger);
     }
     
     const scenarioId = params.scenarioId;
     
-    // For deletion, require ADMIN access
-    const hasAdminAccess = await hasScenarioAccess(user.id, scenarioId, AccessRole.ADMIN);
-    if (!hasAdminAccess) {
-      return forbidden('You do not have admin access to delete this scenario', logger);
+    // Check if user has admin access to this scenario (only admins can delete)
+    const hasAccess = await hasScenarioAccess(user.id, scenarioId, AccessRole.ADMIN);
+    if (!hasAccess) {
+      return forbidden('You do not have permission to delete this scenario', deleteLogger);
     }
     
     // Delete scenario
     const success = await scenarioRepository.deleteScenario(scenarioId);
     
     if (!success) {
-      return serverError(new Error('Failed to delete scenario'), logger);
+      return notFound('Scenario not found', deleteLogger);
     }
     
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return serverError(error instanceof Error ? error : new Error('Unknown error'), logger);
+    return serverError(error instanceof Error ? error : new Error('Unknown error'), deleteLogger);
   }
 }
