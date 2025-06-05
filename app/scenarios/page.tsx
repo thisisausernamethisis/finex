@@ -5,45 +5,49 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Building2, TrendingUp, FileText } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Plus, Search, Calendar, TrendingUp } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
 
-interface Asset {
+interface Scenario {
   id: string;
   name: string;
   description?: string;
-  growthValue?: number;
+  probability?: number;
+  type?: 'TECHNOLOGY' | 'ECONOMIC' | 'GEOPOLITICAL';
+  timeline?: string;
   userId: string;
-  category?: string;
-  categoryConfidence?: number;
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-interface PaginatedAssets {
-  items: Asset[];
+interface PaginatedScenarios {
+  items: Scenario[];
   total: number;
   hasMore: boolean;
 }
 
-export default function AssetsPage() {
+export default function ScenariosPage() {
   const { getToken } = useAuth();
-  const [assets, setAssets] = useState<Asset[]>([]);
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [newAsset, setNewAsset] = useState({
+  const [newScenario, setNewScenario] = useState({
     name: '',
     description: '',
-    isPublic: false
+    probability: 0.5,
+    type: 'TECHNOLOGY' as const,
+    timeline: ''
   });
 
-  const loadAssets = async () => {
+  const loadScenarios = async () => {
     try {
       const token = await getToken();
-      const url = new URL('/api/assets', window.location.origin);
+      const url = new URL('/api/scenarios', window.location.origin);
       
       if (searchTerm) {
         url.searchParams.set('search', searchTerm);
@@ -56,72 +60,69 @@ export default function AssetsPage() {
       });
 
       if (response.ok) {
-        const data: PaginatedAssets = await response.json();
-        setAssets(data.items);
+        const data: PaginatedScenarios = await response.json();
+        setScenarios(data.items);
       } else {
-        console.error('Failed to load assets');
+        console.error('Failed to load scenarios');
       }
     } catch (error) {
-      console.error('Error loading assets:', error);
+      console.error('Error loading scenarios:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const createAsset = async () => {
-    if (!newAsset.name.trim()) return;
+  const createScenario = async () => {
+    if (!newScenario.name.trim()) return;
     
     setCreating(true);
     try {
       const token = await getToken();
-      const response = await fetch('/api/assets', {
+      const response = await fetch('/api/scenarios', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name: newAsset.name,
-          description: newAsset.description || undefined,
-          isPublic: newAsset.isPublic,
+          name: newScenario.name,
+          description: newScenario.description || undefined,
+          probability: newScenario.probability,
         }),
       });
 
       if (response.ok) {
         setShowCreateForm(false);
-        setNewAsset({ name: '', description: '', isPublic: false });
-        loadAssets(); // Reload assets
+        setNewScenario({ name: '', description: '', probability: 0.5, type: 'TECHNOLOGY', timeline: '' });
+        loadScenarios(); // Reload scenarios
       } else {
-        console.error('Failed to create asset');
+        console.error('Failed to create scenario');
       }
     } catch (error) {
-      console.error('Error creating asset:', error);
+      console.error('Error creating scenario:', error);
     } finally {
       setCreating(false);
     }
   };
 
   useEffect(() => {
-    loadAssets();
+    loadScenarios();
   }, [searchTerm]);
 
-  const getCategoryColor = (category?: string) => {
-    switch (category) {
-      case 'AI_COMPUTE': return 'bg-purple-100 text-purple-800';
-      case 'ROBOTICS_PHYSICAL_AI': return 'bg-blue-100 text-blue-800';
-      case 'QUANTUM_COMPUTING': return 'bg-indigo-100 text-indigo-800';
-      case 'BIOTECH_HEALTH': return 'bg-green-100 text-green-800';
-      case 'FINTECH_CRYPTO': return 'bg-yellow-100 text-yellow-800';
-      case 'ENERGY_CLEANTECH': return 'bg-emerald-100 text-emerald-800';
-      case 'SPACE_DEFENSE': return 'bg-red-100 text-red-800';
-      case 'TRADITIONAL_TECH': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-slate-100 text-slate-800';
+  const getTypeColor = (type?: string) => {
+    switch (type) {
+      case 'TECHNOLOGY': return 'bg-blue-100 text-blue-800';
+      case 'ECONOMIC': return 'bg-green-100 text-green-800';
+      case 'GEOPOLITICAL': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const formatCategoryName = (category?: string) => {
-    if (!category) return 'Uncategorized';
-    return category.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  const getProbabilityColor = (probability?: number) => {
+    if (!probability) return 'text-gray-500';
+    if (probability < 0.3) return 'text-red-500';
+    if (probability < 0.7) return 'text-yellow-500';
+    return 'text-green-500';
   };
 
   if (loading) {
@@ -148,15 +149,15 @@ export default function AssetsPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Assets</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Scenarios</h1>
             <p className="text-muted-foreground">
-              Manage your portfolio assets and their categorization
+              Manage future scenarios and their impact on your portfolio
             </p>
           </div>
           
           <Button onClick={() => setShowCreateForm(!showCreateForm)}>
             <Plus className="h-4 w-4 mr-2" />
-            New Asset
+            New Scenario
           </Button>
         </div>
 
@@ -164,49 +165,51 @@ export default function AssetsPage() {
         {showCreateForm && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Create New Asset</CardTitle>
+              <CardTitle>Create New Scenario</CardTitle>
               <CardDescription>
-                Add a new asset to your portfolio for analysis
+                Define a future scenario to analyze its impact on your assets
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2">Asset Name</label>
+                  <Label htmlFor="name">Scenario Name</Label>
                   <Input
                     id="name"
-                    value={newAsset.name}
-                    onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                    placeholder="e.g., NVIDIA Corporation"
+                    value={newScenario.name}
+                    onChange={(e) => setNewScenario({ ...newScenario, name: e.target.value })}
+                    placeholder="e.g., AI Regulation Wave"
                   />
                 </div>
                 
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium mb-2">Description</label>
-                  <textarea
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
                     id="description"
-                    value={newAsset.description}
-                    onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })}
-                    placeholder="Brief description of the asset..."
+                    value={newScenario.description}
+                    onChange={(e) => setNewScenario({ ...newScenario, description: e.target.value })}
+                    placeholder="Describe the scenario in detail..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div>
+                  <Label htmlFor="probability">Probability ({Math.round(newScenario.probability * 100)}%)</Label>
                   <input
-                    type="checkbox"
-                    id="isPublic"
-                    checked={newAsset.isPublic}
-                    onChange={(e) => setNewAsset({ ...newAsset, isPublic: e.target.checked })}
-                    className="rounded"
+                    type="range"
+                    id="probability"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={newScenario.probability}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewScenario({ ...newScenario, probability: parseFloat(e.target.value) })}
+                    className="w-full mt-2"
                   />
-                  <label htmlFor="isPublic" className="text-sm">Make asset public</label>
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button onClick={createAsset} disabled={creating || !newAsset.name.trim()}>
-                    {creating ? 'Creating...' : 'Create Asset'}
+                  <Button onClick={createScenario} disabled={creating || !newScenario.name.trim()}>
+                    {creating ? 'Creating...' : 'Create Scenario'}
                   </Button>
                   <Button onClick={() => setShowCreateForm(false)}>
                     Cancel
@@ -222,7 +225,7 @@ export default function AssetsPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search assets..."
+              placeholder="Search scenarios..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -230,72 +233,65 @@ export default function AssetsPage() {
           </div>
         </div>
 
-        {/* Assets Grid */}
-        {assets.length === 0 ? (
+        {/* Scenarios Grid */}
+        {scenarios.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
-              <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No assets yet</h3>
+              <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No scenarios yet</h3>
               <p className="text-gray-500 mb-4">
-                Add your first asset to start building your portfolio analysis
+                Create your first scenario to start analyzing future impacts
               </p>
               <Button onClick={() => setShowCreateForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add First Asset
+                Create First Scenario
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {assets.map((asset) => (
-              <Card key={asset.id} className="hover:shadow-md transition-shadow">
+            {scenarios.map((scenario) => (
+              <Card key={scenario.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{asset.name}</CardTitle>
-                    {asset.category && (
-                      <Badge className={getCategoryColor(asset.category)}>
-                        {formatCategoryName(asset.category)}
+                    <CardTitle className="text-lg">{scenario.name}</CardTitle>
+                    {scenario.type && (
+                      <Badge className={getTypeColor(scenario.type)}>
+                        {scenario.type}
                       </Badge>
                     )}
                   </div>
-                  {asset.description && (
+                  {scenario.description && (
                     <CardDescription className="line-clamp-2">
-                      {asset.description}
+                      {scenario.description}
                     </CardDescription>
                   )}
                 </CardHeader>
                 
                 <CardContent>
                   <div className="space-y-2">
-                    {asset.growthValue !== undefined && (
+                    {scenario.probability !== undefined && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Growth Value:</span>
-                        <span className="font-medium flex items-center">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          {asset.growthValue.toFixed(2)}
+                        <span className="text-sm text-gray-600">Probability:</span>
+                        <span className={`font-medium ${getProbabilityColor(scenario.probability)}`}>
+                          {Math.round(scenario.probability * 100)}%
                         </span>
                       </div>
                     )}
                     
-                    {asset.categoryConfidence !== undefined && (
+                    {scenario.timeline && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Category Confidence:</span>
-                        <span className="text-sm">
-                          {Math.round(asset.categoryConfidence * 100)}%
+                        <span className="text-sm text-gray-600">Timeline:</span>
+                        <span className="text-sm flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {scenario.timeline}
                         </span>
                       </div>
                     )}
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Visibility:</span>
-                      <span className="text-sm">
-                        {asset.isPublic ? 'Public' : 'Private'}
-                      </span>
-                    </div>
                     
                     <div className="flex justify-between items-center text-xs text-gray-500 pt-2 border-t">
                       <span>Created</span>
-                      <span>{new Date(asset.createdAt).toLocaleDateString()}</span>
+                      <span>{new Date(scenario.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </CardContent>
