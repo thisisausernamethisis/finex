@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { ScenarioRepository } from '../../../lib/repositories/scenarioRepository';
+import { ScenarioType } from '@prisma/client';
 import { z } from 'zod';
 import { createChildLogger } from '../../../lib/logger';
 import { serverError, unauthorized } from '../../../lib/utils/http';
@@ -14,7 +15,10 @@ const createLogger = createChildLogger({ route: 'POST /api/scenarios' });
 const createScenarioSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
-  probability: z.number().min(0).max(1).optional()
+  probability: z.number().min(0).max(1).optional(),
+  type: z.nativeEnum(ScenarioType).optional(),
+  timeline: z.string().max(100).optional(),
+  isPublic: z.boolean().optional()
 });
 
 // Create repository instance

@@ -5,8 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Building2, TrendingUp, FileText } from 'lucide-react';
+import { Plus, Search, Building2, TrendingUp, Tag } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
+
+// Technology Category Enum (matches Prisma schema)
+const TechnologyCategory = {
+  AI_COMPUTE: 'AI_COMPUTE',
+  ROBOTICS_PHYSICAL_AI: 'ROBOTICS_PHYSICAL_AI', 
+  QUANTUM_COMPUTING: 'QUANTUM_COMPUTING',
+  TRADITIONAL_TECH: 'TRADITIONAL_TECH',
+  BIOTECH_HEALTH: 'BIOTECH_HEALTH',
+  FINTECH_CRYPTO: 'FINTECH_CRYPTO',
+  ENERGY_CLEANTECH: 'ENERGY_CLEANTECH',
+  SPACE_DEFENSE: 'SPACE_DEFENSE',
+  OTHER: 'OTHER'
+} as const;
 
 interface Asset {
   id: string;
@@ -14,8 +27,9 @@ interface Asset {
   description?: string;
   growthValue?: number;
   userId: string;
-  category?: string;
+  category?: keyof typeof TechnologyCategory;
   categoryConfidence?: number;
+  categoryInsights?: any;
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;
@@ -37,6 +51,9 @@ export default function AssetsPage() {
   const [newAsset, setNewAsset] = useState({
     name: '',
     description: '',
+    growthValue: '',
+    category: '' as keyof typeof TechnologyCategory | '',
+    categoryConfidence: '',
     isPublic: false
   });
 
@@ -74,22 +91,36 @@ export default function AssetsPage() {
     setCreating(true);
     try {
       const token = await getToken();
+      
+      // Build request body with only defined fields
+      const requestBody: any = {
+        name: newAsset.name,
+        isPublic: newAsset.isPublic,
+      };
+      
+      if (newAsset.description) requestBody.description = newAsset.description;
+      if (newAsset.category) requestBody.category = newAsset.category;
+      if (newAsset.categoryConfidence) requestBody.categoryConfidence = parseFloat(newAsset.categoryConfidence);
+      
       const response = await fetch('/api/assets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: newAsset.name,
-          description: newAsset.description || undefined,
-          isPublic: newAsset.isPublic,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
         setShowCreateForm(false);
-        setNewAsset({ name: '', description: '', isPublic: false });
+        setNewAsset({ 
+          name: '', 
+          description: '', 
+          growthValue: '',
+          category: '',
+          categoryConfidence: '',
+          isPublic: false 
+        });
         loadAssets(); // Reload assets
       } else {
         console.error('Failed to create asset');
@@ -115,6 +146,7 @@ export default function AssetsPage() {
       case 'ENERGY_CLEANTECH': return 'bg-emerald-100 text-emerald-800';
       case 'SPACE_DEFENSE': return 'bg-red-100 text-red-800';
       case 'TRADITIONAL_TECH': return 'bg-gray-100 text-gray-800';
+      case 'OTHER': return 'bg-slate-100 text-slate-800';
       default: return 'bg-slate-100 text-slate-800';
     }
   };
@@ -172,7 +204,7 @@ export default function AssetsPage() {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2">Asset Name</label>
+                  <label htmlFor="name" className="block text-sm font-medium mb-2">Asset Name *</label>
                   <Input
                     id="name"
                     value={newAsset.name}
@@ -192,6 +224,45 @@ export default function AssetsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
+                <div>
+                  <label htmlFor="category" className="block text-sm font-medium mb-2">Technology Category</label>
+                  <select
+                    id="category"
+                    value={newAsset.category}
+                    onChange={(e) => setNewAsset({ ...newAsset, category: e.target.value as keyof typeof TechnologyCategory })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="AI_COMPUTE">AI Compute</option>
+                    <option value="ROBOTICS_PHYSICAL_AI">Robotics & Physical AI</option>
+                    <option value="QUANTUM_COMPUTING">Quantum Computing</option>
+                    <option value="BIOTECH_HEALTH">Biotech & Health</option>
+                    <option value="FINTECH_CRYPTO">Fintech & Crypto</option>
+                    <option value="ENERGY_CLEANTECH">Energy & CleanTech</option>
+                    <option value="SPACE_DEFENSE">Space & Defense</option>
+                    <option value="TRADITIONAL_TECH">Traditional Tech</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+
+                {newAsset.category && (
+                  <div>
+                    <label htmlFor="categoryConfidence" className="block text-sm font-medium mb-2">
+                      Category Confidence (0.0 - 1.0)
+                    </label>
+                    <Input
+                      id="categoryConfidence"
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={newAsset.categoryConfidence}
+                      onChange={(e) => setNewAsset({ ...newAsset, categoryConfidence: e.target.value })}
+                      placeholder="e.g., 0.8"
+                    />
+                  </div>
+                )}
                 
                 <div className="flex items-center space-x-2">
                   <input
@@ -204,7 +275,7 @@ export default function AssetsPage() {
                   <label htmlFor="isPublic" className="text-sm">Make asset public</label>
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-4">
                   <Button onClick={createAsset} disabled={creating || !newAsset.name.trim()}>
                     {creating ? 'Creating...' : 'Create Asset'}
                   </Button>
@@ -252,11 +323,18 @@ export default function AssetsPage() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{asset.name}</CardTitle>
-                    {asset.category && (
-                      <Badge className={getCategoryColor(asset.category)}>
-                        {formatCategoryName(asset.category)}
-                      </Badge>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {asset.category && (
+                        <Badge className={getCategoryColor(asset.category)}>
+                          {formatCategoryName(asset.category)}
+                        </Badge>
+                      )}
+                      {asset.isPublic && (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          Public
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   {asset.description && (
                     <CardDescription className="line-clamp-2">
@@ -280,18 +358,18 @@ export default function AssetsPage() {
                     {asset.categoryConfidence !== undefined && (
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Category Confidence:</span>
-                        <span className="text-sm">
+                        <span className="text-sm font-medium">
                           {Math.round(asset.categoryConfidence * 100)}%
                         </span>
                       </div>
                     )}
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Visibility:</span>
-                      <span className="text-sm">
-                        {asset.isPublic ? 'Public' : 'Private'}
-                      </span>
-                    </div>
+
+                    {asset.categoryInsights && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">AI Insights:</span>
+                        <Tag className="h-4 w-4 text-gray-400" />
+                      </div>
+                    )}
                     
                     <div className="flex justify-between items-center text-xs text-gray-500 pt-2 border-t">
                       <span>Created</span>

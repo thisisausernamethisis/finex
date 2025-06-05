@@ -7,15 +7,24 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Search, Calendar, TrendingUp } from 'lucide-react';
+import { Plus, Search, Calendar, TrendingUp, Clock, Globe } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
+
+// Scenario Type Enum (matches Prisma schema)
+const ScenarioType = {
+  TECHNOLOGY: 'TECHNOLOGY',
+  ECONOMIC: 'ECONOMIC',
+  GEOPOLITICAL: 'GEOPOLITICAL',
+  REGULATORY: 'REGULATORY',
+  MARKET: 'MARKET'
+} as const;
 
 interface Scenario {
   id: string;
   name: string;
   description?: string;
   probability?: number;
-  type?: 'TECHNOLOGY' | 'ECONOMIC' | 'GEOPOLITICAL';
+  type?: keyof typeof ScenarioType;
   timeline?: string;
   userId: string;
   isPublic: boolean;
@@ -40,8 +49,9 @@ export default function ScenariosPage() {
     name: '',
     description: '',
     probability: 0.5,
-    type: 'TECHNOLOGY' as const,
-    timeline: ''
+    type: 'TECHNOLOGY' as keyof typeof ScenarioType,
+    timeline: '',
+    isPublic: false
   });
 
   const loadScenarios = async () => {
@@ -78,25 +88,41 @@ export default function ScenariosPage() {
     setCreating(true);
     try {
       const token = await getToken();
+      
+      // Build request body with all supported fields
+      const requestBody: any = {
+        name: newScenario.name,
+        probability: newScenario.probability,
+        type: newScenario.type,
+        isPublic: newScenario.isPublic,
+      };
+      
+      if (newScenario.description) requestBody.description = newScenario.description;
+      if (newScenario.timeline) requestBody.timeline = newScenario.timeline;
+      
       const response = await fetch('/api/scenarios', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: newScenario.name,
-          description: newScenario.description || undefined,
-          probability: newScenario.probability,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
         setShowCreateForm(false);
-        setNewScenario({ name: '', description: '', probability: 0.5, type: 'TECHNOLOGY', timeline: '' });
+        setNewScenario({ 
+          name: '', 
+          description: '', 
+          probability: 0.5, 
+          type: 'TECHNOLOGY', 
+          timeline: '',
+          isPublic: false 
+        });
         loadScenarios(); // Reload scenarios
       } else {
-        console.error('Failed to create scenario');
+        const errorData = await response.json();
+        console.error('Failed to create scenario:', errorData);
       }
     } catch (error) {
       console.error('Error creating scenario:', error);
@@ -114,8 +140,15 @@ export default function ScenariosPage() {
       case 'TECHNOLOGY': return 'bg-blue-100 text-blue-800';
       case 'ECONOMIC': return 'bg-green-100 text-green-800';
       case 'GEOPOLITICAL': return 'bg-red-100 text-red-800';
+      case 'REGULATORY': return 'bg-orange-100 text-orange-800';
+      case 'MARKET': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const formatTypeName = (type?: string) => {
+    if (!type) return 'Unknown';
+    return type.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const getProbabilityColor = (probability?: number) => {
@@ -173,7 +206,7 @@ export default function ScenariosPage() {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Scenario Name</Label>
+                  <Label htmlFor="name">Scenario Name *</Label>
                   <Input
                     id="name"
                     value={newScenario.name}
@@ -192,6 +225,32 @@ export default function ScenariosPage() {
                     rows={3}
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="type">Scenario Type</Label>
+                  <select
+                    id="type"
+                    value={newScenario.type}
+                    onChange={(e) => setNewScenario({ ...newScenario, type: e.target.value as keyof typeof ScenarioType })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="TECHNOLOGY">Technology</option>
+                    <option value="ECONOMIC">Economic</option>
+                    <option value="GEOPOLITICAL">Geopolitical</option>
+                    <option value="REGULATORY">Regulatory</option>
+                    <option value="MARKET">Market</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor="timeline">Timeline</Label>
+                  <Input
+                    id="timeline"
+                    value={newScenario.timeline}
+                    onChange={(e) => setNewScenario({ ...newScenario, timeline: e.target.value })}
+                    placeholder="e.g., 2-5 years, Near term, Long term"
+                  />
+                </div>
                 
                 <div>
                   <Label htmlFor="probability">Probability ({Math.round(newScenario.probability * 100)}%)</Label>
@@ -205,9 +264,25 @@ export default function ScenariosPage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewScenario({ ...newScenario, probability: parseFloat(e.target.value) })}
                     className="w-full mt-2"
                   />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>0%</span>
+                    <span>50%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isPublic"
+                    checked={newScenario.isPublic}
+                    onChange={(e) => setNewScenario({ ...newScenario, isPublic: e.target.checked })}
+                    className="rounded"
+                  />
+                  <label htmlFor="isPublic" className="text-sm">Make scenario public</label>
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-4">
                   <Button onClick={createScenario} disabled={creating || !newScenario.name.trim()}>
                     {creating ? 'Creating...' : 'Create Scenario'}
                   </Button>
@@ -255,11 +330,19 @@ export default function ScenariosPage() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{scenario.name}</CardTitle>
-                    {scenario.type && (
-                      <Badge className={getTypeColor(scenario.type)}>
-                        {scenario.type}
-                      </Badge>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {scenario.type && (
+                        <Badge className={getTypeColor(scenario.type)}>
+                          {formatTypeName(scenario.type)}
+                        </Badge>
+                      )}
+                      {scenario.isPublic && (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          <Globe className="h-3 w-3 mr-1" />
+                          Public
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   {scenario.description && (
                     <CardDescription className="line-clamp-2">
@@ -283,7 +366,7 @@ export default function ScenariosPage() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Timeline:</span>
                         <span className="text-sm flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
+                          <Clock className="h-3 w-3 mr-1" />
                           {scenario.timeline}
                         </span>
                       </div>
