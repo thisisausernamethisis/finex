@@ -159,11 +159,9 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
   return NextResponse.next();
 });
 
-// Main middleware function - TEMPORARY BYPASS FOR TESTING
+// Main middleware function - PROPER CLERK AUTHENTICATION
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
-  // TEMPORARY: Skip authentication for testing T-171, T-172, T-173
-  console.log('Middleware bypassed for testing - T-171, T-172, T-173');
-  return NextResponse.next();
+  return clerkHandler(req, event);
 }
 
 // Export config
