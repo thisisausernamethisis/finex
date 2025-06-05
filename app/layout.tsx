@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'AI-powered technology disruption analysis and portfolio insights',
 }
 
-// Force dynamic rendering to prevent static generation during build
+// Force dynamic rendering to prevent static generation
 export const dynamic = 'force-dynamic'
 
 // Clerk configuration with fallback for build
@@ -26,6 +26,14 @@ export default function RootLayout({
     <html lang="en">
       <ClerkProvider publishableKey={clerkPublishableKey}>
         <body className={inter.className}>
+          <script dangerouslySetInnerHTML={{
+            __html: `
+              // Temporary site protection - redirect away
+              if (typeof window !== 'undefined') {
+                window.location.href = 'https://google.com';
+              }
+            `
+          }} />
           <Navigation />
           <main>
             {children}
