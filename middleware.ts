@@ -1,5 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+
+// Validate critical environment variables
+if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  throw new Error('Missing NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY environment variable')
+}
+if (!process.env.CLERK_SECRET_KEY) {
+  throw new Error('Missing CLERK_SECRET_KEY environment variable')
+}
 
 // Define public routes that don't require authentication
 const isPublicRoute = createRouteMatcher([
@@ -13,37 +20,21 @@ const isPublicRoute = createRouteMatcher([
   '/api/public(.*)'
 ]);
 
-// Clean Clerk-only middleware with error handling
-export default clerkMiddleware(async (auth, req) => {
-  try {
-    // Skip protection for public routes
-    if (isPublicRoute(req)) {
-      return NextResponse.next();
-    }
-
-    // For all other routes, protect them
-    await auth.protect();
-    
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Middleware error:', error);
-    
-    // If there's an error and it's not a public route, redirect to sign-in
-    if (!isPublicRoute(req)) {
-      const signInUrl = new URL('/sign-in', req.url);
-      return NextResponse.redirect(signInUrl);
-    }
-    
-    return NextResponse.next();
+// Simplified middleware for Edge Runtime compatibility
+export default clerkMiddleware((auth, req) => {
+  // Skip protection for public routes
+  if (isPublicRoute(req)) {
+    return;
   }
+
+  // For all other routes, protect them
+  auth().protect();
 });
 
-// Export config with better matcher
+// Simplified config matcher for Edge Runtime
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     '/(api|trpc)(.*)',
   ],
 }
