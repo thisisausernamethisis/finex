@@ -1,7 +1,8 @@
 {
   "version": 2,
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "DEPLOYMENT_TRIGGER": "force-rebuild-2025-06-06"
   },
   "functions": {
     "app/api/assets/categorize/route.ts": {
@@ -13,5 +14,11 @@
     "app/api/scenarios/*/route.ts": {
       "runtime": "nodejs18.x"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
 } 
