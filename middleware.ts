@@ -8,33 +8,28 @@ if (!process.env.CLERK_SECRET_KEY) {
   throw new Error('Missing CLERK_SECRET_KEY environment variable')
 }
 
-// Define public routes that don't require authentication
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/webhooks(.*)',
-  '/api/health(.*)',
-  '/_next(.*)',
-  '/favicon.ico',
-  '/api/public(.*)'
+// Define protected routes that require authentication
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/assets(.*)',
+  '/scenarios(.*)',
+  '/matrix(.*)',
+  '/insights(.*)',
+  '/templates(.*)',
+  '/api/(?!webhooks|health|public)(.*)'
 ]);
 
-// Simplified middleware for Edge Runtime compatibility
+// Latest Clerk middleware pattern for Edge Runtime
 export default clerkMiddleware(async (auth, req) => {
-  // Skip protection for public routes
-  if (isPublicRoute(req)) {
-    return;
+  if (isProtectedRoute(req)) {
+    const authObj = await auth();
+    if (!authObj.userId) {
+      throw new Error('Unauthorized');
+    }
   }
-
-  // For all other routes, protect them
-  await auth.protect();
 });
 
-// Simplified config matcher for Edge Runtime
+// Standard config matcher for Edge Runtime
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    '/(api|trpc)(.*)',
-  ],
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 }

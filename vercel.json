@@ -2,5 +2,16 @@
   "version": 2,
   "env": {
     "NODE_ENV": "production"
+  },
+  "functions": {
+    "app/api/assets/categorize/route.ts": {
+      "runtime": "nodejs18.x"
+    },
+    "app/api/matrix/*/route.ts": {
+      "runtime": "nodejs18.x"
+    },
+    "app/api/scenarios/*/route.ts": {
+      "runtime": "nodejs18.x"
+    }
   }
 } 

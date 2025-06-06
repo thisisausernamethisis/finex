@@ -7,6 +7,9 @@ import { serverError, unauthorized, badRequest, notFound } from '../../../../lib
 import { validateSchema } from '../../../../lib/utils/api';
 import { Queue } from 'bullmq';
 
+// Force Node.js runtime for BullMQ and Redis dependencies
+export const runtime = 'nodejs';
+
 // Define TechnologyCategory enum locally until Prisma client is properly generated
 enum TechnologyCategory {
   AI_COMPUTE = 'AI_COMPUTE',

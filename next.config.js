@@ -8,10 +8,10 @@ const nextConfig = {
   trailingSlash: false,
   poweredByHeader: false,
   // Webpack configuration for Edge Runtime compatibility
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Optimize for serverless functions
-      config.externals = [...config.externals, '@prisma/client']
+  webpack: (config, { isServer, nextRuntime }) => {
+    if (isServer && nextRuntime === 'nodejs') {
+      // Only externalize for Node.js runtime, not Edge Runtime
+      config.externals.push('@prisma/client')
     }
     return config
   }

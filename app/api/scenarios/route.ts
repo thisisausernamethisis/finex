@@ -3,6 +3,9 @@ import { currentUser } from '@clerk/nextjs/server';
 import { ScenarioRepository } from '../../../lib/repositories/scenarioRepository';
 import { ScenarioType } from '@prisma/client';
 import { z } from 'zod';
+
+// Force Node.js runtime for Prisma and complex dependencies  
+export const runtime = 'nodejs';
 import { createChildLogger } from '../../../lib/logger';
 import { serverError, unauthorized } from '../../../lib/utils/http';
 import { getQueryOptions, validateSchema, withPagination } from '../../../lib/utils/api';

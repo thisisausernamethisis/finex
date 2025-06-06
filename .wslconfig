@@ -1,0 +1,15 @@
+[wsl2]
+# Enable mirrored networking (Windows 11 22H2+)
+networkingMode=mirrored
+
+# Enable auto port forwarding
+autoProxy=true
+
+# Enable DNS tunneling
+dnsTunneling=true
+
+# Enable firewall integration
+firewall=true
+
+# Enable auto memory reclaim
+autoMemoryReclaim=gradual 
