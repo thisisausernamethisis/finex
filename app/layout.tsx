@@ -1,13 +1,14 @@
 import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Navigation } from '@/components/Navigation'
+import { Providers } from './providers'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MetaMap - Technology Analysis Platform',
+      title: 'Finex v3 - Strategic Scenario Analysis Platform',
   description: 'AI-powered technology disruption analysis and portfolio insights',
 }
 
@@ -26,10 +27,12 @@ export default function RootLayout({
     <html lang="en">
       <ClerkProvider publishableKey={clerkPublishableKey}>
         <body className={inter.className}>
-          <Navigation />
-          <main>
-            {children}
-          </main>
+          <Providers>
+            <Navigation />
+            <main>
+              {children}
+            </main>
+          </Providers>
         </body>
       </ClerkProvider>
     </html>
