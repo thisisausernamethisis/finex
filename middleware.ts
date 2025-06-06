@@ -21,14 +21,14 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 // Simplified middleware for Edge Runtime compatibility
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   // Skip protection for public routes
   if (isPublicRoute(req)) {
     return;
   }
 
   // For all other routes, protect them
-  auth().protect();
+  await auth.protect();
 });
 
 // Simplified config matcher for Edge Runtime
