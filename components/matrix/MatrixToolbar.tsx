@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Search, Filter, Download, RefreshCw, Settings } from 'lucide-react';
+import { Search, Filter, Download, RefreshCw, Settings, Play, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { 
   Select,
   SelectContent,
@@ -15,7 +16,13 @@ interface MatrixToolbarProps {
   onFilterChange: (filters: MatrixFilters) => void;
   onRefresh: () => void;
   onExport: () => void;
+  onGenerate?: () => void;
   isLoading?: boolean;
+  matrixStats?: {
+    totalCalculations: number;
+    avgConfidence: number;
+    lastUpdated?: string;
+  };
 }
 
 export interface MatrixFilters {
@@ -30,7 +37,9 @@ export function MatrixToolbar({
   onFilterChange, 
   onRefresh, 
   onExport,
-  isLoading = false 
+  onGenerate,
+  isLoading = false,
+  matrixStats
 }: MatrixToolbarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<MatrixFilters>({});
@@ -56,6 +65,36 @@ export function MatrixToolbar({
   
   return (
     <div className="matrix-toolbar bg-background border rounded-lg p-4 mb-4">
+      {/* Matrix Status Row */}
+      {matrixStats && (
+        <div className="flex items-center justify-between gap-4 mb-4 pb-4 border-b">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{matrixStats.totalCalculations} calculations</span>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {Math.round(matrixStats.avgConfidence * 100)}% avg confidence
+            </Badge>
+            {matrixStats.lastUpdated && (
+              <span className="text-xs text-muted-foreground">
+                Updated {matrixStats.lastUpdated}
+              </span>
+            )}
+          </div>
+          {onGenerate && (
+            <Button
+              onClick={onGenerate}
+              disabled={isLoading}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Play className="h-4 w-4 mr-2" />
+              {isLoading ? 'Generating...' : 'Regenerate Matrix'}
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Main toolbar row */}
       <div className="flex items-center justify-between gap-4 mb-4">
         {/* Search */}

@@ -91,4 +91,21 @@ export function DialogDescription({ children, className }: DialogDescriptionProp
       {children}
     </p>
   );
+}
+
+interface DialogTriggerProps {
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
+
+export function DialogTrigger({ children, className, onClick }: DialogTriggerProps) {
+  return (
+    <button 
+      className={cn('inline-flex items-center justify-center', className)}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
 } 

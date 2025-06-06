@@ -8,8 +8,9 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { EnhancedAssetCard } from './EnhancedAssetCard';
-import { Plus, Settings } from 'lucide-react';
+import { Plus, Settings, MoreHorizontal, Edit, Trash2, UserPlus } from 'lucide-react';
 
 interface ThemeAccordionProps {
   theme: AssetTheme;
@@ -17,6 +18,9 @@ interface ThemeAccordionProps {
   onAssetSelect: (id: string) => void;
   onAssetEdit: (asset: Asset) => void;
   onAssetDelete: (id: string) => void;
+  onAddAssetToTheme?: (themeId: string) => void;
+  onEditTheme?: (theme: AssetTheme) => void;
+  onDeleteTheme?: (themeId: string) => void;
   isExpanded?: boolean;
   onToggle?: () => void;
 }
@@ -27,6 +31,9 @@ export function ThemeAccordion({
   onAssetSelect,
   onAssetEdit,
   onAssetDelete,
+  onAddAssetToTheme,
+  onEditTheme,
+  onDeleteTheme,
   isExpanded,
   onToggle
 }: ThemeAccordionProps) {
@@ -66,26 +73,42 @@ export function ThemeAccordion({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                // TODO: Add asset to this theme
-                console.log('Add asset to theme:', theme.id);
+                onAddAssetToTheme?.(theme.id);
               }}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
+              className="opacity-70 hover:opacity-100 transition-opacity"
             >
               <Plus className="w-4 h-4" />
             </Button>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                // TODO: Theme settings
-                console.log('Theme settings:', theme.id);
-              }}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => e.stopPropagation()}
+                  className="opacity-70 hover:opacity-100 transition-opacity"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEditTheme?.(theme)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Theme
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAddAssetToTheme?.(theme.id)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add Asset
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => onDeleteTheme?.(theme.id)}
+                  className="text-red-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Theme
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <div className={`w-6 h-6 rounded-full ${colorClasses.bg} flex items-center justify-center`}>
               <div className={`w-2 h-2 rounded-full transition-transform duration-200 ${
@@ -123,7 +146,11 @@ export function ThemeAccordion({
                 <p className="text-sm text-muted-foreground mb-4">
                   Add assets to this theme to start building your portfolio
                 </p>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onAddAssetToTheme?.(theme.id)}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add First Asset
                 </Button>

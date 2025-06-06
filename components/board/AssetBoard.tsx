@@ -5,6 +5,12 @@ import { ThemeAccordion } from './ThemeAccordion';
 import { BoardHeader } from './BoardHeader';
 import { BoardSearch } from './BoardSearch';
 import { AssetsBoardSkeleton } from './AssetsBoardSkeleton';
+import { AssetTemplateSelector } from '@/components/features/AssetManagement/AssetTemplateSelector';
+import AssetEditModal from '@/components/features/AssetManagement/AssetEditModal';
+import { ContextualHelp, WorkflowStepIndicator } from '@/components/common/ContextualHelp';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, FileText, Zap } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AssetBoardProps {
@@ -21,6 +27,8 @@ export function AssetBoard({
   const [search, setSearch] = useState('');
   const [themeFilter, setThemeFilter] = useState<string>('ALL');
   const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set());
+  const [showFileTextSelector, setShowFileTextSelector] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<any>(null);
   
   const { toast } = useToast();
   
@@ -86,27 +94,81 @@ export function AssetBoard({
   };
   
   const handleCreateAsset = () => {
-    // Create a sample asset for demo
+    setShowFileTextSelector(true);
+  };
+
+  const handleQuickCreateAsset = () => {
+    // Create a basic asset without template
     createAssetMutation.mutate({
       name: `New Asset ${Date.now()}`,
-      description: 'Sample asset description',
+      description: 'Custom asset description',
       category: 'uncategorized',
       isPublic: false,
     });
   };
+
+  const handleCreateFromFileText = async (template: any) => {
+    // Clone the template to create a new asset
+    try {
+      const response = await fetch(`/api/theme-templates/${template.id}/clone`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const newAsset = await response.json();
+        toast({
+          title: 'Success',
+          description: `Asset created from template: ${template.name}`,
+        });
+      } else {
+        throw new Error('Failed to clone template');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create asset from template',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCreateFromScratch = () => {
+    handleQuickCreateAsset();
+  };
   
   const handleAssetEdit = (asset: any) => {
-    // TODO: Open edit modal
-    console.log('Edit asset:', asset);
-    toast({
-      title: 'Edit Asset',
-      description: 'Asset editing will be implemented in a future update',
-    });
+    setEditingAsset(asset);
   };
   
   const handleAssetDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this asset?')) {
       deleteAssetMutation.mutate({ id });
+    }
+  };
+
+  const handleAddAssetToTheme = (themeId: string) => {
+    toast({
+      title: 'Add Asset to Theme',
+      description: 'This feature will allow you to assign existing assets to themes',
+    });
+  };
+
+  const handleEditTheme = (theme: any) => {
+    toast({
+      title: 'Edit Theme',
+      description: 'Theme editing functionality will be implemented',
+    });
+  };
+
+  const handleDeleteTheme = (themeId: string) => {
+    if (confirm('Are you sure you want to delete this theme?')) {
+      toast({
+        title: 'Delete Theme',
+        description: 'Theme deletion functionality will be implemented',
+      });
     }
   };
   
@@ -134,12 +196,20 @@ export function AssetBoard({
   
   return (
     <div className="space-y-6">
-      <BoardHeader 
-        totalAssets={assets.length}
-        totalThemes={themes.length}
-        selectedAssetId={selectedAssetId}
-        onCreateAsset={handleCreateAsset}
-      />
+      <div className="flex items-center justify-between">
+        <BoardHeader 
+          totalAssets={assets.length}
+          totalThemes={themes.length}
+          selectedAssetId={selectedAssetId}
+          onCreateAsset={handleCreateAsset}
+          onQuickCreateAsset={handleQuickCreateAsset}
+        />
+        <ContextualHelp 
+          phase={1} 
+          triggerText="Phase 1 Help"
+          className="ml-4"
+        />
+      </div>
       
       <BoardSearch
         search={search}
@@ -148,6 +218,22 @@ export function AssetBoard({
         onThemeFilterChange={setThemeFilter}
         availableThemes={themes}
       />
+
+      {/* Phase 1 Progress Indicator */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="pt-4">
+          <WorkflowStepIndicator
+            currentStep={1}
+            totalSteps={4}
+            stepLabels={[
+              'Asset Research & Theme Organization',
+              'Scenario Planning & Definition',
+              'Matrix Generation & Analysis',
+              'Strategic Insights & Recommendations'
+            ]}
+          />
+        </CardContent>
+      </Card>
       
       <div className="space-y-4">
         {filteredThemes.length > 0 ? (
@@ -159,6 +245,9 @@ export function AssetBoard({
               onAssetSelect={handleAssetSelect}
               onAssetEdit={handleAssetEdit}
               onAssetDelete={handleAssetDelete}
+              onAddAssetToTheme={handleAddAssetToTheme}
+              onEditTheme={handleEditTheme}
+              onDeleteTheme={handleDeleteTheme}
               isExpanded={expandedThemes.has(theme.id)}
               onToggle={() => handleThemeToggle(theme.id)}
             />
@@ -173,22 +262,62 @@ export function AssetBoard({
             </p>
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg mb-4">
-              No assets in your portfolio yet
-            </p>
-            <p className="text-sm text-muted-foreground mb-6">
-              Start building your portfolio by adding your first asset
-            </p>
-            <button
-              onClick={handleCreateAsset}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-            >
-              Add Your First Asset
-            </button>
-          </div>
+          <Card className="border-dashed border-2 border-muted-foreground/25">
+            <CardContent className="text-center py-12">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Plus className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Start Your Portfolio Analysis</h3>
+                <p className="text-muted-foreground mb-6">
+                  Begin Phase 1 by adding assets you want to analyze. Create comprehensive profiles with research themes and supporting data.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button
+                    onClick={handleCreateAsset}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Browse FileTexts
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleQuickCreateAsset}
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Quick Create
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-4">
+                  💡 Tip: Start with 3-5 key assets to keep your analysis manageable
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
+      
+      {/* FileText Selector Modal */}
+      <AssetTemplateSelector
+        isOpen={showFileTextSelector}
+        onClose={() => setShowFileTextSelector(false)}
+        onSelectTemplate={handleCreateFromFileText}
+        onCreateFromScratch={handleCreateFromScratch}
+      />
+      
+      {/* Asset Edit Modal */}
+      {editingAsset && (
+        <AssetEditModal
+          asset={editingAsset}
+          open={!!editingAsset}
+          onOpenChange={(open) => !open && setEditingAsset(null)}
+          onSave={() => {
+            setEditingAsset(null);
+            // Refresh assets list
+            window.location.reload();
+          }}
+        />
+      )}
       
       {/* Status indicators */}
       {createAssetMutation.isPending && (

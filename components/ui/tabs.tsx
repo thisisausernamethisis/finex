@@ -80,4 +80,28 @@ const TabsTrigger = React.forwardRef<
 ))
 TabsTrigger.displayName = "TabsTrigger"
 
-export { Tabs, TabsList, TabsTrigger } 
+const TabsContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & {
+    value: string
+    currentValue?: string
+  }
+>(({ className, children, value, currentValue, ...props }, ref) => {
+  if (currentValue !== value) return null
+  
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+})
+TabsContent.displayName = "TabsContent"
+
+export { Tabs, TabsList, TabsTrigger, TabsContent } 

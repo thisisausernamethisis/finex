@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { MatrixCalculation, useMatrixCellAnalysis } from '@/lib/hooks/matrix';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { MatrixAnalysisDetail } from './MatrixAnalysisDetail';
 
 interface MatrixCellDialogProps {
   assetId?: string;
@@ -68,131 +69,30 @@ export function MatrixCellDialog({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              {getImpactIcon(calculation.impact)}
-              <span>Impact Analysis</span>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-lg font-bold ${getImpactColor(calculation.impact)}`}>
-              {calculation.impact > 0 ? '+' : ''}{calculation.impact}
-            </div>
-          </DialogTitle>
+          <DialogTitle>Matrix Cell Analysis</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* Asset & Scenario Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Asset
-              </h4>
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="font-medium">{calculation.assetName}</div>
-                <div className="text-sm text-muted-foreground">{calculation.assetCategory}</div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Scenario
-              </h4>
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="font-medium">{calculation.scenarioName}</div>
-                <div className="text-sm text-muted-foreground">{calculation.scenarioType}</div>
-              </div>
-            </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner />
+            <span className="ml-2 text-sm text-muted-foreground">Loading detailed analysis...</span>
           </div>
-          
-          {/* Impact Metrics */}
-          <div className="space-y-3">
-            <h4 className="font-semibold flex items-center gap-2">
-              <Info className="h-4 w-4" />
-              Impact Metrics
-            </h4>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-muted rounded-lg">
-                <div className="text-2xl font-bold">{calculation.impact}</div>
-                <div className="text-sm text-muted-foreground">Impact Score</div>
-                <div className="text-xs mt-1">(-5 to +5 scale)</div>
-              </div>
-              
-              <div className="text-center p-3 bg-muted rounded-lg">
-                <div className="text-2xl font-bold">{Math.round(calculation.confidenceScore * 100)}%</div>
-                <div className="text-sm text-muted-foreground">Confidence</div>
-                <div className="text-xs mt-1">Model certainty</div>
-              </div>
-              
-              <div className="text-center p-3 bg-muted rounded-lg">
-                <Badge variant={getRiskColor(calculation.riskLevel) as any} className="text-lg px-3 py-1">
-                  {calculation.riskLevel}
-                </Badge>
-                <div className="text-sm text-muted-foreground mt-2">Risk Level</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Breakdown (if available) */}
-          {calculation.breakdown && (
-            <div className="space-y-3">
-              <h4 className="font-semibold">Impact Breakdown</h4>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex justify-between p-2 bg-muted rounded">
-                  <span>Base Impact:</span>
-                  <span className="font-medium">{calculation.breakdown.baseImpact}</span>
-                </div>
-                <div className="flex justify-between p-2 bg-muted rounded">
-                  <span>Technology Multiplier:</span>
-                  <span className="font-medium">{calculation.breakdown.technologyMultiplier}x</span>
-                </div>
-                <div className="flex justify-between p-2 bg-muted rounded">
-                  <span>Timeline Adjustment:</span>
-                  <span className="font-medium">{calculation.breakdown.timelineAdjustment}</span>
-                </div>
-                <div className="flex justify-between p-2 bg-muted rounded">
-                  <span>Confidence Score:</span>
-                  <span className="font-medium">{Math.round(calculation.breakdown.confidenceScore * 100)}%</span>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <Separator />
-          
-          {/* Analysis Explanation */}
-          <div className="space-y-3">
-            <h4 className="font-semibold flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Analysis
-            </h4>
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm leading-relaxed">{calculation.explanation}</p>
-            </div>
-          </div>
-          
-          {/* Detailed Analysis (if loading/available) */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner />
-              <span className="ml-2 text-sm text-muted-foreground">Loading detailed analysis...</span>
-            </div>
-          )}
-          
-          {detailedAnalysis && (
-            <div className="space-y-3">
-              <h4 className="font-semibold">Detailed Analysis</h4>
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm leading-relaxed text-blue-900">
-                  {detailedAnalysis.detailedExplanation || 'Additional analysis data would appear here.'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        ) : (
+          <MatrixAnalysisDetail
+            assetName={calculation.assetName}
+            scenarioName={calculation.scenarioName}
+            impactScore={calculation.impact}
+            confidenceLevel={calculation.confidenceScore}
+            reasoning={calculation.explanation}
+            evidence={detailedAnalysis?.evidence || []}
+            analysisReasoning={detailedAnalysis?.reasoning}
+            confidenceBreakdown={detailedAnalysis?.confidenceBreakdown}
+            generatedAt={detailedAnalysis?.generatedAt}
+            processingTime={detailedAnalysis?.processingTime}
+          />
+        )}
         
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Search, Plus, ChevronDown, FileText, Zap } from 'lucide-react';
 import { ScenarioType } from '@/lib/hooks/scenarios';
 
 interface ScenariosHeaderProps {
@@ -9,6 +11,8 @@ interface ScenariosHeaderProps {
   typeFilter: ScenarioType | 'ALL';
   onTypeFilterChange: (value: ScenarioType | 'ALL') => void;
   onCreateClick: () => void;
+  onQuickCreateClick?: () => void;
+  totalScenarios?: number;
   isCreating?: boolean;
 }
 
@@ -18,20 +22,48 @@ export function ScenariosHeader({
   typeFilter,
   onTypeFilterChange,
   onCreateClick,
+  onQuickCreateClick,
+  totalScenarios = 0,
   isCreating = false,
 }: ScenariosHeaderProps) {
   return (
     <div className="mb-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Scenarios</h1>
-        <Button
-          onClick={onCreateClick}
-          disabled={isCreating}
-          className="bg-primary hover:bg-primary/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {isCreating ? 'Creating...' : 'Create Scenario'}
-        </Button>
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">Scenario Planning</h1>
+            <Badge variant="secondary" className="text-xs">
+              Phase 2: Scenario Planning
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <p className="text-muted-foreground">
+              {totalScenarios} scenarios for future impact analysis
+            </p>
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              disabled={isCreating}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {isCreating ? 'Creating...' : 'Add Scenario'}
+              <ChevronDown className="w-3 h-3 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onCreateClick}>
+              <FileText className="w-4 h-4 mr-2" />
+              From FileText
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onQuickCreateClick}>
+              <Zap className="w-4 h-4 mr-2" />
+              Quick Create
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       <div className="flex gap-4">

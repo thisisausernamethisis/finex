@@ -6,12 +6,17 @@ import { ScenariosHeader } from '@/components/scenarios/ScenariosHeader';
 import { ScenariosGrid } from '@/components/scenarios/ScenariosGrid';
 import { ScenariosSkeleton } from '@/components/scenarios/ScenariosSkeleton';
 import { ScenariosErrorBoundary } from '@/components/scenarios/ScenariosErrorBoundary';
+import ScenarioEditModal from '@/components/features/ScenarioManagement/ScenarioEditModal';
+import { ScenarioTemplateSelector } from '@/components/features/ScenarioManagement/ScenarioTemplateSelector';
+import { ContextualHelp, WorkflowStepIndicator } from '@/components/common/ContextualHelp';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function ScenariosPage() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<ScenarioType | 'ALL'>('ALL');
   const [editingScenario, setEditingScenario] = useState<Scenario | null>(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   
   const { toast } = useToast();
   
@@ -48,8 +53,11 @@ export default function ScenariosPage() {
   });
   
   const handleCreateClick = () => {
-    // For now, create a sample scenario
-    // TODO: Replace with proper create modal
+    setShowTemplateSelector(true);
+  };
+
+  const handleQuickCreateClick = () => {
+    // Quick create scenario
     createScenarioMutation.mutate({
       name: `New Scenario ${Date.now()}`,
       description: 'Sample scenario description',
@@ -57,11 +65,31 @@ export default function ScenariosPage() {
       isPublic: false,
     });
   };
+
+  const handleCreateFromTemplate = (template: any) => {
+    // Create scenario from template
+    createScenarioMutation.mutate({
+      name: template.name,
+      description: template.description,
+      type: template.type,
+      probability: template.probability,
+      timeline: template.timeline,
+      isPublic: false,
+    });
+    setShowTemplateSelector(false);
+    toast({
+      title: 'Success',
+      description: `Scenario created from template: ${template.name}`,
+    });
+  };
+
+  const handleCreateFromScratch = () => {
+    handleQuickCreateClick();
+    setShowTemplateSelector(false);
+  };
   
   const handleEdit = (scenario: Scenario) => {
     setEditingScenario(scenario);
-    // TODO: Open edit modal
-    console.log('Edit scenario:', scenario);
   };
   
   const handleDelete = (id: string) => {
@@ -94,21 +122,69 @@ export default function ScenariosPage() {
   
   return (
     <div className="min-h-screen bg-background p-8">
-      <div className="max-w-7xl mx-auto">
-        <ScenariosHeader
-          search={search}
-          onSearchChange={setSearch}
-          typeFilter={typeFilter}
-          onTypeFilterChange={setTypeFilter}
-          onCreateClick={handleCreateClick}
-          isCreating={createScenarioMutation.isPending}
-        />
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <ScenariosHeader
+            search={search}
+            onSearchChange={setSearch}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            onCreateClick={handleCreateClick}
+            onQuickCreateClick={handleQuickCreateClick}
+            totalScenarios={scenarios.length}
+            isCreating={createScenarioMutation.isPending}
+          />
+          <ContextualHelp 
+            phase={2} 
+            triggerText="Phase 2 Help"
+            className="ml-4"
+          />
+        </div>
+
+        {/* Phase 2 Progress Indicator */}
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="pt-4">
+            <WorkflowStepIndicator
+              currentStep={2}
+              totalSteps={4}
+              stepLabels={[
+                'Asset Research & Theme Organization',
+                'Scenario Planning & Definition',
+                'Matrix Generation & Analysis',
+                'Strategic Insights & Recommendations'
+              ]}
+            />
+          </CardContent>
+        </Card>
         
         <ScenariosGrid
           scenarios={scenarios}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onCreateFromFileText={handleCreateClick}
+          onQuickCreate={handleQuickCreateClick}
         />
+        
+        {/* Scenario Template Selector */}
+        <ScenarioTemplateSelector
+          isOpen={showTemplateSelector}
+          onClose={() => setShowTemplateSelector(false)}
+          onSelectTemplate={handleCreateFromTemplate}
+          onCreateFromScratch={handleCreateFromScratch}
+        />
+
+        {/* Scenario Edit Modal */}
+        {editingScenario && (
+          <ScenarioEditModal
+            scenario={editingScenario}
+            open={!!editingScenario}
+            onOpenChange={(open) => !open && setEditingScenario(null)}
+            onSave={() => {
+              setEditingScenario(null);
+              refetch();
+            }}
+          />
+        )}
       </div>
     </div>
   );
