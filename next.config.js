@@ -7,10 +7,6 @@ const nextConfig = {
   // Optimize for Vercel Edge Runtime
   trailingSlash: false,
   poweredByHeader: false,
-  // Ensure proper environment variable handling
-  env: {
-    NODE_ENV: process.env.NODE_ENV,
-  },
   // Webpack configuration for Edge Runtime compatibility
   webpack: (config, { isServer }) => {
     if (isServer) {
