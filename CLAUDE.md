@@ -22,6 +22,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npx prisma migrate dev` - Apply database migrations
 - `npx prisma generate` - Generate Prisma client
 
+### Deployment Validation
+- `npm run lint && npm run typecheck` - Pre-deployment validation
+- `npm run build` - Verify production build succeeds
+
 ## Architecture Overview
 
 ### System Purpose
@@ -74,6 +78,27 @@ The `lib/services/` directory contains the core business logic:
 - Use React Query for all data fetching with proper error boundaries
 - Follow existing patterns in components for consistent UI/UX
 - Matrix calculations happen asynchronously via BullMQ workers
+
+### Deployment Architecture
+- **Production Environment**: Vercel with Edge Runtime optimizations
+- **Database**: Neon PostgreSQL with connection pooling
+- **Authentication**: Clerk with simplified Edge Runtime middleware
+- **Environment Variables**: Critical validation at build time for missing variables
+- **Build Process**: Prisma generation → TypeScript compilation → Next.js build
+- **Edge Runtime Compatibility**: Middleware simplified for serverless functions
+
+### UX Framework & Component Architecture
+The system implements a comprehensive UX evaluation framework across three main phases:
+- **Phase 1: Assets** - Template-driven asset creation with theme organization
+- **Phase 2: Scenarios** - Future variable planning with probability assessment
+- **Phase 3: Matrix** - AI-powered impact analysis with real-time processing status
+- **Cross-Phase Integration**: Unified contextual help system and workflow progress indicators
+
+Components follow consistent patterns:
+- **Template Selectors**: For guided creation workflows
+- **Edit Modals**: Multi-tab interfaces for comprehensive data management
+- **Contextual Help**: Phase-specific guidance integrated throughout
+- **Empty States**: Engaging visuals with actionable next steps
 
 ### System Identity
 This is NOT a simple portfolio tracker or document management system. It's specifically designed for systematic future scenario analysis with AI-powered impact assessment to enable data-driven strategic planning.
