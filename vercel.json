@@ -2,7 +2,8 @@
   "version": 2,
   "env": {
     "NODE_ENV": "production",
-    "DEPLOYMENT_TRIGGER": "force-rebuild-2025-06-06"
+    "DEPLOYMENT_TRIGGER": "cache-bust-2025-06-06-v2",
+    "VERCEL_FORCE_NO_BUILD_CACHE": "1"
   },
   "github": {
     "silent": true
