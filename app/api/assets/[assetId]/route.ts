@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { AssetRepository } from '../../../../lib/repositories/assetRepository';
 import { hasAssetAccess, AccessRole } from '../../../../lib/services/accessControlService';
-import { TechnologyCategory } from '@prisma/client';
 import { z } from 'zod';
 import { createChildLogger } from '../../../../lib/logger';
 import { serverError, unauthorized, notFound, forbidden } from '../../../../lib/utils/http';
@@ -17,9 +16,6 @@ const deleteLogger = createChildLogger({ route: 'DELETE /api/assets/[assetId]' }
 const updateAssetSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
-  category: z.nativeEnum(TechnologyCategory).optional(),
-  categoryConfidence: z.number().min(0).max(1).optional(),
-  categoryInsights: z.any().optional(),
   isPublic: z.boolean().optional()
 });
 

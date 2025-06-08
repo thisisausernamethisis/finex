@@ -47,7 +47,7 @@
 
 ---
 
-## 🚨 **PATCH 9: System Identity & Messaging Realignment**
+## 🚨 **PATCH 9: System Identity & Messaging Realignment** (COMPLETED)
 *Priority: CRITICAL | Effort: 2 days | Dependencies: None*
 
 ### **Scope**
@@ -77,15 +77,61 @@ Fix fundamental messaging misalignment that presents system as "technology categ
    - Strategic planning use cases over investment categorization
 
 ### **Success Criteria**
-- [ ] Homepage messaging 100% aligned with ground truth
-- [ ] No references to "technology categorization" 
-- [ ] Clear strategic planning positioning throughout
-- [ ] Consistent branding across all components
+- [x] Homepage messaging 100% aligned with ground truth
+- [x] No references to "technology categorization" 
+- [x] Clear strategic planning positioning throughout
+- [x] Consistent branding across all components
+
+---
+
+## 🔩 **PATCH 9.1: Data Integrity Enhancement**
+*Priority: HIGH | Effort: 1 day | Dependencies: None*
+
+### **Scope**
+Enforce data integrity at the database level for the `Theme` model to ensure a theme is linked to either an `Asset` or a `Scenario`, but not both. This addresses a potential data corruption risk identified during the 360-review.
+
+### **Targets**
+- `prisma/schema.prisma` - Database schema update
+- `lib/services/` - Update services to handle new schema
+
+### **Key Changes**
+1.  **Database Schema Update**
+    -   Modify the `Theme` model to enforce the exclusive relationship with `Asset` or `Scenario`.
+2.  **Service Layer Adaptation**
+    -   Update any logic that creates or updates `Theme` objects to comply with the new database constraints.
+
+### **Success Criteria**
+- [ ] `prisma/schema.prisma` is updated with the new constraints.
+- [ ] A Prisma migration is generated and can be applied successfully.
+- [ ] Application remains fully functional after the change.
+
+---
+
+## 🧠 **PATCH 9.2: Vector Search Enablement**
+*Priority: MEDIUM | Effort: 2 days | Dependencies: None*
+
+### **Scope**
+Integrate the `pgvector` extension into the PostgreSQL database and enable the `Unsupported("vector(1536)")` field in the `Chunk` model. This will unlock semantic search capabilities for AI-driven analysis.
+
+### **Targets**
+- `prisma/schema.prisma` - Database schema update
+- `lib/services/aiAnalysisService.ts` - AI service enhancement
+
+### **Key Changes**
+1.  **Database Schema Update**
+    -   Enable the `embedding` field in the `Chunk` model.
+2.  **AI Service Enhancement**
+    -   Integrate vector search into the `HybridSearchService` and other relevant AI services to improve evidence ranking and analysis.
+
+### **Success Criteria**
+- [ ] `prisma/schema.prisma` is updated to support vector embeddings.
+- [ ] A Prisma migration is generated and can be applied successfully.
+- [ ] AI services leverage vector search for enhanced analysis.
 
 ---
 
 ## 📊 **PATCH 10: TAM Integration & Growth Discovery Engine**
-*Priority: HIGH | Effort: 3 days | Dependencies: PATCH 9*
+*Priority: HIGH | Effort: 3 days | Dependencies: None*
 
 ### **Scope**
 Implement Total Addressable Market integration for growth/risk discovery analysis as specified in ground truth

@@ -13,10 +13,17 @@ export const metadata: Metadata = {
 }
 
 // Force dynamic rendering to prevent static generation
-export const dynamic = 'force-dynamic'
+// export const dynamic = 'force-dynamic'
 
-// Clerk configuration with fallback for build
-const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_build_placeholder_for_compatibility'
+// Clerk configuration with proper validation
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+if (!clerkPublishableKey) {
+  throw new Error(
+    'Missing NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY environment variable. ' +
+    'Please add it to your environment configuration.'
+  );
+}
 
 export default function RootLayout({
   children,

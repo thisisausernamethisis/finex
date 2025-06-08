@@ -313,10 +313,9 @@ export class ContextAssemblyService {
     });
 
     try {
-      // Search for relevant content across all assets in the category
-      const trendEvidence = await hybridSearchService.searchByTechnologyCategory({
+      // Search for relevant content across all assets
+      const trendEvidence = await hybridSearchService.hybridSearch({
         query: `${technologyCategory} trends innovation disruption market impact`,
-        categories: [technologyCategory as any], // Type assertion for now
         limit: 20
       });
 
@@ -375,9 +374,6 @@ export class ContextAssemblyService {
       id: asset.id,
       name: asset.name,
       description: asset.description,
-      category: asset.category as any,
-      categoryConfidence: asset.categoryConfidence,
-      categoryInsights: asset.categoryInsights,
       themes: asset.themes.map((theme: any) => ({
         id: theme.id,
         name: theme.name,
@@ -553,13 +549,6 @@ export class ContextAssemblyService {
       overview += `Description: ${asset.description}\n`;
     }
     
-    if (asset.category) {
-      overview += `Technology Category: ${asset.category}`;
-      if (asset.categoryConfidence) {
-        overview += ` (${Math.round(asset.categoryConfidence * 100)}% confidence)`;
-      }
-      overview += '\n';
-    }
 
     if (asset.themes.length > 0) {
       overview += `\nKey Themes (${asset.themes.length}):\n`;
@@ -794,9 +783,6 @@ interface AssetDetails {
   id: string;
   name: string;
   description?: string | null;
-  category?: any;
-  categoryConfidence?: number | null;
-  categoryInsights?: any;
   themes: ThemeDetails[];
 }
 

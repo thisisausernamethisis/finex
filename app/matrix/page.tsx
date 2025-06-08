@@ -38,15 +38,10 @@ export default function MatrixPage() {
       filtered = filtered.filter(calc => 
         calc.assetName.toLowerCase().includes(query) ||
         calc.scenarioName.toLowerCase().includes(query) ||
-        calc.assetCategory.toLowerCase().includes(query) ||
         calc.scenarioType.toLowerCase().includes(query)
       );
     }
     
-    // Apply category filters
-    if (filters.assetCategory && filters.assetCategory !== 'all') {
-      filtered = filtered.filter(calc => calc.assetCategory.toLowerCase() === filters.assetCategory?.toLowerCase());
-    }
     
     if (filters.scenarioType && filters.scenarioType !== 'all') {
       filtered = filtered.filter(calc => calc.scenarioType.toLowerCase() === filters.scenarioType?.toLowerCase());
@@ -73,10 +68,9 @@ export default function MatrixPage() {
     // Simple CSV export functionality
     const calculations = getFilteredCalculations();
     const csvData = [
-      ['Asset', 'Category', 'Scenario', 'Type', 'Impact', 'Risk Level', 'Confidence'],
+      ['Asset', 'Scenario', 'Type', 'Impact', 'Risk Level', 'Confidence'],
       ...calculations.map(calc => [
         calc.assetName,
-        calc.assetCategory, 
         calc.scenarioName,
         calc.scenarioType,
         calc.impact.toString(),

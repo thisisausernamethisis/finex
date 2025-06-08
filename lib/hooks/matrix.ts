@@ -35,7 +35,6 @@ export interface MatrixCalculationData {
 export interface MatrixCalculation {
   assetId: string;
   assetName: string;
-  assetCategory: string;
   scenarioId: string;
   scenarioName: string;
   scenarioType: string;

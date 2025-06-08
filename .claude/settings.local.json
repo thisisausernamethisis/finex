@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(sed:*)",
+      "Bash(npm run lint)",
+      "Bash(git add:*)",
+      "Bash(npm install)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(PORT=3001 npm run dev)",
+      "Bash(ss:*)",
+      "Bash(true)",
+      "Bash(HOST=0.0.0.0 PORT=3000 npm run dev)",
+      "Bash(npx next dev:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(npm ls:*)",
+      "Bash(rm:*)",
+      "Bash(env)",
+      "WebFetch(domain:github.com)",
+      "Bash(rg:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)"
+    ],
+    "deny": []
+  }
+}

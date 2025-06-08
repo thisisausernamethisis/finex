@@ -1,7 +1,6 @@
 import { logger } from '../logger';
 import { embeddingService, VectorSearchOptions, VectorSearchResult } from './embeddingService';
 import { prisma } from '../db';
-import { TechnologyCategory } from '@prisma/client';
 
 // Create a service-specific logger
 const searchLogger = logger.child({ service: 'HybridSearchService' });
@@ -63,55 +62,6 @@ export class HybridSearchService {
     }
   }
 
-  /**
-   * Search for content within specific technology categories
-   */
-  public async searchByTechnologyCategory(options: {
-    query: string;
-    categories: TechnologyCategory[];
-    limit?: number;
-  }): Promise<HybridSearchResult[]> {
-    searchLogger.debug('Technology category search', {
-      query: options.query,
-      categories: options.categories
-    });
-
-    // Get assets in the specified categories
-    const assets = await prisma.asset.findMany({
-      where: {
-        category: { in: options.categories }
-      },
-      include: {
-        themes: {
-          include: {
-            cards: {
-              include: {
-                chunks: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    // Extract card IDs for filtering
-    const cardIds = assets.flatMap((asset: any) => 
-      asset.themes.flatMap((theme: any) => 
-        theme.cards.map((card: any) => card.id)
-      )
-    );
-
-    if (cardIds.length === 0) {
-      return [];
-    }
-
-    // Perform hybrid search with card ID filtering
-    return this.hybridSearch({
-      query: options.query,
-      cardIds,
-      limit: options.limit || 20
-    });
-  }
 
   /**
    * Find content relevant to asset-scenario analysis
@@ -156,7 +106,6 @@ export class HybridSearchService {
         select: { 
           id: true, 
           name: true, 
-          category: true, 
           description: true 
         }
       });

@@ -189,16 +189,12 @@ export class MatrixCalculationService {
   private async getUserCategorizedAssets(userId: string) {
     const assets = await prisma.asset.findMany({
       where: { 
-        userId,
-        category: { not: null }
+        userId
       },
       select: {
         id: true,
         name: true,
-        description: true,
-        category: true,
-        categoryConfidence: true,
-        categoryInsights: true
+        description: true
       },
       orderBy: {
         createdAt: 'desc'

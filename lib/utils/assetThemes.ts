@@ -77,11 +77,6 @@ export function getThemeMetadata(themeId: string): ThemeConfig {
 }
 
 export function categorizeAsset(asset: Asset): string {
-  // If asset already has a category, use it if it's valid
-  if (asset.category && THEME_CONFIG[asset.category.toLowerCase()]) {
-    return asset.category.toLowerCase();
-  }
-
   // Categorize based on name and description
   const searchText = `${asset.name} ${asset.description || ''}`.toLowerCase();
   
@@ -119,12 +114,8 @@ export function organizeAssetsByTheme(assets: Asset[]): AssetTheme[] {
   Object.entries(themeGroups).forEach(([themeId, themeAssets]) => {
     const config = getThemeMetadata(themeId);
     
-    // Calculate average confidence for theme
-    const totalConfidence = themeAssets.reduce((sum, asset) => {
-      return sum + (asset.categoryConfidence || 0.5);
-    }, 0);
-    
-    const avgConfidence = themeAssets.length > 0 ? totalConfidence / themeAssets.length : 0;
+    // Set default confidence for theme
+    const avgConfidence = 0.8; // Default confidence since we removed categorization
     
     themes.push({
       id: themeId,

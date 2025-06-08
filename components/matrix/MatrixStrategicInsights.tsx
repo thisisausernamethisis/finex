@@ -39,7 +39,7 @@ export function MatrixStrategicInsights({ calculations, isLoading }: MatrixStrat
   }
 
   // Calculate insights directly from displayed matrix data
-  const assetResilienceMap = new Map<string, { name: string; impacts: number[]; category: string }>();
+  const assetResilienceMap = new Map<string, { name: string; impacts: number[] }>();
   const scenarioRiskMap = new Map<string, { name: string; impacts: number[]; type: string }>();
 
   calculations.forEach(calc => {
@@ -47,8 +47,7 @@ export function MatrixStrategicInsights({ calculations, isLoading }: MatrixStrat
     if (!assetResilienceMap.has(calc.assetId)) {
       assetResilienceMap.set(calc.assetId, {
         name: calc.assetName,
-        impacts: [],
-        category: calc.assetCategory
+        impacts: []
       });
     }
     assetResilienceMap.get(calc.assetId)!.impacts.push(calc.impact);
@@ -139,7 +138,6 @@ export function MatrixStrategicInsights({ calculations, isLoading }: MatrixStrat
               <div key={asset.name} className="flex justify-between items-center">
                 <div>
                   <span className="text-sm font-medium">{asset.name}</span>
-                  <div className="text-xs text-muted-foreground">{asset.category}</div>
                 </div>
                 <div className="text-right">
                   <div className={`text-sm font-bold ${

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { AssetRepository } from '../../../lib/repositories/assetRepository';
-import { TechnologyCategory } from '@prisma/client';
 import { z } from 'zod';
 
 // Force Node.js runtime for Prisma and complex dependencies
@@ -19,7 +18,6 @@ const createAssetSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
   isPublic: z.boolean().optional(),
-  category: z.nativeEnum(TechnologyCategory).optional(),
   categoryConfidence: z.number().min(0).max(1).optional(),
   categoryInsights: z.record(z.any()).optional()
 });
@@ -40,16 +38,10 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const queryOptions = getQueryOptions(url);
     
-    // Get category filter from query params
-    const categoryParam = url.searchParams.get('category');
-    const category = categoryParam && Object.values(TechnologyCategory).includes(categoryParam as TechnologyCategory) 
-      ? categoryParam as TechnologyCategory 
-      : undefined;
-    
-    // Use withPagination utility with category filter
+    // Use withPagination utility
     const paginationResult = await withPagination(
       queryOptions,
-      (page, limit, search) => assetRepository.listAssets(user.id, page, limit, search, category),
+      (page, limit, search) => assetRepository.listAssets(user.id, page, limit, search),
       listLogger
     );
     

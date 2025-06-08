@@ -12,7 +12,7 @@ interface MatrixGridProps {
 
 export function MatrixGrid({ calculations, onCellClick, selectedCell }: MatrixGridProps) {
   // Organize data into grid structure with enhanced metadata
-  const assetMap = new Map<string, { id: string; name: string; category: string; impacts: number[] }>();
+  const assetMap = new Map<string, { id: string; name: string; impacts: number[] }>();
   const scenarioMap = new Map<string, { id: string; name: string; type: string; impacts: number[] }>();
   
   calculations.forEach(calc => {
@@ -21,7 +21,6 @@ export function MatrixGrid({ calculations, onCellClick, selectedCell }: MatrixGr
       assetMap.set(calc.assetId, {
         id: calc.assetId,
         name: calc.assetName,
-        category: calc.assetCategory,
         impacts: []
       });
     }

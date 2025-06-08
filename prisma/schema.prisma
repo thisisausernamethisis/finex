@@ -23,17 +23,6 @@ enum AssetKind {
   TEMPLATE
 }
 
-enum TechnologyCategory {
-  AI_COMPUTE
-  ROBOTICS_PHYSICAL_AI
-  QUANTUM_COMPUTING
-  TRADITIONAL_TECH
-  BIOTECH_HEALTH
-  FINTECH_CRYPTO
-  ENERGY_CLEANTECH
-  SPACE_DEFENSE
-  OTHER
-}
 
 model Asset {
   id                String              @id @default(cuid())
@@ -44,10 +33,6 @@ model Asset {
   userId            String
   kind              AssetKind           @default(REGULAR)
   sourceTemplateId  String?
-  // Technology categorization fields for MetaMap
-  category          TechnologyCategory? // Auto-assigned by AI
-  categoryConfidence Float?             // 0.0-1.0 confidence score
-  categoryInsights  Json?               // Structured insights about categorization
   // Relations
   themes            Theme[]
   matrixResults     MatrixAnalysisResult[]
@@ -98,6 +83,7 @@ model Theme {
   
   // Theme should have either assetId OR scenarioId set, but not both
   // This constraint is enforced at the application layer
+  @@raw(`CONSTRAINT "theme_owner_check" CHECK (("assetId" IS NOT NULL AND "scenarioId" IS NULL) OR ("assetId" IS NULL AND "scenarioId" IS NOT NULL))`)
 }
 
 model Card {
@@ -118,7 +104,7 @@ model Chunk {
   content   String   @db.Text
   order     Int
   // TODO: Enable when pgvector extension is available
-  // embedding Unsupported("vector(1536)")
+  embedding Unsupported("vector(1536)")
   card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   cardId    String
 }

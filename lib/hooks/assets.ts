@@ -9,9 +9,6 @@ export interface Asset {
   growthValue?: number;
   kind?: string;
   sourceTemplateId?: string;
-  category?: string;
-  categoryConfidence?: number;
-  categoryInsights?: any;
   isPublic: boolean;
   themes?: any[];
   createdAt: string;
@@ -27,7 +24,6 @@ interface AssetsResponse {
 
 interface UseAssetsParams {
   search?: string;
-  category?: string;
   page?: number;
   limit?: number;
 }
@@ -42,7 +38,6 @@ export function useAssets(params: UseAssetsParams = {}) {
       const url = new URL('/api/assets', window.location.origin);
       
       if (params.search) url.searchParams.set('search', params.search);
-      if (params.category) url.searchParams.set('category', params.category);
       if (params.page) url.searchParams.set('page', params.page.toString());
       if (params.limit) url.searchParams.set('limit', params.limit.toString());
       

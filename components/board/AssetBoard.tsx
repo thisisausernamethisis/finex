@@ -102,7 +102,6 @@ export function AssetBoard({
     createAssetMutation.mutate({
       name: `New Asset ${Date.now()}`,
       description: 'Custom asset description',
-      category: 'uncategorized',
       isPublic: false,
     });
   };

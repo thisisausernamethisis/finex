@@ -50,11 +50,6 @@ export function EnhancedAssetCard({
           <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors">
             {asset.name}
           </h3>
-          {asset.category && (
-            <Badge variant="secondary" className="mt-2 text-xs">
-              {asset.category}
-            </Badge>
-          )}
         </div>
         
         <DropdownMenu>
@@ -121,14 +116,6 @@ export function EnhancedAssetCard({
             </div>
           )}
           
-          {asset.categoryConfidence && asset.categoryConfidence > 0 && (
-            <div className="flex items-center gap-1">
-              <Target className="w-3 h-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                {Math.round(asset.categoryConfidence * 100)}%
-              </span>
-            </div>
-          )}
         </div>
         
         {/* Asset Themes Preview */}
