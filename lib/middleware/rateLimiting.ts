@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AuthMonitor } from '../monitoring/authMonitor'
-import { createChildLogger } from '../logger'
 
-// Rate limiting logger
-const rateLimitLogger = createChildLogger({ service: 'rate-limit' })
+// Edge Runtime compatible logger
+const createEdgeLogger = (service: string) => ({
+  warn: (message: string, meta?: any) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn(`[${new Date().toISOString()}] [${service}] WARN: ${message}`, meta ? JSON.stringify(meta) : '')
+    }
+  },
+  error: (message: string, meta?: any) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error(`[${new Date().toISOString()}] [${service}] ERROR: ${message}`, meta ? JSON.stringify(meta) : '')
+    }
+  }
+})
+
+// Rate limiting logger (Edge Runtime compatible)
+const rateLimitLogger = createEdgeLogger('rate-limit')
 
 // In-memory store for rate limiting (in production, use Redis)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()

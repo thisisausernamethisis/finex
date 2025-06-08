@@ -15,10 +15,10 @@ const isPublicRoute = createRouteMatcher([
 
 // Define routes that require fresh sessions (sensitive operations)
 const isSensitiveRoute = createRouteMatcher([
-  '/api/assets/[^/]+', // Asset modifications
-  '/api/scenarios/[^/]+', // Scenario modifications
+  '/api/assets/(.*)', // Asset modifications
+  '/api/scenarios/(.*)', // Scenario modifications
   '/api/matrix/calculate', // Matrix calculations
-  '/api/theme-templates/[^/]+' // Template modifications
+  '/api/theme-templates/(.*)' // Template modifications
 ])
 
 export default clerkMiddleware(async (auth, req) => {

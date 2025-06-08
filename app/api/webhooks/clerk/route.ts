@@ -3,10 +3,22 @@ import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { AuthMonitor, AuthEventType } from '@/lib/monitoring/authMonitor'
-import { createChildLogger } from '@/lib/logger'
+
+// Edge Runtime compatible logger
+const createWebhookLogger = () => ({
+  info: (message: string, meta?: any) => {
+    console.log(`[${new Date().toISOString()}] [clerk-webhook] INFO: ${message}`, meta ? JSON.stringify(meta) : '')
+  },
+  warn: (message: string, meta?: any) => {
+    console.warn(`[${new Date().toISOString()}] [clerk-webhook] WARN: ${message}`, meta ? JSON.stringify(meta) : '')
+  },
+  error: (message: string, meta?: any) => {
+    console.error(`[${new Date().toISOString()}] [clerk-webhook] ERROR: ${message}`, meta ? JSON.stringify(meta) : '')
+  }
+})
 
 // Create webhook-specific logger
-const webhookLogger = createChildLogger({ service: 'clerk-webhook' })
+const webhookLogger = createWebhookLogger()
 
 export async function POST(req: NextRequest) {
   // Get webhook secret from environment

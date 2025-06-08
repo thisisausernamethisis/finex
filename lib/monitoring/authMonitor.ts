@@ -1,4 +1,24 @@
-import { logger } from '../logger'
+// Edge Runtime compatible logger
+const createEdgeLogger = (service: string) => ({
+  info: (message: string, meta?: any) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(`[${new Date().toISOString()}] [${service}] INFO: ${message}`, meta ? JSON.stringify(meta) : '')
+    }
+  },
+  warn: (message: string, meta?: any) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn(`[${new Date().toISOString()}] [${service}] WARN: ${message}`, meta ? JSON.stringify(meta) : '')
+    }
+  },
+  error: (message: string, meta?: any) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error(`[${new Date().toISOString()}] [${service}] ERROR: ${message}`, meta ? JSON.stringify(meta) : '')
+    }
+  }
+})
+
+// Create auth-specific logger (Edge Runtime compatible)
+const authLogger = createEdgeLogger('auth-monitor')
 
 // Authentication event types for structured logging
 export enum AuthEventType {
@@ -26,9 +46,6 @@ export interface AuthEventContext {
   error?: string
   metadata?: Record<string, any>
 }
-
-// Create auth-specific logger
-const authLogger = logger.child({ service: 'auth-monitor' })
 
 /**
  * Authentication monitoring service for structured logging and security tracking

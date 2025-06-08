@@ -1,24 +1,19 @@
 import { NextResponse } from 'next/server';
-import { ZodError } from 'zod';
-import { logger } from '../logger';
-import { Logger } from 'winston';
 import { AuthMonitor } from '../monitoring/authMonitor';
 
-/**
- * Format ZodError for consistent API error responses
- * 
- * @param error - The ZodError to format 
- * @returns A formatted error object that matches the API contract
- */
-export function formatZodError(error: ZodError) {
-  return {
-    error: 'ValidationError',
-    details: error.errors.map(e => ({
-      path: e.path.join('.'),
-      message: e.message
-    }))
-  };
-}
+// Edge Runtime compatible logger
+const createHttpLogger = () => ({
+  warn: (message: string, meta?: any) => {
+    console.warn(`[${new Date().toISOString()}] [http-utils] WARN: ${message}`, meta ? JSON.stringify(meta) : '')
+  },
+  error: (message: string, meta?: any) => {
+    console.error(`[${new Date().toISOString()}] [http-utils] ERROR: ${message}`, meta ? JSON.stringify(meta) : '')
+  }
+})
+
+const logger = createHttpLogger()
+
+
 
 /**
  * Create a 400 Bad Request response
