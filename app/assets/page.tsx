@@ -1,19 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { AssetBoard } from '@/components/board/AssetBoard';
+import { AssetWorkflowManager } from '@/components/features/AssetWorkflow/AssetWorkflowManager';
 
 export default function AssetsPage() {
-  const [selectedAssetId, setSelectedAssetId] = useState<string | undefined>();
-  
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
-        <AssetBoard
-          selectedAssetId={selectedAssetId}
-          onAssetSelect={setSelectedAssetId}
-          onAssetDeselect={() => setSelectedAssetId(undefined)}
-        />
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Asset Management</h1>
+          <p className="text-muted-foreground">
+            Phase 1: Create assets, organize themes, and populate research cards for matrix analysis
+          </p>
+        </div>
+        
+        <AssetWorkflowManager />
       </div>
     </div>
   );
