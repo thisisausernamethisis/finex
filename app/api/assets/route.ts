@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { AssetRepository } from '../../../lib/repositories/assetRepository';
+import { MatrixQueueService } from '../../../lib/services/matrixQueueService';
+import { PortfolioInsightQueueService } from '../../../lib/services/portfolioInsightQueueService';
 import { z } from 'zod';
 
 // Force Node.js runtime for Prisma and complex dependencies
@@ -22,8 +24,10 @@ const createAssetSchema = z.object({
   categoryInsights: z.record(z.any()).optional()
 });
 
-// Create repository instance
+// Create repository and service instances
 const assetRepository = new AssetRepository();
+const matrixQueueService = new MatrixQueueService();
+const portfolioInsightQueueService = new PortfolioInsightQueueService();
 
 // Handler for GET /api/assets
 export async function GET(req: NextRequest) {
@@ -77,6 +81,19 @@ export async function POST(req: NextRequest) {
     
     // Create asset
     const asset = await assetRepository.createAsset(user.id, validation.data);
+    
+    // Queue matrix recalculation for the new asset (background job)
+    try {
+      await matrixQueueService.queueAssetAddedCalculation(user.id, asset.id);
+      await portfolioInsightQueueService.queueOnAssetAdded(user.id, asset.id, asset.name);
+    } catch (error) {
+      // Log error but don't fail asset creation
+      createLogger.warn('Failed to queue matrix calculation for new asset', {
+        userId: user.id,
+        assetId: asset.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
     
     return NextResponse.json(asset, { status: 201 });
   } catch (error) {

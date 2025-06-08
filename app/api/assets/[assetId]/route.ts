@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { AssetRepository } from '../../../../lib/repositories/assetRepository';
+import { MatrixQueueService } from '../../../../lib/services/matrixQueueService';
+import { PortfolioInsightQueueService } from '../../../../lib/services/portfolioInsightQueueService';
 import { hasAssetAccess, AccessRole } from '../../../../lib/services/accessControlService';
 import { z } from 'zod';
 import { createChildLogger } from '../../../../lib/logger';
@@ -19,8 +21,10 @@ const updateAssetSchema = z.object({
   isPublic: z.boolean().optional()
 });
 
-// Create repository instance
+// Create repository and service instances
 const assetRepository = new AssetRepository();
+const matrixQueueService = new MatrixQueueService();
+const portfolioInsightQueueService = new PortfolioInsightQueueService();
 
 // Handler for GET /api/assets/[assetId]
 export async function GET(req: NextRequest, { params }: { params: { assetId: string } }) {
@@ -109,11 +113,29 @@ export async function DELETE(req: NextRequest, { params }: { params: { assetId: 
       return forbidden('You do not have permission to delete this asset', deleteLogger);
     }
     
+    // Get asset info before deletion for matrix cleanup
+    const asset = await assetRepository.getAssetById(assetId, user.id);
+    
     // Delete asset
     const success = await assetRepository.deleteAsset(assetId, user.id);
     
     if (!success) {
       return notFound('Asset not found', deleteLogger);
+    }
+    
+    // Queue matrix recalculation for asset removal (background job)
+    if (asset) {
+      try {
+        await matrixQueueService.queueAssetRemovedCalculation(user.id, assetId);
+        await portfolioInsightQueueService.queueOnAssetRemoved(user.id, assetId, asset.name);
+      } catch (error) {
+        // Log error but don't fail deletion
+        deleteLogger.warn('Failed to queue matrix calculation for asset removal', {
+          userId: user.id,
+          assetId,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
     }
     
     return NextResponse.json({ success: true });
