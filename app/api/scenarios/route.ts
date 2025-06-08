@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { ScenarioRepository } from '../../../lib/repositories/scenarioRepository';
+import { MatrixQueueService } from '../../../lib/services/matrixQueueService';
 import { ScenarioType } from '@prisma/client';
 import { z } from 'zod';
 
@@ -24,8 +25,9 @@ const createScenarioSchema = z.object({
   isPublic: z.boolean().optional()
 });
 
-// Create repository instance
+// Create repository and service instances
 const scenarioRepository = new ScenarioRepository();
+const matrixQueueService = new MatrixQueueService();
 
 // Handler for GET /api/scenarios
 export async function GET(req: NextRequest) {
@@ -79,6 +81,18 @@ export async function POST(req: NextRequest) {
     
     // Create scenario
     const scenario = await scenarioRepository.createScenario(user.id, validation.data);
+    
+    // Queue matrix recalculation for new scenario (background job)
+    try {
+      await matrixQueueService.queueScenarioUpdatedCalculation(scenario.id, [user.id]);
+    } catch (error) {
+      // Log error but don't fail scenario creation
+      createLogger.warn('Failed to queue matrix calculation for new scenario', {
+        userId: user.id,
+        scenarioId: scenario.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
     
     return NextResponse.json(scenario, { status: 201 });
   } catch (error) {

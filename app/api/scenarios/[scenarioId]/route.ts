@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { ScenarioRepository } from '../../../../lib/repositories/scenarioRepository';
+import { MatrixQueueService } from '../../../../lib/services/matrixQueueService';
 import { hasScenarioAccess, AccessRole } from '../../../../lib/services/accessControlService';
 import { ScenarioType } from '@prisma/client';
 import { z } from 'zod';
@@ -23,8 +24,9 @@ const updateScenarioSchema = z.object({
   isPublic: z.boolean().optional()
 });
 
-// Create repository instance
+// Create repository and service instances
 const scenarioRepository = new ScenarioRepository();
+const matrixQueueService = new MatrixQueueService();
 
 // Handler for GET /api/scenarios/[scenarioId]
 export async function GET(req: NextRequest, { params }: { params: { scenarioId: string } }) {
@@ -118,6 +120,18 @@ export async function DELETE(req: NextRequest, { params }: { params: { scenarioI
     
     if (!success) {
       return notFound('Scenario not found', deleteLogger);
+    }
+    
+    // Queue matrix recalculation for scenario removal (background job)
+    try {
+      await matrixQueueService.queueScenarioUpdatedCalculation(scenarioId, [user.id]);
+    } catch (error) {
+      // Log error but don't fail deletion
+      deleteLogger.warn('Failed to queue matrix calculation for scenario deletion', {
+        userId: user.id,
+        scenarioId: scenarioId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
     
     return NextResponse.json({ success: true });
