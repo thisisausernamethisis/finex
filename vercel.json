@@ -2,7 +2,7 @@
   "version": 2,
   "env": {
     "NODE_ENV": "production",
-    "DEPLOYMENT_TRIGGER": "ux-redesign-2025-06-09-v3",
+    "DEPLOYMENT_TRIGGER": "ux-redesign-final-2025-06-09-v4",
     "VERCEL_FORCE_NO_BUILD_CACHE": "1"
   },
   "headers": [
