@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Target, Grid3X3, Lock } from 'lucide-react';
 import { AssetWorkflowManager } from '@/components/features/AssetWorkflow/AssetWorkflowManager';
 import { ScenarioWorkflowManager } from '@/components/features/ScenarioWorkflow/ScenarioWorkflowManager';
-import { useWorkflow } from '@/lib/hooks/workflow';
+// import { useWorkflow } from '@/lib/hooks/workflow'; // Temporarily disabled
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -14,18 +14,18 @@ interface MainTabsProps {
 }
 
 export function MainTabs({ defaultTab = 'assets' }: MainTabsProps) {
-  const workflow = useWorkflow();
-  const canAccessScenarios = workflow.canAccessPhase(2);
-  const canAccessMatrix = workflow.canAccessPhase(3);
+  // Simplified: Always allow access to all tabs
+  const canAccessScenarios = true;
+  const canAccessMatrix = true;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-8">
-        {/* Header */}
+        {/* Simplified Header - NEW UX v4 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Asset Scenario Matrix</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Finex v3 - Simplified UX</h1>
           <p className="text-muted-foreground">
-            Manage assets and scenarios for matrix impact analysis
+            Only 2 buttons: Add Asset and Add Scenario (v4)
           </p>
         </div>
 
