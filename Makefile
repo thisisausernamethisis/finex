@@ -16,7 +16,7 @@ db:migrate:
 	npx prisma migrate dev
 
 # Seed deterministic fixture data
-db\:seed:
+db:seed:
 	npx prisma db seed
 
 # Run linting
@@ -24,15 +24,15 @@ lint:
 	npm run lint:fix
 
 # Run contract tests
-test\:contract:
+test:contract:
 	npm run test:contract
 
 # Run unit tests
-test\:unit:
+test:unit:
 	npm run test:unit
 
 # Run E2E tests
-test\:e2e:
+test:e2e:
 	npx playwright test
 
 # Run CI checks locally

@@ -16,7 +16,7 @@ export default function UnauthorizedPage() {
             Access Denied
           </h1>
           <p className="text-muted-foreground mb-8">
-            You don't have permission to access this resource. Please sign in with an authorized account or contact your administrator.
+            You don&apos;t have permission to access this resource. Please sign in with an authorized account or contact your administrator.
           </p>
           
           {/* Actions */}

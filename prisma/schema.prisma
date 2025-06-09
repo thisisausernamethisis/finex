@@ -83,7 +83,6 @@ model Theme {
   
   // Theme should have either assetId OR scenarioId set, but not both
   // This constraint is enforced at the application layer
-  @@raw(`CONSTRAINT "theme_owner_check" CHECK (("assetId" IS NOT NULL AND "scenarioId" IS NULL) OR ("assetId" IS NULL AND "scenarioId" IS NOT NULL))`)
 }
 
 model Card {
@@ -104,7 +103,7 @@ model Chunk {
   content   String   @db.Text
   order     Int
   // TODO: Enable when pgvector extension is available
-  embedding Unsupported("vector(1536)")
+  // embedding Unsupported("vector(1536)")
   card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   cardId    String
 }

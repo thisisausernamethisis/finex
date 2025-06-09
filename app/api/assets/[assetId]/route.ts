@@ -18,6 +18,7 @@ const deleteLogger = createChildLogger({ route: 'DELETE /api/assets/[assetId]' }
 const updateAssetSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
+  growthValue: z.number().min(0).max(1000000).optional(),
   isPublic: z.boolean().optional()
 });
 

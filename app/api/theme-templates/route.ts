@@ -92,29 +92,17 @@ export async function GET(req: NextRequest) {
     // Validate query parameters
     const validationResult = searchParamsSchema.safeParse(queryParams);
     if (!validationResult.success) {
-      return badRequest(
-        'Invalid query parameters', 
-        validationResult.error.errors.map(e => e.message),
-        listLogger
-      );
+      return badRequest(validationResult.error, listLogger);
     }
     
     // Special validation for negative page numbers - return 400
     if (queryParams.page && parseInt(queryParams.page, 10) < 1) {
-      return badRequest(
-        'Invalid query parameters',
-        ['Page number must be positive'],
-        listLogger
-      );
+      return badRequest('Page number must be positive', listLogger);
     }
     
     // Special validation for too long search query - return 400
     if (queryParams.q && queryParams.q.length > 100) {
-      return badRequest(
-        'Invalid query parameters',
-        ['Search query must not exceed 100 characters'],
-        listLogger
-      );
+      return badRequest('Search query must not exceed 100 characters', listLogger);
     }
     
     // Extract validated search options

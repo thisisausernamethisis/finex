@@ -89,6 +89,8 @@ export function useCreateAsset(options?: { onSuccess?: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      // Invalidate matrix calculations when assets change
+      queryClient.invalidateQueries({ queryKey: ['matrix'] });
       options?.onSuccess?.();
     },
   });
@@ -119,6 +121,8 @@ export function useUpdateAsset(options?: { onSuccess?: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      // Invalidate matrix calculations when assets change
+      queryClient.invalidateQueries({ queryKey: ['matrix'] });
       options?.onSuccess?.();
     },
   });
@@ -147,6 +151,8 @@ export function useDeleteAsset(options?: { onSuccess?: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      // Invalidate matrix calculations when assets change
+      queryClient.invalidateQueries({ queryKey: ['matrix'] });
       options?.onSuccess?.();
     },
   });

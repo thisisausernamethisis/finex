@@ -54,24 +54,36 @@ export function Navigation() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border/50">
+    <nav 
+      className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border/50"
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2 group">
+            <Link 
+              href="/" 
+              className="flex items-center space-x-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+              aria-label="Finex v3 - Return to homepage"
+            >
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                 <Target className="w-5 h-5 text-white group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-lg text-foreground">Finex v3</span>
-                <span className="text-xs text-muted-foreground -mt-1">Strategic Analysis</span>
+                <span className="text-xs text-muted-foreground -mt-1">Matrix Analysis</span>
               </div>
             </Link>
           </div>
 
           {/* Workflow Navigation */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div 
+            className="hidden md:flex items-center space-x-2"
+            role="menubar"
+            aria-label="Workflow phases navigation"
+          >
             {WORKFLOW_PHASES.map((phase, index) => {
               const Icon = getPhaseIcon(phase.phase);
               const isActive = pathname === phase.href;
@@ -87,6 +99,7 @@ export function Navigation() {
                       href={canAccess ? phase.href : '#'}
                       className={`
                         relative group flex flex-col items-center p-3 rounded-lg transition-all duration-300
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                         ${isActive 
                           ? 'bg-primary/10 text-primary' 
                           : canAccess 
@@ -99,6 +112,11 @@ export function Navigation() {
                           e.preventDefault();
                         }
                       }}
+                      role="menuitem"
+                      tabIndex={canAccess ? 0 : -1}
+                      aria-label={`Phase ${phase.phase}: ${phase.label} - ${isCompleted ? 'Completed' : isActive ? 'Current phase' : canAccess ? `${progress}% complete` : 'Locked - complete previous phases first'}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      aria-disabled={!canAccess}
                       title={canAccess ? phase.description : 'Complete previous phases to unlock'}
                     >
                       {/* Phase Number Circle */}
@@ -178,8 +196,15 @@ export function Navigation() {
       </div>
 
       {/* Mobile Navigation */}
-      <div className="md:hidden border-t border-border/50">
-        <div className="flex overflow-x-auto py-2 px-4 space-x-1 no-scrollbar">
+      <div 
+        className="md:hidden border-t border-border/50"
+        role="navigation"
+        aria-label="Mobile workflow phases navigation"
+      >
+        <div 
+          className="flex overflow-x-auto py-2 px-4 space-x-1 no-scrollbar"
+          role="menubar"
+        >
           {WORKFLOW_PHASES.map((phase) => {
             const Icon = getPhaseIcon(phase.phase);
             const isActive = pathname === phase.href;
@@ -195,9 +220,15 @@ export function Navigation() {
                     e.preventDefault();
                   }
                 }}
+                role="menuitem"
+                tabIndex={canAccess ? 0 : -1}
+                aria-label={`Phase ${phase.phase}: ${phase.label} - ${isCompleted ? 'Completed' : isActive ? 'Current phase' : canAccess ? 'Available' : 'Locked'}`}
+                aria-current={isActive ? 'page' : undefined}
+                aria-disabled={!canAccess}
                 className={`
                   flex flex-col items-center space-y-1 px-3 py-2 rounded-lg
                   text-xs font-medium whitespace-nowrap transition-colors relative
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                   ${isActive 
                     ? 'bg-primary text-primary-foreground' 
                     : canAccess

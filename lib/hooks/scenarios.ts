@@ -14,7 +14,7 @@ export interface Scenario {
   updatedAt: string;
 }
 
-export type ScenarioType = 'TECHNOLOGY' | 'ECONOMIC' | 'GEOPOLITICAL';
+export type ScenarioType = 'TECHNOLOGY' | 'ECONOMIC' | 'GEOPOLITICAL' | 'REGULATORY' | 'MARKET';
 
 interface ScenariosResponse {
   data: Scenario[];
@@ -92,6 +92,8 @@ export function useCreateScenario(options?: { onSuccess?: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scenarios'] });
+      // Invalidate matrix calculations when scenarios change
+      queryClient.invalidateQueries({ queryKey: ['matrix'] });
       options?.onSuccess?.();
     },
   });
@@ -122,6 +124,8 @@ export function useUpdateScenario(options?: { onSuccess?: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scenarios'] });
+      // Invalidate matrix calculations when scenarios change
+      queryClient.invalidateQueries({ queryKey: ['matrix'] });
       options?.onSuccess?.();
     },
   });
@@ -150,6 +154,8 @@ export function useDeleteScenario(options?: { onSuccess?: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scenarios'] });
+      // Invalidate matrix calculations when scenarios change
+      queryClient.invalidateQueries({ queryKey: ['matrix'] });
       options?.onSuccess?.();
     },
   });

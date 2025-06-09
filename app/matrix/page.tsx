@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMatrixCalculation } from '@/lib/hooks/matrix';
+import { useWorkflow } from '@/lib/hooks/workflow';
 import { MatrixSkeleton } from '@/components/matrix/MatrixSkeleton';
 import { MatrixStrategicInsights } from '@/components/matrix/MatrixStrategicInsights';
 import { MatrixGrid } from '@/components/matrix/MatrixGrid';
@@ -13,10 +15,15 @@ import { ContextualHelp, WorkflowStepIndicator } from '@/components/common/Conte
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Brain, TrendingUp } from 'lucide-react';
+import { ArrowRight, Brain, TrendingUp, Lock } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MatrixPage() {
+  const workflow = useWorkflow();
+  const router = useRouter();
+  const canAccessMatrix = workflow.canAccessPhase(3);
+  
+  // Always call hooks at the top level
   const { data: matrixData, isLoading, isError, error, refetch } = useMatrixCalculation('detailed');
   
   // State management
@@ -25,6 +32,55 @@ export default function MatrixPage() {
   const [filters, setFilters] = useState<MatrixFilters>({});
   const [showProcessingStatus, setShowProcessingStatus] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Check access to matrix phase and redirect if needed
+  useEffect(() => {
+    if (!canAccessMatrix) {
+      // Redirect to appropriate phase based on completion
+      if (!workflow.canAccessPhase(2)) {
+        router.push('/dashboard'); // Go to assets
+      } else {
+        router.push('/scenarios'); // Go to scenarios
+      }
+    }
+  }, [canAccessMatrix, workflow, router]);
+  
+  // Show loading while checking access or if access is denied
+  if (!canAccessMatrix) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Lock className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <CardTitle>Matrix Access Locked</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              Complete previous phases to unlock matrix analysis:
+            </p>
+            <div className="space-y-2">
+              <div className={`flex items-center gap-2 ${workflow.canAccessPhase(1) ? 'text-green-600' : 'text-muted-foreground'}`}>
+                {workflow.canAccessPhase(1) ? '✓' : '○'} Phase 1: Assets
+              </div>
+              <div className={`flex items-center gap-2 ${workflow.canAccessPhase(2) ? 'text-green-600' : 'text-muted-foreground'}`}>
+                {workflow.canAccessPhase(2) ? '✓' : '○'} Phase 2: Scenarios
+              </div>
+              <div className={`flex items-center gap-2 ${workflow.canAccessPhase(3) ? 'text-green-600' : 'text-muted-foreground'}`}>
+                {workflow.canAccessPhase(3) ? '✓' : '○'} Phase 3: Matrix Analysis
+              </div>
+            </div>
+            <Button asChild className="w-full">
+              <Link href="/dashboard">
+                Continue Setup
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Filter and search logic
   const getFilteredCalculations = () => {

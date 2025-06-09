@@ -30,7 +30,20 @@
       "WebFetch(domain:github.com)",
       "Bash(rg:*)",
       "Bash(mkdir:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(/home/brett/.claude/local/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"scenario correlation|enhanced intelligence|advanced analytics|strategic insights|portfolio intelligence|second-order effects|cross-scenario relationships|cascading effects|network effects|correlation analysis|historical validation|backtesting|advanced matrix intelligence|scenario correlation analysis\" --type md /home/brett/code/finex_v3/)",
+      "Bash(/home/brett/.claude/local/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"scenario correlation|enhanced intelligence|advanced analytics|strategic insights|portfolio intelligence|second-order effects|cross-scenario relationships|cascading effects|network effects|correlation analysis|historical validation|backtesting|advanced matrix intelligence|scenario correlation analysis\" --type md /home/brett/code/finex_v3/ --glob \"!node_modules/**\")",
+      "Bash(/home/brett/.claude/local/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"portfolio optimization|risk analytics|predictive modeling|machine learning|deep learning|neural network|monte carlo|bayesian|optimization|multi-factor|factor analysis|regression|time series|volatility|sharpe|beta|alpha|correlation coefficient\" --type md /home/brett/code/finex_v3/ --glob \"!node_modules/**\")",
+      "Bash(/home/brett/.claude/local/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"advanced features|sophisticated|enterprise|premium|enhanced|complex analytics|intelligent|smart|automated|predictive|forecasting|recommendation engine|dynamic|real-time correlation|portfolio insights|sector analysis|industry analysis|market intelligence\" --type md /home/brett/code/finex_v3/ --glob \"!node_modules/**\")",
+      "Bash(/home/brett/.claude/local/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -i \"strategic.*insights|portfolio.*intelligence|advanced.*analytics|enhanced.*intelligence|portfolio.*analysis|strategic.*analysis|portfolio.*optimization|resilience.*scoring|risk.*analysis\" /home/brett/code/finex_v3/components/ /home/brett/code/finex_v3/app/insights/ /home/brett/code/finex_v3/app/dashboard/ --line-number)",
+      "Bash(/home/brett/.claude/local/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -l \"insights\" /home/brett/code/finex_v3/components/ /home/brett/code/finex_v3/app/)",
+      "Bash(make:*)",
+      "Bash(npm run test:contract:*)",
+      "Bash(node:*)",
+      "Bash(npx prisma db seed:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(/home/brett/.claude/local/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg \"TODO|FIXME|HACK|XXX|BUG\" --context=2 components/ lib/ app/api/ -t ts -t tsx)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }

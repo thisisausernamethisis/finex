@@ -29,12 +29,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture Overview
 
 ### System Purpose
-Finex v3 is a **scenario-based impact analysis platform** that creates systematic frameworks for evaluating how potential future events impact assets through AI-powered analysis. The core workflow follows 4 phases:
+Finex v3 is a **scenario-based impact analysis platform** that creates systematic frameworks for evaluating how potential future events impact assets through AI-powered analysis. The core workflow follows 3 phases:
 
-1. **Asset Research** - Define assets with themes and supporting cards
-2. **Scenario Planning** - Create future variables to test against assets  
-3. **Matrix Generation** - AI analyzes each Asset × Scenario intersection
-4. **Strategic Analysis** - Interpret results for decision-making
+1. **Asset Management** - Create assets with nested themes and research cards (become matrix rows)
+2. **Scenario Planning** - Define future variables with themes and evidence (become matrix columns)  
+3. **Matrix Analysis** - AI analyzes each Asset × Scenario intersection with impact scoring (-5 to +5)
 
 ### Core Data Model
 - **Assets** (matrix rows) - Things to analyze (companies, investments, strategies)
@@ -46,7 +45,7 @@ Finex v3 is a **scenario-based impact analysis platform** that creates systemati
 ### Technology Stack
 - **Frontend**: Next.js 14 with React Query, Radix UI components, Tailwind CSS
 - **Backend**: Next.js API routes with Prisma ORM and PostgreSQL
-- **Authentication**: Clerk for user management
+- **Authentication**: Clerk with production-ready Edge Runtime middleware, comprehensive security monitoring
 - **AI Processing**: OpenAI integration with BullMQ job queues for matrix calculations
 - **Testing**: Vitest (unit), Jest (contract), Playwright (e2e)
 
@@ -66,11 +65,11 @@ The `lib/services/` directory contains the core business logic:
 - `tests/` - Unit, contract, and e2e tests
 
 ### Data Flow
-1. Users create Assets with Themes containing research Cards
-2. Users define Scenarios representing future variables
+1. Users create Assets with Themes containing research Cards (accordion structure)
+2. Users define Scenarios with Themes and evidence Cards (mirroring asset structure)
 3. Matrix analysis processes each Asset × Scenario combination via AI workers
 4. Results stored as impact scores with confidence levels and reasoning
-5. UI displays matrix grid for strategic analysis
+5. UI displays tabbed interface: Assets | Scenarios | Matrix with basic impact scoring
 
 ### Important Implementation Notes
 - Always run `npm run typecheck` and `npm run lint` before committing changes
@@ -87,18 +86,32 @@ The `lib/services/` directory contains the core business logic:
 - **Build Process**: Prisma generation → TypeScript compilation → Next.js build
 - **Edge Runtime Compatibility**: Middleware simplified for serverless functions
 
-### UX Framework & Component Architecture
-The system implements a comprehensive UX evaluation framework across three main phases:
-- **Phase 1: Assets** - Template-driven asset creation with theme organization
-- **Phase 2: Scenarios** - Future variable planning with probability assessment
-- **Phase 3: Matrix** - AI-powered impact analysis with real-time processing status
-- **Cross-Phase Integration**: Unified contextual help system and workflow progress indicators
+### UX Implementation & Component Architecture
+The system implements a **minimalist, workflow-focused interface** with three core phases:
 
-Components follow consistent patterns:
-- **Template Selectors**: For guided creation workflows
-- **Edit Modals**: Multi-tab interfaces for comprehensive data management
-- **Contextual Help**: Phase-specific guidance integrated throughout
-- **Empty States**: Engaging visuals with actionable next steps
+#### **Primary Navigation**: Tabbed Interface (`/components/layout/MainTabs.tsx`)
+- **Assets | Scenarios | Matrix** - Clean three-phase progression
+- **Workflow Managers**: AssetWorkflowManager and ScenarioWorkflowManager provide identical UX patterns
+
+#### **Phase 1: Asset Management** (`/components/features/AssetWorkflow/`)
+- **Accordion Structure**: Assets → Themes → Cards hierarchy
+- **Inline Creation**: Add/delete themes and cards with confirmation dialogs
+- **Auto-Theme Creation**: Growth theme (manual value) + Default theme (AI-computed)
+
+#### **Phase 2: Scenario Management** (`/components/features/ScenarioWorkflow/`)
+- **Mirrored UX**: Identical accordion pattern as assets
+- **Scenario Types**: Technology/Economic/Geopolitical/Regulatory/Market with color coding
+- **Auto-Theme Creation**: Probability theme (percentage) + Default theme (evidence-based)
+
+#### **Phase 3: Matrix Analysis** (`/components/matrix/`)
+- **Grid Layout**: Assets as rows, scenarios as columns (proper matrix orientation)
+- **Impact Scoring**: Basic -5 to +5 impact analysis for Asset × Scenario pairs
+- **Cell Interactions**: Analysis dialogs with evidence display
+- **Processing Status**: Matrix recalculation with job queue status
 
 ### System Identity
-This is NOT a simple portfolio tracker or document management system. It's specifically designed for systematic future scenario analysis with AI-powered impact assessment to enable data-driven strategic planning.
+This is a **core CRUD system** for Asset/Scenario/Theme/Card management with basic AI matrix impact scoring. 
+
+**CORE SCOPE ONLY**: See [CORE_SCOPE.md](CORE_SCOPE.md) for definitive scope limitations.
+
+**NOT INCLUDED**: Advanced analytics, portfolio intelligence, strategic insights, correlation analysis, or any "enhanced" features beyond basic matrix scoring.

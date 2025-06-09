@@ -138,6 +138,7 @@ export class AssetRepository {
     data: { 
       name: string; 
       description?: string; 
+      growthValue?: number;
       isPublic?: boolean;
       categoryConfidence?: number;
       categoryInsights?: any;
@@ -189,6 +190,7 @@ export class AssetRepository {
     data: { 
       name?: string; 
       description?: string; 
+      growthValue?: number;
       isPublic?: boolean;
       categoryConfidence?: number;
       categoryInsights?: any;

@@ -388,7 +388,7 @@ export default function AssetEditModal({ asset, open, onOpenChange, onSave }: As
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {[1, 2, 3, 4, 5].map(i => (
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => (
                               <SelectItem key={i} value={i.toString()}>{i}</SelectItem>
                             ))}
                           </SelectContent>

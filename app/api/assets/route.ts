@@ -19,6 +19,7 @@ const createLogger = createChildLogger({ route: 'POST /api/assets' });
 const createAssetSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
+  growthValue: z.number().min(0).max(1000000).optional(),
   isPublic: z.boolean().optional(),
   categoryConfidence: z.number().min(0).max(1).optional(),
   categoryInsights: z.record(z.any()).optional()
