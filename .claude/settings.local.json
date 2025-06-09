@@ -43,7 +43,8 @@
       "Bash(npx prisma db seed:*)",
       "Bash(npm run test:unit:*)",
       "Bash(/home/brett/.claude/local/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg \"TODO|FIXME|HACK|XXX|BUG\" --context=2 components/ lib/ app/api/ -t ts -t tsx)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git commit -m \"$(cat <<'EOF'\nPATCH 9.5: Implement Simplified UX with Only Two Buttons\n\n- Remove all edit/delete functionality across the entire system\n- Simplify MainTabs to only \"Add Asset\" and \"Add Scenario\" buttons\n- Convert AssetWorkflowManager to display-only with streamlined AssetItem\n- Convert ScenarioWorkflowManager to display-only with theme/card summary\n- Remove Matrix tab buttons, replace with simple navigation link\n- Clean up unused imports and state management throughout\n- Maintain accordion display structure for existing data\n- Prepare foundation for click-to-reveal workflow implementation\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": []
   }

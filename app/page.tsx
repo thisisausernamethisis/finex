@@ -14,7 +14,7 @@ export default function Home() {
             </div>
             <h1 className="text-3xl font-bold text-foreground">Finex v3</h1>
           </div>
-          <p className="text-muted-foreground">Asset scenario analysis platform</p>
+          <p className="text-muted-foreground">Asset scenario analysis platform (Updated: 2025-06-09)</p>
         </div>
 
         {/* Core Workflow Actions */}
