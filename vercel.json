@@ -2,9 +2,20 @@
   "version": 2,
   "env": {
     "NODE_ENV": "production",
-    "DEPLOYMENT_TRIGGER": "cache-bust-2025-06-06-v2",
+    "DEPLOYMENT_TRIGGER": "ux-redesign-2025-06-09-v3",
     "VERCEL_FORCE_NO_BUILD_CACHE": "1"
   },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ],
   "github": {
     "silent": true
   }

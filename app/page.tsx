@@ -1,7 +1,12 @@
 import Link from 'next/link'
 import { Plus, FileText, Target, BarChart3, Settings } from 'lucide-react'
+import { getCacheBustVersion } from '@/lib/utils/cache'
+
+// Force page to revalidate on every request to prevent caching issues
+export const revalidate = 0
 
 export default function Home() {
+  const version = getCacheBustVersion();
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -14,7 +19,7 @@ export default function Home() {
             </div>
             <h1 className="text-3xl font-bold text-foreground">Finex v3</h1>
           </div>
-          <p className="text-muted-foreground">Asset scenario analysis platform (Updated: 2025-06-09)</p>
+          <p className="text-muted-foreground">Asset scenario analysis platform (v{version})</p>
         </div>
 
         {/* Core Workflow Actions */}
